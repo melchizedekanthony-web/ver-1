@@ -61,49 +61,62 @@ class FittrAPITester:
             return False
     
     def test_user_authentication(self):
-        """Test NextAuth signin flow"""
+        """Test NextAuth signin flow - Note: Complex due to NextAuth v5 session handling"""
         try:
-            # Get CSRF token first
+            # Check if there's already a session
+            session_response = self.session.get(f"https://workout-buddy-839.preview.emergentagent.com/api/auth/session")
+            if session_response.status_code == 200:
+                session_data = session_response.json()
+                if session_data and session_data.get('user'):
+                    self.log_test("User Authentication", True, f"Existing session found for: {session_data['user'].get('email')}")
+                    return True
+            
+            # Try to get CSRF token
             csrf_response = self.session.get(f"https://workout-buddy-839.preview.emergentagent.com/api/auth/csrf")
             csrf_token = None
             if csrf_response.status_code == 200:
-                csrf_token = csrf_response.json().get('csrfToken')
+                csrf_data = csrf_response.json()
+                csrf_token = csrf_data.get('csrfToken')
             
-            # Prepare signin data
-            signin_data = {
-                "email": TEST_USER_EMAIL,
-                "password": TEST_USER_PASSWORD,
-                "redirect": "false"
+            if not csrf_token:
+                self.log_test("User Authentication", False, "Could not get CSRF token")
+                return False
+            
+            # Prepare form data for NextAuth
+            form_data = {
+                'email': TEST_USER_EMAIL,
+                'password': TEST_USER_PASSWORD,
+                'csrfToken': csrf_token,
+                'callbackUrl': 'https://workout-buddy-839.preview.emergentagent.com/dashboard',
+                'json': 'true'
             }
             
-            if csrf_token:
-                signin_data['csrfToken'] = csrf_token
-            
-            # Try NextAuth credentials signin
+            # Try signin with proper form encoding
             signin_response = self.session.post(
                 f"https://workout-buddy-839.preview.emergentagent.com/api/auth/callback/credentials",
-                data=signin_data,  # Use form data instead of JSON
-                headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                data=form_data,
+                headers={
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json'
+                },
                 allow_redirects=False
             )
             
-            # Check for session cookies or successful response
-            has_session_cookie = any('next-auth' in cookie.name for cookie in self.session.cookies)
+            # Check response and cookies
+            has_session_cookie = any('next-auth' in cookie.name.lower() for cookie in self.session.cookies)
             
-            if has_session_cookie or signin_response.status_code in [200, 302]:
-                self.log_test("User Authentication", True, "Authentication successful")
-                return True
-            else:
-                # Alternative: Try to get session to verify auth
-                session_response = self.session.get(f"https://workout-buddy-839.preview.emergentagent.com/api/auth/session")
-                if session_response.status_code == 200:
-                    session_data = session_response.json()
-                    if session_data and session_data.get('user'):
-                        self.log_test("User Authentication", True, f"Session found for user: {session_data['user'].get('email')}")
+            if signin_response.status_code == 200 or has_session_cookie:
+                # Verify session is working
+                verify_response = self.session.get(f"https://workout-buddy-839.preview.emergentagent.com/api/auth/session")
+                if verify_response.status_code == 200:
+                    verify_data = verify_response.json()
+                    if verify_data and verify_data.get('user'):
+                        self.log_test("User Authentication", True, f"Authentication successful for: {verify_data['user'].get('email')}")
                         return True
-                
-                self.log_test("User Authentication", False, f"Auth failed - Status: {signin_response.status_code}, No valid session")
-                return False
+            
+            # If all else fails, note the limitation
+            self.log_test("User Authentication", False, "NextAuth v5 session establishment complex - requires browser-based testing")
+            return False
                     
         except Exception as e:
             self.log_test("User Authentication", False, f"Exception: {str(e)}")
