@@ -63,7 +63,8 @@ export default function Dashboard() {
         const userData = JSON.parse(storedUser);
         console.log('Found user in localStorage:', userData);
         setUser(userData);
-        fetchProfile();
+        // Always fetch profile to check onboarding status
+        await fetchProfile();
         return;
       }
       
@@ -84,7 +85,7 @@ export default function Dashboard() {
       console.log('User authenticated:', data.user);
       setUser(data.user);
       localStorage.setItem('fittr_user', JSON.stringify(data.user));
-      fetchProfile();
+      await fetchProfile();
     } catch (error) {
       console.error('Auth check failed:', error);
       router.push('/auth/signin');
