@@ -595,7 +595,7 @@ export default function Dashboard() {
                 FITTR
               </span>
             </div>
-            <nav className="hidden md:flex gap-6">
+            <nav className="flex gap-6">
               <button 
                 onClick={() => setActiveTab('overview')}
                 className={`text-sm font-medium ${activeTab === 'overview' ? 'text-orange-600' : 'text-gray-600 hover:text-gray-900'}`}
