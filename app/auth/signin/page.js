@@ -22,24 +22,23 @@ export default function SignIn() {
     setLoading(true);
 
     try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
+      const response = await fetch('/api/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       });
 
-      console.log('SignIn result:', result);
+      const data = await response.json();
+      console.log('SignIn response:', data);
 
-      if (result?.error) {
-        console.error('SignIn error:', result.error);
-        toast.error('Invalid email or password');
-      } else if (result?.ok) {
+      if (!response.ok) {
+        toast.error(data.error || 'Invalid email or password');
+      } else {
         toast.success('Welcome back!');
         router.push('/dashboard');
         router.refresh();
-      } else {
-        console.error('Unexpected result:', result);
-        toast.error('An error occurred. Please try again.');
       }
     } catch (error) {
       console.error('SignIn exception:', error);
