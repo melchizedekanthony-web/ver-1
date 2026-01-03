@@ -6,6 +6,7 @@ import { compare } from 'bcrypt';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: MongoDBAdapter(clientPromise),
+  trustHost: true,
   providers: [
     CredentialsProvider({
       name: 'Credentials',
