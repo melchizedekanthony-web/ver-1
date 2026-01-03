@@ -21,23 +21,31 @@ export default function SignIn() {
     setLoading(true);
 
     try {
+      console.log('Attempting signin...');
       const response = await fetch('/api/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Important: include cookies
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
       console.log('SignIn response:', data);
+      console.log('Response headers:', response.headers);
+      console.log('Document cookies:', document.cookie);
 
       if (!response.ok) {
         toast.error(data.error || 'Invalid email or password');
       } else {
         toast.success('Welcome back!');
-        router.push('/dashboard');
-        router.refresh();
+        console.log('Redirecting to dashboard...');
+        // Small delay to ensure cookie is set
+        setTimeout(() => {
+          router.push('/dashboard');
+          router.refresh();
+        }, 100);
       }
     } catch (error) {
       console.error('SignIn exception:', error);
