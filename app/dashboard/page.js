@@ -56,8 +56,20 @@ export default function Dashboard() {
   const checkAuth = async () => {
     try {
       console.log('Checking auth...');
+      
+      // First check localStorage
+      const storedUser = localStorage.getItem('fittr_user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        console.log('Found user in localStorage:', userData);
+        setUser(userData);
+        fetchProfile();
+        return;
+      }
+      
+      // Then check session cookie
       const res = await fetch('/api/session', {
-        credentials: 'include' // This is crucial - tells fetch to send cookies
+        credentials: 'include'
       });
       const data = await res.json();
       
@@ -71,6 +83,7 @@ export default function Dashboard() {
       
       console.log('User authenticated:', data.user);
       setUser(data.user);
+      localStorage.setItem('fittr_user', JSON.stringify(data.user));
       fetchProfile();
     } catch (error) {
       console.error('Auth check failed:', error);
