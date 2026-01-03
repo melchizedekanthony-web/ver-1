@@ -194,7 +194,7 @@ export default function Dashboard() {
     }
   };
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -204,6 +204,15 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  if (!user) {
+    return null;
+  }
+
+  const handleSignOut = async () => {
+    await fetch('/api/signout', { method: 'POST' });
+    router.push('/');
+  };
 
   // Onboarding Flow
   if (profile && !profile.onboardingComplete) {
