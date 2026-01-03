@@ -28,14 +28,21 @@ export default function SignIn() {
         password,
       });
 
-      if (result.error) {
+      console.log('SignIn result:', result);
+
+      if (result?.error) {
+        console.error('SignIn error:', result.error);
         toast.error('Invalid email or password');
-      } else {
+      } else if (result?.ok) {
         toast.success('Welcome back!');
         router.push('/dashboard');
         router.refresh();
+      } else {
+        console.error('Unexpected result:', result);
+        toast.error('An error occurred. Please try again.');
       }
     } catch (error) {
+      console.error('SignIn exception:', error);
       toast.error('An error occurred. Please try again.');
     } finally {
       setLoading(false);
