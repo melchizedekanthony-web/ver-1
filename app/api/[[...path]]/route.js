@@ -49,7 +49,7 @@ async function simpleSignIn(request) {
     }
 
     // Create session token
-    const token = await createSession({
+    const token = await createAuthSession({
       id: user.id || user._id.toString(),
       email: user.email,
       name: user.name
