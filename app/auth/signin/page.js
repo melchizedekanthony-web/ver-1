@@ -27,24 +27,24 @@ export default function SignIn() {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Important: include cookies
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
       console.log('SignIn response:', data);
-      console.log('Response headers:', response.headers);
-      console.log('Document cookies:', document.cookie);
 
       if (!response.ok) {
         toast.error(data.error || 'Invalid email or password');
       } else {
+        // Store user in localStorage as backup
+        if (data.user) {
+          localStorage.setItem('fittr_user', JSON.stringify(data.user));
+        }
         toast.success('Welcome back!');
         console.log('Redirecting to dashboard...');
-        // Small delay to ensure cookie is set
         setTimeout(() => {
-          router.push('/dashboard');
-          router.refresh();
+          window.location.href = '/dashboard'; // Use window.location for full page reload
         }, 100);
       }
     } catch (error) {
