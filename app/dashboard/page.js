@@ -56,7 +56,9 @@ export default function Dashboard() {
   const checkAuth = async () => {
     try {
       console.log('Checking auth...');
-      const res = await fetch('/api/session');
+      const res = await fetch('/api/session', {
+        credentials: 'include' // This is crucial - tells fetch to send cookies
+      });
       const data = await res.json();
       
       console.log('Session data:', data);
