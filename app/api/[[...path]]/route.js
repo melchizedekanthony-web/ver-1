@@ -67,9 +67,10 @@ async function simpleSignIn(request) {
 
     response.cookies.set('session', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Changed for preview environment
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30 // 30 days
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      path: '/'
     });
 
     return response;
