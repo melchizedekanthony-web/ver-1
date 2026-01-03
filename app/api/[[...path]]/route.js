@@ -8,6 +8,15 @@ import { createSession as createAuthSession, verifySession } from '@/lib/auth-si
 // Helper function to get user from session
 async function getCurrentUser(request) {
   try {
+    // First check for Authorization header (from localStorage token)
+    const authHeader = request.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const session = await verifySession(token);
+      if (session) return session;
+    }
+    
+    // Then check cookies
     const cookieHeader = request.headers.get('cookie');
     if (!cookieHeader) return null;
     
