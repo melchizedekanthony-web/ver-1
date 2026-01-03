@@ -55,14 +55,19 @@ export default function Dashboard() {
 
   const checkAuth = async () => {
     try {
+      console.log('Checking auth...');
       const res = await fetch('/api/session');
       const data = await res.json();
       
+      console.log('Session data:', data);
+      
       if (!data.user) {
+        console.log('No user, redirecting to signin');
         router.push('/auth/signin');
         return;
       }
       
+      console.log('User authenticated:', data.user);
       setUser(data.user);
       fetchProfile();
     } catch (error) {
