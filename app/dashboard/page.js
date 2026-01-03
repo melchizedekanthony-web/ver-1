@@ -126,10 +126,18 @@ export default function Dashboard() {
 
   const fetchMatches = async () => {
     try {
+      const token = localStorage.getItem('fittr_token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const res = await fetch('/api/matches', {
-        credentials: 'include'
+        credentials: 'include',
+        headers
       });
       const data = await res.json();
+      console.log('Matches data:', data);
       if (data.matches) {
         setMatches(data.matches.slice(0, 10));
       }
@@ -140,8 +148,15 @@ export default function Dashboard() {
 
   const fetchSessions = async () => {
     try {
+      const token = localStorage.getItem('fittr_token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const res = await fetch('/api/sessions?filter=upcoming', {
-        credentials: 'include'
+        credentials: 'include',
+        headers
       });
       const data = await res.json();
       if (data.sessions) {
@@ -154,8 +169,15 @@ export default function Dashboard() {
 
   const fetchFeed = async () => {
     try {
+      const token = localStorage.getItem('fittr_token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const res = await fetch('/api/feed', {
-        credentials: 'include'
+        credentials: 'include',
+        headers
       });
       const data = await res.json();
       if (data.posts) {
