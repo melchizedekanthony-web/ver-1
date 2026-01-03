@@ -103,7 +103,9 @@ export default function Dashboard() {
 
   const fetchMatches = async () => {
     try {
-      const res = await fetch('/api/matches');
+      const res = await fetch('/api/matches', {
+        credentials: 'include'
+      });
       const data = await res.json();
       if (data.matches) {
         setMatches(data.matches.slice(0, 10));
@@ -115,7 +117,9 @@ export default function Dashboard() {
 
   const fetchSessions = async () => {
     try {
-      const res = await fetch('/api/sessions?filter=upcoming');
+      const res = await fetch('/api/sessions?filter=upcoming', {
+        credentials: 'include'
+      });
       const data = await res.json();
       if (data.sessions) {
         setSessions(data.sessions);
@@ -127,7 +131,9 @@ export default function Dashboard() {
 
   const fetchFeed = async () => {
     try {
-      const res = await fetch('/api/feed');
+      const res = await fetch('/api/feed', {
+        credentials: 'include'
+      });
       const data = await res.json();
       if (data.posts) {
         setFeedPosts(data.posts.slice(0, 10));
