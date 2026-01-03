@@ -584,7 +584,7 @@ async function getSessions(request) {
 }
 
 // GET /api/sessions/[id] - Get specific session
-async function getSession(request, id) {
+async function getSessionById(request, id) {
   try {
     const user = await getCurrentUser();
     if (!user) {
