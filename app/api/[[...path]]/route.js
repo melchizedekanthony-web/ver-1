@@ -1199,7 +1199,7 @@ export async function GET(request, { params }) {
     return getReviews(request, id);
   } else if (path.startsWith('sessions/')) {
     const id = path.split('/')[1];
-    return getSession(request, id);
+    return getSessionById(request, id);
   } else if (path === 'feed') {
     return getFeed(request);
   } else if (path.startsWith('reviews/')) {
