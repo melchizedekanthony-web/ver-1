@@ -559,7 +559,7 @@ export default function Dashboard() {
             <Button variant="ghost" size="icon">
               <Bell className="w-5 h-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => signOut({ callbackUrl: '/' })}>
+            <Button variant="ghost" size="icon" onClick={handleSignOut}>
               <LogOut className="w-5 h-5" />
             </Button>
             <Avatar>
