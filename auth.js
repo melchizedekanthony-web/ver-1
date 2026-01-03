@@ -7,6 +7,18 @@ import { compare } from 'bcrypt';
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: MongoDBAdapter(clientPromise),
   trustHost: true,
+  useSecureCookies: false,
+  cookies: {
+    pkceCodeVerifier: {
+      name: 'next-auth.pkce.code_verifier',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: false,
+      },
+    },
+  },
   providers: [
     CredentialsProvider({
       name: 'Credentials',
