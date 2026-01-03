@@ -1,14 +1,109 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
-import { hash } from 'bcrypt';
+import { hash, compare } from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import openai from '@/lib/openai';
 import { auth } from '@/auth';
+import { createSession, getSession } from '@/lib/auth-simple';
 
 // Helper function to get user from session
 async function getCurrentUser() {
-  const session = await auth();
-  return session?.user;
+  const session = await getSession();
+  return session;
+}
+
+// ========== SIMPLE AUTH ROUTES ==========
+
+// POST /api/signin - Simple sign in
+async function simpleSignIn(request) {
+  try {
+    const body = await request.json();
+    const { email, password } = body;
+    
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: 'Missing email or password' },
+        { status: 400 }
+      );
+    }
+
+    const db = await getDb();
+    const usersCollection = db.collection('users');
+    
+    const user = await usersCollection.findOne({ email });
+    
+    if (!user || !user.password) {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      );
+    }
+
+    const passwordMatch = await compare(password, user.password);
+
+    if (!passwordMatch) {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      );
+    }
+
+    // Create session token
+    const token = await createSession({
+      id: user.id || user._id.toString(),
+      email: user.email,
+      name: user.name
+    });
+
+    // Set cookie
+    const response = NextResponse.json({
+      success: true,
+      user: {
+        id: user.id || user._id.toString(),
+        email: user.email,
+        name: user.name
+      }
+    });
+
+    response.cookies.set('session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30 // 30 days
+    });
+
+    return response;
+  } catch (error) {
+    console.error('Sign in error:', error);
+    return NextResponse.json(
+      { error: 'An error occurred during sign in' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/signout - Simple sign out
+async function simpleSignOut(request) {
+  const response = NextResponse.json({ success: true });
+  response.cookies.delete('session');
+  return response;
+}
+
+// GET /api/session - Get current session
+async function getSessionData(request) {
+  const session = await getSession();
+  
+  if (!session) {
+    return NextResponse.json({ user: null });
+  }
+
+  return NextResponse.json({ 
+    user: {
+      id: session.id,
+      email: session.email,
+      name: session.name
+    }
+  });
 }
 
 // ========== AUTH ROUTES ==========
