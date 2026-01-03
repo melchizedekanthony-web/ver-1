@@ -4,11 +4,11 @@ import { hash, compare } from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import openai from '@/lib/openai';
 import { auth } from '@/auth';
-import { createSession, getSession } from '@/lib/auth-simple';
+import { createSession as createAuthSession, getSession as getAuthSession } from '@/lib/auth-simple';
 
 // Helper function to get user from session
 async function getCurrentUser() {
-  const session = await getSession();
+  const session = await getAuthSession();
   return session;
 }
 
