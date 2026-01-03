@@ -1119,7 +1119,7 @@ export async function POST(request, { params }) {
   const path = params?.path?.join('/') || '';
 
   // Route matching
-  if (path === 'auth/register') {
+  if (path === 'register') {
     return registerUser(request);
   } else if (path === 'profile/basic') {
     return updateBasicInfo(request);
