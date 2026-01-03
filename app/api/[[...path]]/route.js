@@ -189,7 +189,7 @@ async function registerUser(request) {
 // GET /api/profile - Get user profile
 async function getProfile(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -216,7 +216,7 @@ async function getProfile(request) {
 // POST /api/profile/basic - Update basic info (Step 2)
 async function updateBasicInfo(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -251,7 +251,7 @@ async function updateBasicInfo(request) {
 // POST /api/profile/fitness - Update fitness identity (Step 3)
 async function updateFitnessIdentity(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -285,7 +285,7 @@ async function updateFitnessIdentity(request) {
 // POST /api/profile/health - Update health metrics (Step 4)
 async function updateHealthMetrics(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -337,7 +337,7 @@ async function updateHealthMetrics(request) {
 // POST /api/profile/preferences - Update activity preferences (Step 5)
 async function updateActivityPreferences(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -377,7 +377,7 @@ async function updateActivityPreferences(request) {
 // GET /api/matches - Get compatible workout partners
 async function getMatches(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -472,7 +472,7 @@ async function getMatches(request) {
 // POST /api/sessions - Create new session
 async function createSession(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -532,7 +532,7 @@ async function createSession(request) {
 // GET /api/sessions - Get user's sessions
 async function getSessions(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -603,7 +603,7 @@ async function getSessions(request) {
 // GET /api/sessions/[id] - Get specific session
 async function getSessionById(request, id) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -653,7 +653,7 @@ async function getSessionById(request, id) {
 // POST /api/sessions/[id]/join - Join a session
 async function joinSession(request, id) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -709,7 +709,7 @@ async function joinSession(request, id) {
 // POST /api/sessions/[id]/complete - Mark session as complete
 async function completeSession(request, id) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -734,7 +734,7 @@ async function completeSession(request, id) {
 // POST /api/ai/generate-workout - Generate AI workout plan
 async function generateWorkout(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -833,7 +833,7 @@ The plan should be safe, effective, and achievable for this fitness level.`;
 // GET /api/feed - Get social feed
 async function getFeed(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -872,7 +872,7 @@ async function getFeed(request) {
 // POST /api/feed - Create feed post
 async function createFeedPost(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -907,7 +907,7 @@ async function createFeedPost(request) {
 // POST /api/feed/[id]/like - Like a post
 async function likePost(request, id) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -944,7 +944,7 @@ async function likePost(request, id) {
 // POST /api/feed/[id]/comment - Comment on a post
 async function commentOnPost(request, id) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -981,7 +981,7 @@ async function commentOnPost(request, id) {
 // POST /api/reviews - Create review
 async function createReview(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -1070,7 +1070,7 @@ async function getReviews(request, targetId) {
 // GET /api/notifications - Get user notifications
 async function getNotifications(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -1096,7 +1096,7 @@ async function getNotifications(request) {
 // POST /api/notifications/[id]/read - Mark notification as read
 async function markNotificationRead(request, id) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -1121,7 +1121,7 @@ async function markNotificationRead(request, id) {
 // POST /api/emergency/sos - Trigger emergency SOS
 async function triggerSOS(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -1163,7 +1163,7 @@ async function triggerSOS(request) {
 // POST /api/subscriptions/upgrade - Upgrade subscription
 async function upgradeSubscription(request) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
