@@ -20,10 +20,10 @@ import { ACTIVITY_CATEGORIES, FITNESS_GOALS, LOOKING_FOR_MODES, DAYS_OF_WEEK, TI
 import { toast } from 'sonner';
 
 export default function Dashboard() {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [profile, setProfile] = useState(null);
+  const [user, setUser] = useState(null);
   const [matches, setMatches] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [feedPosts, setFeedPosts] = useState([]);
@@ -50,12 +50,26 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
-    } else if (status === 'authenticated') {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const res = await fetch('/api/session');
+      const data = await res.json();
+      
+      if (!data.user) {
+        router.push('/auth/signin');
+        return;
+      }
+      
+      setUser(data.user);
       fetchProfile();
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      router.push('/auth/signin');
     }
-  }, [status, router]);
+  };
 
   const fetchProfile = async () => {
     try {
