@@ -7,9 +7,26 @@ import { auth } from '@/auth';
 import { createSession as createAuthSession, getSession as getAuthSession } from '@/lib/auth-simple';
 
 // Helper function to get user from session
-async function getCurrentUser() {
-  const session = await getAuthSession();
-  return session;
+async function getCurrentUser(request) {
+  try {
+    const cookieHeader = request.headers.get('cookie');
+    if (!cookieHeader) return null;
+    
+    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      acc[key] = value;
+      return acc;
+    }, {});
+    
+    const token = cookies.session;
+    if (!token) return null;
+    
+    const session = await verifySession(token);
+    return session;
+  } catch (error) {
+    console.error('Get current user error:', error);
+    return null;
+  }
 }
 
 // ========== SIMPLE AUTH ROUTES ==========
