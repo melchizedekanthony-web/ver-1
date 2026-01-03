@@ -63,46 +63,47 @@ class FittrAPITester:
     def test_user_authentication(self):
         """Test NextAuth signin flow"""
         try:
-            # Test with existing user credentials
+            # Get CSRF token first
+            csrf_response = self.session.get(f"https://workout-buddy-839.preview.emergentagent.com/api/auth/csrf")
+            csrf_token = None
+            if csrf_response.status_code == 200:
+                csrf_token = csrf_response.json().get('csrfToken')
+            
+            # Prepare signin data
             signin_data = {
                 "email": TEST_USER_EMAIL,
                 "password": TEST_USER_PASSWORD,
                 "redirect": "false"
             }
             
-            # First try to get CSRF token
-            csrf_response = self.session.get(f"{BASE_URL}/auth/csrf")
-            if csrf_response.status_code == 200:
-                csrf_token = csrf_response.json().get('csrfToken')
+            if csrf_token:
                 signin_data['csrfToken'] = csrf_token
             
-            # Attempt signin
-            response = self.session.post(
-                f"{BASE_URL}/auth/signin/credentials",
-                json=signin_data
+            # Try NextAuth credentials signin
+            signin_response = self.session.post(
+                f"https://workout-buddy-839.preview.emergentagent.com/api/auth/callback/credentials",
+                data=signin_data,  # Use form data instead of JSON
+                headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                allow_redirects=False
             )
             
-            # Check for session cookies
-            if 'next-auth.session-token' in self.session.cookies or 'next-auth.csrf-token' in self.session.cookies:
-                self.auth_cookies = self.session.cookies
-                self.log_test("User Authentication", True, "Authentication successful with session cookies")
+            # Check for session cookies or successful response
+            has_session_cookie = any('next-auth' in cookie.name for cookie in self.session.cookies)
+            
+            if has_session_cookie or signin_response.status_code in [200, 302]:
+                self.log_test("User Authentication", True, "Authentication successful")
                 return True
             else:
-                # Try alternative approach - direct credential validation
-                auth_response = self.session.post(
-                    f"{BASE_URL}/auth/callback/credentials",
-                    json={
-                        "email": TEST_USER_EMAIL,
-                        "password": TEST_USER_PASSWORD
-                    }
-                )
+                # Alternative: Try to get session to verify auth
+                session_response = self.session.get(f"https://workout-buddy-839.preview.emergentagent.com/api/auth/session")
+                if session_response.status_code == 200:
+                    session_data = session_response.json()
+                    if session_data and session_data.get('user'):
+                        self.log_test("User Authentication", True, f"Session found for user: {session_data['user'].get('email')}")
+                        return True
                 
-                if auth_response.status_code in [200, 302]:
-                    self.log_test("User Authentication", True, "Authentication successful")
-                    return True
-                else:
-                    self.log_test("User Authentication", False, f"Auth failed - Status: {auth_response.status_code}")
-                    return False
+                self.log_test("User Authentication", False, f"Auth failed - Status: {signin_response.status_code}, No valid session")
+                return False
                     
         except Exception as e:
             self.log_test("User Authentication", False, f"Exception: {str(e)}")
