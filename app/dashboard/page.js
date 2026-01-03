@@ -170,11 +170,24 @@ export default function Dashboard() {
     try {
       setLoading(true);
       
+      console.log('Starting onboarding completion...');
+      console.log('Onboarding data:', onboardingData);
+      
+      const token = localStorage.getItem('fittr_token');
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       // Submit all onboarding data in sequence
       if (onboardingStep >= 2) {
+        console.log('Updating basic info...');
         await fetch('/api/profile/basic', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
+          credentials: 'include',
           body: JSON.stringify({
             name: onboardingData.name,
             dob: onboardingData.dob,
@@ -184,9 +197,11 @@ export default function Dashboard() {
       }
 
       if (onboardingStep >= 3) {
+        console.log('Updating fitness...');
         await fetch('/api/profile/fitness', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
+          credentials: 'include',
           body: JSON.stringify({
             fitnessLevel: onboardingData.fitnessLevel,
             goals: onboardingData.goals,
@@ -196,9 +211,11 @@ export default function Dashboard() {
       }
 
       if (onboardingStep >= 4 && onboardingData.height && onboardingData.weight) {
+        console.log('Updating health...');
         await fetch('/api/profile/health', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
+          credentials: 'include',
           body: JSON.stringify({
             height: parseInt(onboardingData.height),
             weight: parseInt(onboardingData.weight),
@@ -208,9 +225,11 @@ export default function Dashboard() {
       }
 
       // Final step - activities and preferences
+      console.log('Updating preferences...');
       const res = await fetch('/api/profile/preferences', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
+        credentials: 'include',
         body: JSON.stringify({
           activities: onboardingData.activities,
           preferredDays: onboardingData.preferredDays,
@@ -221,11 +240,20 @@ export default function Dashboard() {
         }),
       });
 
+      console.log('Preferences response:', res.status);
+
       if (res.ok) {
+        const data = await res.json();
+        console.log('Preferences response data:', data);
         toast.success('Onboarding complete! Welcome to FITTR!');
         await fetchProfile();
+      } else {
+        const errorData = await res.json();
+        console.error('Error completing onboarding:', errorData);
+        toast.error('Failed to complete onboarding: ' + (errorData.error || 'Unknown error'));
       }
     } catch (error) {
+      console.error('Onboarding error:', error);
       toast.error('Failed to complete onboarding');
     } finally {
       setLoading(false);
