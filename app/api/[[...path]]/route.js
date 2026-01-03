@@ -1186,7 +1186,9 @@ export async function GET(request, { params }) {
   const path = params?.path?.join('/') || '';
 
   // Route matching
-  if (path === 'profile') {
+  if (path === 'session') {
+    return getSessionData(request);
+  } else if (path === 'profile') {
     return getProfile(request);
   } else if (path === 'matches') {
     return getMatches(request);
