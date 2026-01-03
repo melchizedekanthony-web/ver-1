@@ -80,7 +80,9 @@ export default function Dashboard() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch('/api/profile');
+      const res = await fetch('/api/profile', {
+        credentials: 'include'
+      });
       const data = await res.json();
       if (data.profile) {
         setProfile(data.profile);
