@@ -108,7 +108,7 @@ async function simpleSignOut(request) {
 
 // GET /api/session - Get current session
 async function getSessionData(request) {
-  const session = await getAuthSession();
+  const session = await getCurrentUser(request);
   
   if (!session) {
     return NextResponse.json({ user: null });
