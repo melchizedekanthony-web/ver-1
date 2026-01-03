@@ -1,24 +1,10 @@
 import NextAuth from 'next-auth';
-import { MongoDBAdapter } from '@auth/mongodb-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import clientPromise from './lib/mongodb';
 import { compare } from 'bcrypt';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: MongoDBAdapter(clientPromise),
   trustHost: true,
-  useSecureCookies: false,
-  cookies: {
-    pkceCodeVerifier: {
-      name: 'next-auth.pkce.code_verifier',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: false,
-      },
-    },
-  },
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -83,12 +69,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
+        session.user.email = token.email;
+        session.user.name = token.name;
       }
       return session;
     }
