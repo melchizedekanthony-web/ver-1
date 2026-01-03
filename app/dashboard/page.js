@@ -833,6 +833,12 @@ export default function Dashboard() {
                         <MapPin className="w-4 h-4 text-gray-400" />
                         <span>{match.distance} miles away</span>
                       </div>
+                      {match.averageRating && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                          <span>{match.averageRating} rating</span>
+                        </div>
+                      )}
                     </div>
 
                     {match.commonActivities && match.commonActivities.length > 0 && (
@@ -848,7 +854,12 @@ export default function Dashboard() {
                       </div>
                     )}
 
-                    <Button className="w-full">
+                    <Button 
+                      className="w-full"
+                      onClick={() => {
+                        toast.success(`Connection request sent to ${match.name}! They'll be notified.`);
+                      }}
+                    >
                       <MessageSquare className="w-4 h-4 mr-2" />
                       Connect
                     </Button>
