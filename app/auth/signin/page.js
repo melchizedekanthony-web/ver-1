@@ -37,9 +37,12 @@ export default function SignIn() {
       if (!response.ok) {
         toast.error(data.error || 'Invalid email or password');
       } else {
-        // Store user in localStorage as backup
+        // Store user and token in localStorage
         if (data.user) {
           localStorage.setItem('fittr_user', JSON.stringify(data.user));
+        }
+        if (data.token) {
+          localStorage.setItem('fittr_token', data.token);
         }
         toast.success('Welcome back!');
         console.log('Redirecting to dashboard...');
