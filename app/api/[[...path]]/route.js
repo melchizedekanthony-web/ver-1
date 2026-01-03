@@ -1214,7 +1214,11 @@ export async function POST(request, { params }) {
   const path = params?.path?.join('/') || '';
 
   // Route matching
-  if (path === 'register') {
+  if (path === 'signin') {
+    return simpleSignIn(request);
+  } else if (path === 'signout') {
+    return simpleSignOut(request);
+  } else if (path === 'register') {
     return registerUser(request);
   } else if (path === 'profile/basic') {
     return updateBasicInfo(request);
