@@ -238,8 +238,9 @@ export default function Dashboard() {
   }
 
   const handleSignOut = async () => {
+    localStorage.removeItem('fittr_user');
     await fetch('/api/signout', { method: 'POST' });
-    router.push('/');
+    window.location.href = '/';
   };
 
   // Onboarding Flow
