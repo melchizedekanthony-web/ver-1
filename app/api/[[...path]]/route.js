@@ -74,6 +74,7 @@ async function simpleSignIn(request) {
     // Set cookie
     const response = NextResponse.json({
       success: true,
+      token: token, // Return token in response too
       user: {
         id: user.id || user._id.toString(),
         email: user.email,
