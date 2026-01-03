@@ -94,8 +94,17 @@ export default function Dashboard() {
 
   const fetchProfile = async () => {
     try {
+      const token = localStorage.getItem('fittr_token');
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const res = await fetch('/api/profile', {
-        credentials: 'include'
+        credentials: 'include',
+        headers
       });
       const data = await res.json();
       if (data.profile) {
