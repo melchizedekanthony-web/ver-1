@@ -1,189 +1,82 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Dumbbell, Users, Target, Shield, Zap, Star } from 'lucide-react';
 
 export default function Home() {
+  const router = useRouter();
+  const [showButton, setShowButton] = useState(false);
+
+  useEffect(() => {
+    // Show "JOIN UP" button after logo animation
+    const timer = setTimeout(() => {
+      setShowButton(true);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Dumbbell className="w-8 h-8 text-orange-600" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-              FITTR
-            </span>
-          </div>
-          <div className="flex gap-4">
-            <Link href="/auth/signin">
-              <Button variant="ghost">Sign In</Button>
-            </Link>
+    <div className="min-h-screen bg-[#1a1aff] flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Animated background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1a1aff] via-[#2020ff] to-[#1515dd] animate-pulse"></div>
+      
+      <div className="relative z-10 text-center">
+        {/* GOWITHME Logo with glow effect */}
+        <h1 className="text-7xl md:text-9xl font-black text-white mb-8 tracking-wider animate-pulse"
+            style={{
+              textShadow: '0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 255, 255, 0.6), 0 0 60px rgba(255, 255, 255, 0.4)',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              letterSpacing: '0.1em'
+            }}>
+          GOWITHME
+        </h1>
+
+        {/* JOIN UP Button - appears after delay */}
+        {showButton && (
+          <div className="animate-fade-in">
             <Link href="/auth/register">
-              <Button>Get Started</Button>
+              <button 
+                className="text-3xl md:text-5xl font-bold text-white px-12 py-4 rounded-full transition-all duration-300 hover:scale-110"
+                style={{
+                  textShadow: '0 0 15px rgba(255, 255, 255, 0.9), 0 0 30px rgba(255, 255, 255, 0.7)',
+                  letterSpacing: '0.15em'
+                }}>
+                JOIN UP
+              </button>
             </Link>
+            
+            <div className="mt-8">
+              <Link href="/auth/signin">
+                <button className="text-lg text-white/80 hover:text-white underline underline-offset-4 transition-colors">
+                  Already have an account? Sign in
+                </button>
+              </Link>
+            </div>
           </div>
-        </div>
-      </header>
+        )}
+      </div>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-orange-600 via-red-600 to-purple-600 bg-clip-text text-transparent">
-            Find Your Perfect Workout Partner
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Connect with fitness enthusiasts in your area for workouts, training sessions, and athletic activities. 
-            Make fitness social, safe, and fun.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Link href="/auth/register">
-              <Button size="lg" className="bg-orange-600 hover:bg-orange-700">
-                Start Matching Now
-              </Button>
-            </Link>
-            <Link href="#features">
-              <Button size="lg" variant="outline">
-                Learn More
-              </Button>
-            </Link>
-          </div>
-          <div className="mt-12 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
-            <div>
-              <div className="text-3xl font-bold text-orange-600">10K+</div>
-              <div className="text-sm text-gray-600">Active Users</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-orange-600">50K+</div>
-              <div className="text-sm text-gray-600">Sessions Completed</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-orange-600">30+</div>
-              <div className="text-sm text-gray-600">Activities</div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Bottom sparkle effect */}
+      <div className="absolute bottom-10 right-10 text-white text-6xl opacity-70 animate-pulse">
+        ✦
+      </div>
 
-      {/* Features Section */}
-      <section id="features" className="container mx-auto px-4 py-20 bg-gray-50">
-        <h2 className="text-4xl font-bold text-center mb-12">Why Choose FITTR?</h2>
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition">
-            <Users className="w-12 h-12 text-orange-600 mb-4" />
-            <h3 className="text-xl font-bold mb-2">Smart Matching</h3>
-            <p className="text-gray-600">
-              Our algorithm matches you with compatible partners based on fitness level, goals, and schedule.
-            </p>
-          </div>
-          <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition">
-            <Target className="w-12 h-12 text-orange-600 mb-4" />
-            <h3 className="text-xl font-bold mb-2">AI Workout Plans</h3>
-            <p className="text-gray-600">
-              Get personalized workout plans generated by AI, tailored to your goals and fitness level.
-            </p>
-          </div>
-          <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition">
-            <Shield className="w-12 h-12 text-orange-600 mb-4" />
-            <h3 className="text-xl font-bold mb-2">Safety First</h3>
-            <p className="text-gray-600">
-              Verified profiles, ratings system, and emergency SOS feature keep you safe during sessions.
-            </p>
-          </div>
-          <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition">
-            <Zap className="w-12 h-12 text-orange-600 mb-4" />
-            <h3 className="text-xl font-bold mb-2">On-Demand Sessions</h3>
-            <p className="text-gray-600">
-              Book workout sessions like Uber. Quick, easy, and flexible scheduling.
-            </p>
-          </div>
-          <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition">
-            <Star className="w-12 h-12 text-orange-600 mb-4" />
-            <h3 className="text-xl font-bold mb-2">Reputation System</h3>
-            <p className="text-gray-600">
-              Rate and review partners. Build your fitness reputation and earn badges.
-            </p>
-          </div>
-          <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition">
-            <Dumbbell className="w-12 h-12 text-orange-600 mb-4" />
-            <h3 className="text-xl font-bold mb-2">30+ Activities</h3>
-            <p className="text-gray-600">
-              From weightlifting to yoga, running to rock climbing. Find partners for any activity.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="container mx-auto px-4 py-20">
-        <h2 className="text-4xl font-bold text-center mb-12">How It Works</h2>
-        <div className="grid md:grid-cols-4 gap-8 max-w-6xl mx-auto">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-              1
-            </div>
-            <h3 className="text-lg font-bold mb-2">Create Profile</h3>
-            <p className="text-gray-600">
-              Sign up and complete your fitness profile with goals and preferences.
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-              2
-            </div>
-            <h3 className="text-lg font-bold mb-2">Find Matches</h3>
-            <p className="text-gray-600">
-              Browse compatible workout partners in your area.
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-              3
-            </div>
-            <h3 className="text-lg font-bold mb-2">Book Session</h3>
-            <p className="text-gray-600">
-              Create or join workout sessions at your convenience.
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-              4
-            </div>
-            <h3 className="text-lg font-bold mb-2">Train Together</h3>
-            <p className="text-gray-600">
-              Meet up, work out, and achieve your fitness goals together.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="container mx-auto px-4 py-20 text-center bg-gradient-to-r from-orange-600 to-red-600 rounded-3xl text-white">
-        <h2 className="text-4xl font-bold mb-4">Ready to Transform Your Fitness Journey?</h2>
-        <p className="text-xl mb-8 opacity-90">
-          Join thousands of fitness enthusiasts already training together.
-        </p>
-        <Link href="/auth/register">
-          <Button size="lg" variant="secondary" className="bg-white text-orange-600 hover:bg-gray-100">
-            Get Started Free
-          </Button>
-        </Link>
-      </section>
-
-      {/* Footer */}
-      <footer className="container mx-auto px-4 py-12 text-center text-gray-600">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Dumbbell className="w-6 h-6 text-orange-600" />
-          <span className="text-xl font-bold text-gray-800">FITTR</span>
-        </div>
-        <p>© 2024 FITTR. All rights reserved.</p>
-        <div className="flex gap-6 justify-center mt-4">
-          <a href="#" className="hover:text-orange-600">Privacy</a>
-          <a href="#" className="hover:text-orange-600">Terms</a>
-          <a href="#" className="hover:text-orange-600">Contact</a>
-        </div>
-      </footer>
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.8s ease-out;
+        }
+      `}</style>
     </div>
   );
 }
