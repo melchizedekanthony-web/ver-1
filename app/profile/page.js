@@ -69,7 +69,8 @@ export default function ProfilePage() {
     }
     setUser(storedUser);
     fetchProfile();
-    loadMockGallery();
+    fetchMediaGallery();
+    fetchProfileStatus();
   }, []);
 
   const fetchProfile = async () => {
@@ -86,45 +87,97 @@ export default function ProfilePage() {
     }
   };
 
-  const loadMockGallery = () => {
-    // Mock media gallery
-    setMediaGallery([
-      { id: 1, type: 'photo', url: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=300', caption: 'Mountain hike!', isPublic: true, date: new Date() },
-      { id: 2, type: 'photo', url: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=300', caption: 'Gym session', isPublic: true, date: new Date() },
-      { id: 3, type: 'photo', url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300', caption: 'Yoga morning', isPublic: false, date: new Date() },
-    ]);
+  const fetchMediaGallery = async () => {
+    try {
+      const res = await fetchWithAuth('/api/profile/media');
+      const data = await res.json();
+      if (data.media) {
+        setMediaGallery(data.media.map(m => ({
+          id: m.id,
+          type: m.mediaType,
+          url: m.mediaUrl,
+          caption: m.caption,
+          isPublic: !m.isPrivate,
+          date: new Date(m.createdAt)
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to fetch media:', error);
+    }
   };
 
-  const handleMediaUpload = (e, type) => {
+  const fetchProfileStatus = async () => {
+    try {
+      const res = await fetchWithAuth('/api/profile');
+      const data = await res.json();
+      if (data.profile) {
+        setCurrentStatus(data.profile.activityStatus || 'Available');
+        setCurrentActivity(data.profile.currentActivity || '');
+      }
+    } catch (error) {
+      console.error('Failed to fetch status:', error);
+    }
+  };
+
+  const handleMediaUpload = async (e, type) => {
     const files = Array.from(e.target.files);
-    files.forEach(file => {
+    for (const file of files) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setMediaGallery(prev => [...prev, {
-          id: Date.now() + Math.random(),
-          type,
-          url: event.target.result,
-          caption: '',
-          isPublic: true,
-          date: new Date()
-        }]);
-        toast.success(`${type === 'photo' ? 'Photo' : 'Video'} added to gallery!`);
+      reader.onload = async (event) => {
+        try {
+          // In production, upload to cloud storage first, then save URL
+          const mediaUrl = event.target.result;
+          
+          const res = await fetchWithAuth('/api/profile/media', {
+            method: 'POST',
+            body: JSON.stringify({
+              mediaUrl,
+              mediaType: type,
+              isPrivate: false,
+              caption: ''
+            })
+          });
+          
+          const data = await res.json();
+          if (data.media) {
+            setMediaGallery(prev => [...prev, {
+              id: data.media.id,
+              type,
+              url: mediaUrl,
+              caption: '',
+              isPublic: true,
+              date: new Date()
+            }]);
+            toast.success(`${type === 'photo' ? 'Photo' : 'Video'} added to gallery!`);
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          toast.error('Failed to upload media');
+        }
       };
       reader.readAsDataURL(file);
-    });
+    }
   };
 
-  const updateMediaPrivacy = (mediaId, isPublic) => {
+  const updateMediaPrivacy = async (mediaId, isPublic) => {
     setMediaGallery(prev => prev.map(m => 
       m.id === mediaId ? { ...m, isPublic } : m
     ));
     toast.success(isPublic ? 'Media set to public' : 'Media set to private');
   };
 
-  const deleteMedia = (mediaId) => {
-    setMediaGallery(prev => prev.filter(m => m.id !== mediaId));
-    setSelectedMedia(null);
-    toast.success('Media deleted');
+  const deleteMedia = async (mediaId) => {
+    try {
+      await fetchWithAuth(`/api/profile/media/${mediaId}`, {
+        method: 'DELETE'
+      });
+      setMediaGallery(prev => prev.filter(m => m.id !== mediaId));
+      setSelectedMedia(null);
+      toast.success('Media deleted');
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete media');
+    }
   };
 
   const shareToSocial = (platform) => {
