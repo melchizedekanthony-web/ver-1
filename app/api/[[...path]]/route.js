@@ -2037,9 +2037,37 @@ export async function POST(request, { params }) {
 }
 
 export async function PUT(request, { params }) {
+  const path = params?.path?.join('/') || '';
+  
+  // Route matching for PUT requests
+  if (path.startsWith('activities/')) {
+    const id = path.split('/')[1];
+    return updateActivity(request, id);
+  } else if (path.startsWith('cart/')) {
+    const productId = path.split('/')[1];
+    return updateCartItem(request, productId);
+  }
+  
+  // Fall back to POST for other routes (backward compatibility)
   return POST(request, { params });
 }
 
 export async function DELETE(request, { params }) {
+  const path = params?.path?.join('/') || '';
+  
+  // Route matching for DELETE requests
+  if (path.startsWith('profile/media/')) {
+    const mediaId = path.split('/')[2];
+    return deleteProfileMedia(request, mediaId);
+  } else if (path.startsWith('activities/')) {
+    const id = path.split('/')[1];
+    return deleteActivity(request, id);
+  } else if (path.startsWith('cart/')) {
+    const productId = path.split('/')[1];
+    return removeFromCart(request, productId);
+  } else if (path === 'cart') {
+    return clearCart(request);
+  }
+  
   return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
 }
