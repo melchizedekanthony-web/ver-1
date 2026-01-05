@@ -112,6 +112,11 @@ export default function ConnectPage() {
 
   const submitCancellation = async () => {
     try {
+      // Combine reason with additional details
+      const fullReason = additionalDetails 
+        ? `${cancelReason}: ${additionalDetails}` 
+        : cancelReason;
+
       // In production, save the cancellation reason and rating
       await fetchWithAuth('/api/reviews', {
         method: 'POST',
@@ -119,7 +124,7 @@ export default function ConnectPage() {
           targetId: targetUser?.id || userId,
           targetType: 'user',
           rating: cancelRating,
-          reviewText: cancelReason,
+          reviewText: fullReason,
           isCancellation: true,
           isEmergency: isEmergency
         })
@@ -136,6 +141,15 @@ export default function ConnectPage() {
       console.error('Error submitting cancellation:', error);
       router.push('/dashboard');
     }
+  };
+
+  const skipAndExit = () => {
+    if (isEmergency) {
+      toast.error('Emergency exit. Stay safe!', { duration: 5000 });
+    } else {
+      toast.info('Meetup cancelled.');
+    }
+    router.push('/dashboard');
   };
 
   const cancelReasons = isEmergency ? [
