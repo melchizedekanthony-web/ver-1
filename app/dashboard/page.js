@@ -12,7 +12,7 @@ import {
   Search, MapPin, Coffee, Film, Music, Dumbbell, Mountain, Bike, 
   BookOpen, Heart, Users, Utensils, X, Star, ChevronUp, ChevronDown,
   Camera, Dog, Palette, Trophy, GraduationCap, UserPlus, UsersRound,
-  MessageSquare, Send, Clock, Filter, Zap, ArrowLeft, Check
+  MessageSquare, Send, Clock, Filter, Zap, ArrowLeft, Check, Accessibility
 } from 'lucide-react';
 import { toast } from 'sonner';
 import BottomNav from '@/components/BottomNav';
