@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
-import { MapPin, MessageSquare, Phone, X, Check, Navigation, AlertTriangle, Star, Shield } from 'lucide-react';
+import { MapPin, MessageSquare, Phone, X, Check, Navigation, AlertTriangle, Star, Shield, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUser, fetchWithAuth } from '@/lib/auth';
 
@@ -37,6 +37,7 @@ export default function ConnectPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelRating, setCancelRating] = useState(0);
   const [isEmergency, setIsEmergency] = useState(false);
+  const [additionalDetails, setAdditionalDetails] = useState('');
 
   useEffect(() => {
     const storedUser = getUser();
