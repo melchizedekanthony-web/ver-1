@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { 
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check, Clock,
   MapPin, Users, MessageSquare, CheckSquare, Square, Plus, X, Edit2,
-  Mountain, Coffee, Dumbbell, Music, Bike, Save
+  Mountain, Coffee, Dumbbell, Music, Bike, Save, Globe, Lock, Trash2
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
