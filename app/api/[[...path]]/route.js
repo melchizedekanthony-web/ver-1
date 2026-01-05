@@ -1207,6 +1207,726 @@ async function upgradeSubscription(request) {
   }
 }
 
+// ========== PROFILE MEDIA ENDPOINTS ==========
+
+// POST /api/profile/media - Upload profile media (photos/videos)
+async function uploadProfileMedia(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { mediaUrl, mediaType, isPrivate = false, caption = '' } = body;
+
+    if (!mediaUrl || !mediaType) {
+      return NextResponse.json({ error: 'Media URL and type are required' }, { status: 400 });
+    }
+
+    const db = await getDb();
+    const mediaCollection = db.collection('profile_media');
+
+    const mediaItem = {
+      id: uuidv4(),
+      userId: user.id,
+      mediaUrl,
+      mediaType, // 'photo' or 'video'
+      isPrivate,
+      caption,
+      createdAt: new Date(),
+      likes: [],
+      comments: []
+    };
+
+    await mediaCollection.insertOne(mediaItem);
+
+    return NextResponse.json({ 
+      message: 'Media uploaded successfully',
+      media: mediaItem 
+    });
+  } catch (error) {
+    console.error('Upload media error:', error);
+    return NextResponse.json({ error: 'Failed to upload media' }, { status: 500 });
+  }
+}
+
+// GET /api/profile/media - Get user's profile media
+async function getProfileMedia(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId') || user.id;
+    const isOwnProfile = userId === user.id;
+
+    const db = await getDb();
+    const mediaCollection = db.collection('profile_media');
+
+    // If viewing someone else's profile, only show public media
+    const query = isOwnProfile 
+      ? { userId } 
+      : { userId, isPrivate: false };
+
+    const media = await mediaCollection
+      .find(query)
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return NextResponse.json({ media });
+  } catch (error) {
+    console.error('Get media error:', error);
+    return NextResponse.json({ error: 'Failed to get media' }, { status: 500 });
+  }
+}
+
+// DELETE /api/profile/media/:id - Delete media
+async function deleteProfileMedia(request, mediaId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const db = await getDb();
+    const mediaCollection = db.collection('profile_media');
+
+    const result = await mediaCollection.deleteOne({ 
+      id: mediaId, 
+      userId: user.id 
+    });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: 'Media not found or not authorized' }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: 'Media deleted successfully' });
+  } catch (error) {
+    console.error('Delete media error:', error);
+    return NextResponse.json({ error: 'Failed to delete media' }, { status: 500 });
+  }
+}
+
+// POST /api/profile/status - Update user activity status
+async function updateProfileStatus(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { status, activity } = body; // status: 'active', 'looking', 'busy', 'offline'
+
+    const db = await getDb();
+    const usersCollection = db.collection('users');
+
+    await usersCollection.updateOne(
+      { id: user.id },
+      { 
+        $set: { 
+          activityStatus: status,
+          currentActivity: activity,
+          statusUpdatedAt: new Date()
+        } 
+      }
+    );
+
+    return NextResponse.json({ 
+      message: 'Status updated',
+      status,
+      activity
+    });
+  } catch (error) {
+    console.error('Update status error:', error);
+    return NextResponse.json({ error: 'Failed to update status' }, { status: 500 });
+  }
+}
+
+// ========== CALENDAR/AVAILABILITY ENDPOINTS ==========
+
+// POST /api/calendar/availability - Save user availability
+async function saveAvailability(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { slots, isPublic = true } = body;
+    // slots: [{ day: 'Monday', startTime: '09:00', endTime: '17:00', activity: 'Running' }]
+
+    const db = await getDb();
+    const availabilityCollection = db.collection('availability');
+
+    // Upsert availability for this user
+    await availabilityCollection.updateOne(
+      { userId: user.id },
+      { 
+        $set: { 
+          userId: user.id,
+          slots,
+          isPublic,
+          updatedAt: new Date()
+        } 
+      },
+      { upsert: true }
+    );
+
+    return NextResponse.json({ 
+      message: 'Availability saved',
+      slots,
+      isPublic
+    });
+  } catch (error) {
+    console.error('Save availability error:', error);
+    return NextResponse.json({ error: 'Failed to save availability' }, { status: 500 });
+  }
+}
+
+// GET /api/calendar/availability - Get user availability
+async function getAvailability(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId') || user.id;
+    const isOwnProfile = userId === user.id;
+
+    const db = await getDb();
+    const availabilityCollection = db.collection('availability');
+
+    const availability = await availabilityCollection.findOne({ userId });
+
+    // If viewing someone else's availability and it's private, return empty
+    if (!isOwnProfile && availability && !availability.isPublic) {
+      return NextResponse.json({ 
+        availability: null,
+        message: 'This user\'s availability is private'
+      });
+    }
+
+    return NextResponse.json({ 
+      availability: availability || { slots: [], isPublic: true }
+    });
+  } catch (error) {
+    console.error('Get availability error:', error);
+    return NextResponse.json({ error: 'Failed to get availability' }, { status: 500 });
+  }
+}
+
+// ========== ACTIVITIES ENDPOINTS ==========
+
+// POST /api/activities - Create/save an activity card
+async function createActivity(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { 
+      title, 
+      activityType, 
+      date, 
+      time, 
+      location,
+      checklist = [],
+      notes = '',
+      isPublic = true,
+      includInBroadcast = false
+    } = body;
+
+    const db = await getDb();
+    const activitiesCollection = db.collection('activities');
+
+    const activity = {
+      id: uuidv4(),
+      userId: user.id,
+      title,
+      activityType,
+      date,
+      time,
+      location,
+      checklist, // [{ item: 'Bring water', completed: false }]
+      notes,
+      isPublic,
+      includInBroadcast,
+      status: 'planned', // planned, in_progress, completed, cancelled
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    await activitiesCollection.insertOne(activity);
+
+    return NextResponse.json({ 
+      message: 'Activity created',
+      activity 
+    });
+  } catch (error) {
+    console.error('Create activity error:', error);
+    return NextResponse.json({ error: 'Failed to create activity' }, { status: 500 });
+  }
+}
+
+// GET /api/activities - Get user's activities
+async function getActivities(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status'); // filter by status
+    const upcoming = searchParams.get('upcoming') === 'true';
+
+    const db = await getDb();
+    const activitiesCollection = db.collection('activities');
+
+    let query = { userId: user.id };
+    
+    if (status) {
+      query.status = status;
+    }
+    
+    if (upcoming) {
+      query.date = { $gte: new Date().toISOString().split('T')[0] };
+    }
+
+    const activities = await activitiesCollection
+      .find(query)
+      .sort({ date: 1, time: 1 })
+      .toArray();
+
+    return NextResponse.json({ activities });
+  } catch (error) {
+    console.error('Get activities error:', error);
+    return NextResponse.json({ error: 'Failed to get activities' }, { status: 500 });
+  }
+}
+
+// PUT /api/activities/:id - Update an activity
+async function updateActivity(request, activityId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { title, activityType, date, time, location, checklist, notes, isPublic, includInBroadcast, status } = body;
+
+    const db = await getDb();
+    const activitiesCollection = db.collection('activities');
+
+    const updateData = { updatedAt: new Date() };
+    if (title !== undefined) updateData.title = title;
+    if (activityType !== undefined) updateData.activityType = activityType;
+    if (date !== undefined) updateData.date = date;
+    if (time !== undefined) updateData.time = time;
+    if (location !== undefined) updateData.location = location;
+    if (checklist !== undefined) updateData.checklist = checklist;
+    if (notes !== undefined) updateData.notes = notes;
+    if (isPublic !== undefined) updateData.isPublic = isPublic;
+    if (includInBroadcast !== undefined) updateData.includInBroadcast = includInBroadcast;
+    if (status !== undefined) updateData.status = status;
+
+    const result = await activitiesCollection.updateOne(
+      { id: activityId, userId: user.id },
+      { $set: updateData }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: 'Activity updated' });
+  } catch (error) {
+    console.error('Update activity error:', error);
+    return NextResponse.json({ error: 'Failed to update activity' }, { status: 500 });
+  }
+}
+
+// DELETE /api/activities/:id - Delete an activity
+async function deleteActivity(request, activityId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const db = await getDb();
+    const activitiesCollection = db.collection('activities');
+
+    const result = await activitiesCollection.deleteOne({ 
+      id: activityId, 
+      userId: user.id 
+    });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: 'Activity deleted' });
+  } catch (error) {
+    console.error('Delete activity error:', error);
+    return NextResponse.json({ error: 'Failed to delete activity' }, { status: 500 });
+  }
+}
+
+// ========== WELLNESS STORE CART ENDPOINTS ==========
+
+// POST /api/cart/add - Add item to cart
+async function addToCart(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { productId, productName, price, quantity = 1, imageUrl } = body;
+
+    const db = await getDb();
+    const cartCollection = db.collection('cart');
+
+    // Check if item already in cart
+    const existingItem = await cartCollection.findOne({ 
+      userId: user.id, 
+      productId 
+    });
+
+    if (existingItem) {
+      // Update quantity
+      await cartCollection.updateOne(
+        { userId: user.id, productId },
+        { $inc: { quantity }, $set: { updatedAt: new Date() } }
+      );
+    } else {
+      // Add new item
+      await cartCollection.insertOne({
+        id: uuidv4(),
+        userId: user.id,
+        productId,
+        productName,
+        price,
+        quantity,
+        imageUrl,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
+    // Get updated cart
+    const cart = await cartCollection.find({ userId: user.id }).toArray();
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    return NextResponse.json({ 
+      message: 'Added to cart',
+      cart,
+      total,
+      itemCount: cart.length
+    });
+  } catch (error) {
+    console.error('Add to cart error:', error);
+    return NextResponse.json({ error: 'Failed to add to cart' }, { status: 500 });
+  }
+}
+
+// GET /api/cart - Get user's cart
+async function getCart(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const db = await getDb();
+    const cartCollection = db.collection('cart');
+
+    const cart = await cartCollection.find({ userId: user.id }).toArray();
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    return NextResponse.json({ 
+      cart,
+      total,
+      itemCount: cart.length
+    });
+  } catch (error) {
+    console.error('Get cart error:', error);
+    return NextResponse.json({ error: 'Failed to get cart' }, { status: 500 });
+  }
+}
+
+// PUT /api/cart/:productId - Update cart item quantity
+async function updateCartItem(request, productId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { quantity } = body;
+
+    const db = await getDb();
+    const cartCollection = db.collection('cart');
+
+    if (quantity <= 0) {
+      // Remove item if quantity is 0 or less
+      await cartCollection.deleteOne({ userId: user.id, productId });
+    } else {
+      await cartCollection.updateOne(
+        { userId: user.id, productId },
+        { $set: { quantity, updatedAt: new Date() } }
+      );
+    }
+
+    // Get updated cart
+    const cart = await cartCollection.find({ userId: user.id }).toArray();
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    return NextResponse.json({ 
+      message: 'Cart updated',
+      cart,
+      total,
+      itemCount: cart.length
+    });
+  } catch (error) {
+    console.error('Update cart error:', error);
+    return NextResponse.json({ error: 'Failed to update cart' }, { status: 500 });
+  }
+}
+
+// DELETE /api/cart/:productId - Remove item from cart
+async function removeFromCart(request, productId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const db = await getDb();
+    const cartCollection = db.collection('cart');
+
+    await cartCollection.deleteOne({ userId: user.id, productId });
+
+    // Get updated cart
+    const cart = await cartCollection.find({ userId: user.id }).toArray();
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    return NextResponse.json({ 
+      message: 'Removed from cart',
+      cart,
+      total,
+      itemCount: cart.length
+    });
+  } catch (error) {
+    console.error('Remove from cart error:', error);
+    return NextResponse.json({ error: 'Failed to remove from cart' }, { status: 500 });
+  }
+}
+
+// DELETE /api/cart - Clear entire cart
+async function clearCart(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const db = await getDb();
+    const cartCollection = db.collection('cart');
+
+    await cartCollection.deleteMany({ userId: user.id });
+
+    return NextResponse.json({ 
+      message: 'Cart cleared',
+      cart: [],
+      total: 0,
+      itemCount: 0
+    });
+  } catch (error) {
+    console.error('Clear cart error:', error);
+    return NextResponse.json({ error: 'Failed to clear cart' }, { status: 500 });
+  }
+}
+
+// ========== BROADCAST ENDPOINTS ==========
+
+// POST /api/broadcast - Create a broadcast to find companions
+async function createBroadcast(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { 
+      category, // 'athletic' or 'non-athletic'
+      activity,
+      connectionType, // 'buddy', 'trainer', 'competitor', 'group', 'accessible'
+      radius,
+      location,
+      filters = {},
+      message = ''
+    } = body;
+
+    const db = await getDb();
+    const broadcastsCollection = db.collection('broadcasts');
+
+    const broadcast = {
+      id: uuidv4(),
+      userId: user.id,
+      userName: user.name,
+      category,
+      activity,
+      connectionType,
+      radius,
+      location,
+      filters,
+      message,
+      status: 'active',
+      responses: [],
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    };
+
+    await broadcastsCollection.insertOne(broadcast);
+
+    // Find matching users based on criteria
+    const usersCollection = db.collection('users');
+    const matchQuery = {
+      id: { $ne: user.id },
+      onboardingComplete: true
+    };
+
+    if (activity) {
+      matchQuery.activities = { $in: [activity.toLowerCase()] };
+    }
+
+    const potentialMatches = await usersCollection
+      .find(matchQuery)
+      .limit(20)
+      .toArray();
+
+    return NextResponse.json({ 
+      message: 'Broadcast created',
+      broadcast,
+      matchesFound: potentialMatches.length,
+      matches: potentialMatches.map(u => ({
+        id: u.id,
+        name: u.name,
+        profilePhoto: u.profilePhoto,
+        fitnessLevel: u.fitnessLevel,
+        activities: u.activities,
+        location: u.location
+      }))
+    });
+  } catch (error) {
+    console.error('Create broadcast error:', error);
+    return NextResponse.json({ error: 'Failed to create broadcast' }, { status: 500 });
+  }
+}
+
+// GET /api/broadcasts - Get active broadcasts
+async function getBroadcasts(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get('category');
+    const activity = searchParams.get('activity');
+
+    const db = await getDb();
+    const broadcastsCollection = db.collection('broadcasts');
+
+    let query = { 
+      status: 'active',
+      expiresAt: { $gt: new Date() }
+    };
+
+    if (category) query.category = category;
+    if (activity) query.activity = activity;
+
+    const broadcasts = await broadcastsCollection
+      .find(query)
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .toArray();
+
+    return NextResponse.json({ broadcasts });
+  } catch (error) {
+    console.error('Get broadcasts error:', error);
+    return NextResponse.json({ error: 'Failed to get broadcasts' }, { status: 500 });
+  }
+}
+
+// POST /api/broadcasts/:id/respond - Respond to a broadcast
+async function respondToBroadcast(request, broadcastId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { message = '' } = body;
+
+    const db = await getDb();
+    const broadcastsCollection = db.collection('broadcasts');
+
+    const response = {
+      userId: user.id,
+      userName: user.name,
+      message,
+      respondedAt: new Date()
+    };
+
+    await broadcastsCollection.updateOne(
+      { id: broadcastId },
+      { $push: { responses: response } }
+    );
+
+    // Create notification for broadcast owner
+    const broadcast = await broadcastsCollection.findOne({ id: broadcastId });
+    if (broadcast) {
+      const notificationsCollection = db.collection('notifications');
+      await notificationsCollection.insertOne({
+        id: uuidv4(),
+        userId: broadcast.userId,
+        type: 'broadcast_response',
+        title: 'New Response to Your Broadcast',
+        message: `${user.name} responded to your ${broadcast.activity} broadcast`,
+        data: { broadcastId, responderId: user.id },
+        read: false,
+        createdAt: new Date()
+      });
+    }
+
+    return NextResponse.json({ 
+      message: 'Response sent',
+      response 
+    });
+  } catch (error) {
+    console.error('Respond to broadcast error:', error);
+    return NextResponse.json({ error: 'Failed to respond to broadcast' }, { status: 500 });
+  }
+}
+
 // ========== ROUTE HANDLER ==========
 
 export async function GET(request, { params }) {
