@@ -72,7 +72,7 @@ module.exports = {
                                 blue: '#1a1aff',
                                 purple: '#4a3aff',
                                 lightgray: '#e8e8e8'
-                        },
+                        }
                 },
                 borderRadius: {
                         lg: 'var(--radius)',
