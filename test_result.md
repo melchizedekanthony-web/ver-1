@@ -362,10 +362,18 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "User Registration"
+    - "User Authentication with NextAuth"
+    - "Matching Algorithm"
+    - "Session Management"
+    - "Social Feed"
+    - "Rating & Review System"
+    - "Notifications System"
+    - "Emergency SOS"
   stuck_tasks:
     - "AI Workout Generator"
-  test_all: false
+  test_all: true
   test_priority: "high_first"
 
 agent_communication:
