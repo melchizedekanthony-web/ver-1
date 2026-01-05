@@ -10,10 +10,17 @@ import { MapPin, MessageSquare, Phone, X, Check, Navigation } from 'lucide-react
 import { toast } from 'sonner';
 import { getUser, fetchWithAuth } from '@/lib/auth';
 
-const MapComponent = dynamic(() => import('@/components/MapComponent'), { 
-  ssr: false,
-  loading: () => <div className="h-full bg-gray-100 flex items-center justify-center">Loading map...</div>
-});
+const MapComponent = dynamic(
+  () => import('@/components/MapComponent').then(mod => mod.default),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="h-full bg-gray-100 flex items-center justify-center">
+        <div className="text-gray-500">Loading map...</div>
+      </div>
+    )
+  }
+);
 
 export default function ConnectPage() {
   const router = useRouter();
