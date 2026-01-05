@@ -1937,6 +1937,8 @@ export async function GET(request, { params }) {
     return getSessionData(request);
   } else if (path === 'profile') {
     return getProfile(request);
+  } else if (path === 'profile/media') {
+    return getProfileMedia(request);
   } else if (path === 'matches') {
     return getMatches(request);
   } else if (path === 'sessions') {
@@ -1954,6 +1956,14 @@ export async function GET(request, { params }) {
     return getReviews(request, targetId);
   } else if (path === 'notifications') {
     return getNotifications(request);
+  } else if (path === 'calendar/availability') {
+    return getAvailability(request);
+  } else if (path === 'activities') {
+    return getActivities(request);
+  } else if (path === 'cart') {
+    return getCart(request);
+  } else if (path === 'broadcasts') {
+    return getBroadcasts(request);
   }
 
   return NextResponse.json({ error: 'Not found' }, { status: 404 });
