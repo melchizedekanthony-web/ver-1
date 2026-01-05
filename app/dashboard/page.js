@@ -96,6 +96,17 @@ const connectionTypes = [
     textColor: 'text-green-500',
     lightBg: 'bg-green-50'
   },
+  { 
+    id: 'accessible', 
+    name: 'Accessible', 
+    displayName: 'ACCESSIBLE',
+    description: 'Inclusive activities for all',
+    icon: Accessibility, 
+    color: 'bg-purple-500',
+    borderColor: 'border-purple-500',
+    textColor: 'text-purple-500',
+    lightBg: 'bg-purple-50'
+  },
 ];
 
 // Group options
