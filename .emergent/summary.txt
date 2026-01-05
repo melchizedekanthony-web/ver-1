@@ -1,131 +1,133 @@
 <analysis>
 <original_problem_statement>
-The initial request was to build **FITTR**, a comprehensive, location-based fitness social platform. The app's goal was to connect users for workouts and training sessions, similar to Uber's on-demand model but for fitness. Key features included an advanced user profile system, an intelligent matching engine, session management with an AI-powered workout generator, a social feed, a rating system, a marketplace for wellness products, and robust safety features like an emergency SOS. The specified tech stack included Next.js, PostgreSQL (Supabase), and Prisma.
+The project began as **FITTR**, a location-based fitness social platform. It was then pivoted to **GOWITHME**, a social connection app with a hybrid Uber/Facebook feel, a dark blue theme, and a map-centric UI. The user has since provided further instructions, renaming the app to **WannaGo** and providing a series of detailed feature requests and UI refinements for various pages.
 
-However, after an initial version was built, the user provided a new set of app flow images for an app called **GOWITHME**. The user clarified that they want the same core functionality as FITTR but with the completely different GOWITHME branding, visual design, and a user experience that is a hybrid of **Uber (map-centric, quick connections) and Facebook (social feed, community)**. The agent was instructed to keep the existing backend architecture where possible and focus on rebuilding the frontend to match the new GOWITHME design.
+**PRODUCT REQUIREMENTS (Current):**
+- **App Name:** WannaGo
+- **Core Concept:** A map-based social platform to connect users for activities, split into Athletic and Non-Athletic categories.
+- **Core UX Flow:**
+    1.  **Home/Dashboard:** A 50/50 split view with a map and an activity panel. User selects a category (Athletic/Non-Athletic), then a specific activity from a text-only dropdown.
+    2.  **Connection Type:** User selects a connection type (Buddy, Trainer, Competitor, Group, Accessible).
+    3.  **Broadcast:** User refines the search with a radius slider and advanced filters (intensity, injury considerations, etc.). The Broadcast button text is dynamic (e.g., Find A Running Trainer). A Spreading the word... loading state is shown.
+    4.  **Find Companion:** A list/map of matching users is displayed.
+    5.  **Meetup:** During the meetup, a user must have a way to cancel at any time for safety, with an option to leave a review explaining why.
+- **Key Features Requested:**
+    - **Fixed Bottom Navigation:** Always visible.
+    - **Back Buttons:** A universal back button on all main pages.
+    - **Profile Page:** Users can upload shareable/private photos and videos, and set an activity status.
+    - **Activity Log:** An editable My Availability calendar with public/private options. Interactive activity cards allowing users to add checklists, location info, and comments that get included in broadcasts.
+    - **Rate Experience Page:** Ability to upload photos and short videos (under 30s) in reviews, with an option to share on social media or the app profile.
+    - **Wellness Store:** A redesigned page with category navigation and featured item grids, intended for a future Shopify dropshipping integration.
+    - **AI Workout Generator:** This feature has been explicitly **removed** by the user.
 
-**PRODUCT REQUIREMENTS:**
-- **App Concept:** A social platform named GOWITHME for connecting people for various activities (fitness, coffee, cinema, etc.).
-- **Core UX:** A hybrid of Uber's map-based connection model and Facebook's social community features.
-- **Visual Design:** A deep blue theme (#1a1aff) with glowing white text, purple accent buttons (#4a3aff), and a modern, card-based UI.
-- **Key Features:**
-    - Map-based companion finding and location sharing.
-    - Activity selection grid.
-    - Real-time activity alerts.
-    - Social feed and messaging.
-    - Wellness e-commerce store.
-    - User profiles with ratings, calendar, and availability.
-    - All backend functionality from the original FITTR spec (matching, sessions, etc.) should be preserved.
 </original_problem_statement>
 
 **User's preferred language**: English
 
 **what currently exists?**
-The project is a Next.js application with a MongoDB backend. Initially built as FITTR, it has been pivoted to GOWITHME. The backend API routes for user management, profiles, matching, sessions, and a social feed are largely in place from the FITTR build. The authentication system, originally planned with NextAuth.js, was replaced with a custom, but fragile, JWT-based system using localStorage and cookies due to persistent issues.
+The project is a Next.js application named WannaGo with a MongoDB backend and a custom JWT authentication system. The agent has successfully built out a significant portion of the frontend based on iterative user feedback.
 
-The frontend has been partially redesigned to match the GOWITHME aesthetic. The landing page, auth pages, and a new dashboard with an activity grid have been created. Placeholder pages for an activity detail view, connections, wellness store, calendar, feed, and messages have also been generated. Test users exist in the database, and the matching algorithm is functional on the backend.
+- **Dashboard ():** This is a complex, multi-step god component that handles the main user flow: Category selection, Activity selection (as a simple text dropdown), Connection Type selection (including the new 'Accessible' option), and Broadcasting with a dynamic button text and loading state.
+- **Enhanced Pages:** The ,  (Activity Log), and  pages have been completely redesigned with new UI and (frontend-only) functionality like media galleries, editable availability, and a categorized store layout. A new  page has been created with placeholders for media uploads.
+- **Styling:** The app has been rebranded to WannaGo, and the UI reflects the user's design requests, including a fixed bottom navigation bar and a new reusable Header component.
+- **Backend:** The backend remains a single monolithic API file (). Most of the new frontend features (profile media, availability, etc.) are **not yet connected to any backend logic** and are effectively UI mocks.
 
 **Last working item**:
-- Last item agent was working: The agent was in the process of a full build-out of the GOWITHME frontend. It had just created placeholder pages for the social feed () and messages () and was about to create a  component required for these pages.
+- Last item agent was working: The agent was in the middle of implementing a large batch of user requests (from message #202). It had just finished overhauling the dashboard with category selection and a 50/50 layout, added a fixed bottom nav, and was about to implement the cancel meetup feature.
 - Status: IN PROGRESS
 - Agent Testing Done: N
-- Which testing method agent to use? frontend testing agent
+- Which testing method agent to use? screenshot tool to verify the UI of the cancel meetup feature on the connect page, and to re-verify the many recent changes to the dashboard.
 - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-- Issue 1: Authentication is unreliable and has been a recurring problem. (P0)
-- Issue 2: AI Workout Generator API is non-functional due to an unresolved API connectivity issue. (P1)
-- Issue 3: The Connect button on the user matching page is a placeholder and does not initiate a real connection. (P2)
-- Issue 4: The core UI is an activity grid, not the map-centric Uber-like interface the user requested. (P0)
-- Issue 5: The agent failed to create the  file because it already existed, blocking UI development for the feed and messages pages. (P3)
+- Issue 1: Implement the cancel meetup feature on the connect page. (P0)
+- Issue 2: Verify and debug the latest batch of major UI changes. (P0)
+- Issue 3: Implement the backend logic for all new frontend features. (P1)
+- Issue 4: The custom authentication system is complex and potentially fragile. (P2)
+- Issue 5: The monolithic backend API in  is over 1200 lines and needs to be refactored. (P3)
 
 Issues Detail:
 - Issue 1:
-    - Attempted fixes: The agent started with NextAuth.js, which failed due to persistent CSRF token errors in the environment. It was replaced with a custom auth system using JWTs. This system also failed multiple times due to issues with cookies, cross-domain policies, and fetch requests not sending credentials. The current fix uses a hybrid of cookies, localStorage for the token, and passing the token as a Bearer token in Authorization headers. This complexity makes it fragile.
-    - Next debug checklist:
-        1.  Standardize the authentication state management. Rely on a single source of truth (e.g., Bearer token from localStorage) for all authenticated API requests.
-        2.  Refactor all  calls into a single utility function that automatically attaches the auth token.
-        3.  Review  and the  function in  to ensure they robustly handle token verification from the  header.
-        4.  Implement a global context provider on the frontend to manage user session state, preventing the need to re-fetch user data on every page.
-    - Why fix this issue and what will be achieved with the fix? A stable authentication system is critical for any user-facing feature. Fixing this will stop the recurring invalid email/password and page redirects back to signin errors, providing a stable foundation to build upon.
-    - Status: IN PROGRESS
-    - Is recurring issue? Y
-    - Should Test frontend/backend/both after fix? both
-    - Blocked on other issue: None
+  - Attempted fixes: The agent was just about to start this by editing .
+  - Next debug checklist:
+    1.  Edit  to add a Cancel Meetup or Emergency Exit button.
+    2.  On click, this button should likely redirect the user away from the meetup flow, perhaps back to the dashboard.
+    3.  Implement a modal that asks the user if they want to leave a review about why they cancelled.
+    4.  If the user agrees, redirect them to the  page.
+  - Why fix this issue and what will be achieved with the fix? This is a critical safety feature explicitly requested by the user.
+  - Status: NOT STARTED
+  - Is recurring issue? N
+  - Should Test frontend/backend/both after fix? frontend
+  - Blocked on other issue: None
 
 - Issue 2:
-    - Attempted fixes: The backend testing agent identified that the  endpoint was failing. The agent attempted to modify the OpenAI client configuration in  but then reverted the change, leaving the issue unresolved.
-    - Next debug checklist:
-        1.  Isolate the  function in .
-        2.  Add detailed logging to see the exact request being sent to the Emergent API and the full error response.
-        3.  Verify the  is correctly loaded and used by the OpenAI client.
-        4.  Create a simple, standalone script to test the connection to the Emergent API endpoint () outside of the Next.js app to rule out environmental issues.
-    - Why fix this issue and what will be achieved with the fix? This is a key feature from the original spec. Fixing it will deliver on the AI-powered value proposition.
-    - Status: NOT STARTED
-    - Is recurring issue? N
-    - Should Test frontend/backend/both after fix? backend
-    - Blocked on other issue: None
+  - Attempted fixes: None yet. The agent implemented several major changes (Category selection, 50/50 layout, new filters on dashboard; fixed bottom nav; new Header component) but has not tested them.
+  - Next debug checklist:
+    1.  Use the  to sign in and navigate to the dashboard.
+    2.  Verify the new Choose Category section appears and functions.
+    3.  Verify the map-to-activity-panel ratio is 50/50.
+    4.  Verify the Advanced Filters on the broadcast step contain the new options.
+    5.  Verify the bottom navigation bar is fixed and visible on all main pages (, , , etc.).
+    6.  Verify the new  with its back button appears on the appropriate pages.
+  - Why fix this issue and what will be achieved with the fix? To ensure the latest user requests were implemented correctly and haven't introduced regressions.
+  - Status: TESTING PENDING
+  - Is recurring issue? N
+  - Should Test frontend/backend/both after fix? frontend
+  - Blocked on other issue: None
 
-- Issue 4:
-    - Attempted fixes: None. The agent built a grid-based dashboard instead of a map-based one.
-    - Next debug checklist:
-        1.  Choose a mapping library (e.g.,  or ). Add it to  and install.
-        2.  Request a Google Maps or Mapbox API key from the user.
-        3.  Redesign  to feature a full-screen map as the primary element.
-        4.  Fetch the list of nearby users from the  endpoint.
-        5.  Render users as markers on the map.
-        6.  Implement functionality to show a user's mini-profile when their marker is clicked.
-    - Why fix this issue and what will be achieved with the fix? This is a primary requirement from the user's latest pivot to a GOWITHME Uber/Facebook hybrid. Implementing it is crucial for meeting the user's core vision.
-    - Status: NOT STARTED
-    - Is recurring issue? N
-    - Should Test frontend/backend/both after fix? frontend
-    - Blocked on other issue: None
+- Issue 3:
+  - Attempted fixes: None. The agent has focused on building the frontend UI first.
+  - Next debug checklist:
+    1.  Create new API endpoints in  (or a new refactored file) for , , .
+    2.  Update the corresponding frontend pages (, ) to call these new endpoints.
+    3.  Implement file upload logic for photos/videos (this will require careful planning).
+    4.  Modify the database schema/models to store this new information.
+  - Why fix this issue and what will be achieved with the fix? This will turn the mocked UI into a functional application, allowing user data to be saved and retrieved.
+  - Status: NOT STARTED
+  - Is recurring issue? N
+  - Should Test frontend/backend/both after fix? both
+  - Blocked on other issue: None
 
 **In progress Task List**:
-- Task 1: Complete the GOWITHME Frontend Implementation (P0)
-    - Where to resume: The agent has created placeholder pages. The next steps are to flesh out each page with a functional UI that matches the user's design images and is connected to the backend APIs. Priority should be given to the map-based dashboard, followed by the social feed and messaging pages. The  component issue needs to be resolved first.
-    - What will be achieved with this? A fully functional application that matches the user's GOWITHME vision.
-    - Status: IN PROGRESS
-    - Should Test frontend/backend/both after fix? both
-    - Blocked on something: The  component creation needs to be fixed. The map integration (Issue 4) is a core part of this task.
+- Task 1: Complete and Verify the Latest User Requests (P0)
+  - Where to resume: Start by implementing the cancel meetup feature in . After that, conduct a full visual test of all the changes from message #202 (fixed nav, back buttons, dashboard categories/layout, advanced filters, reset button).
+  - What will be achieved with this? The application will fully reflect the user's most recent set of comprehensive requirements on the frontend.
+  - Status: IN PROGRESS
+  - Should Test frontend/backend/both after fix? frontend
+  - Blocked on something: None
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-    - (P0) Implement the map-centric UI for finding partners, as per the Uber-like request.
-    - (P1) Implement the full functionality for the social feed page (), including creating, viewing, liking, and commenting on posts.
-    - (P1) Implement a basic real-time chat on the messages page ().
-    - (P2) Implement the full e-commerce flow for the Wellness Store (), including cart and a mocked checkout process.
+  - (P0) Implement Backend for New Features: Connect all the new UI on the Profile, Calendar, and Rate pages to the backend API so data can be saved and loaded.
+  - (P1) Shopify Integration: Plan and implement the integration for the Wellness Store. This will likely require using the  agent.
+  - (P2) Implement Pre-Match Chat: Wire up the UI to a basic messaging system.
 - **Future Tasks:**
-    - Implement real payment processing with Stripe.
-    - Integrate calendar sync (Google/Apple Calendar).
-    - Implement the Emergency SOS feature.
-    - Build out the Admin Dashboard for user and content management.
-    - Add real-time notifications (e.g., using Supabase Realtime or WebSockets).
-    - Improve mobile responsiveness across the application.
+  - Implement real-time location tracking on the map.
+  - Add real-time notifications.
+  - Integrate a real payment gateway (Stripe).
+  - Build out the Admin Dashboard.
 
 **Completed work in this session**
-- List of all completed tasks with file and method name:
-  - Initial project scaffolding with Next.js and MongoDB.
-  - Creation of a monolithic backend API in  handling users, profiles, sessions, matching, and feed posts.
-  - Seeding the database with test users to test the matching feature.
-  - **Auth System Pivot:** Attempted and removed NextAuth.js, replacing it with a custom JWT authentication system ().
-  - **Frontend Pivot to GOWITHME:**
-      - Updated  with the new color scheme.
-      - Redesigned the landing page ().
-      - Redesigned auth pages (, ).
-      - Redesigned the main dashboard () with an activity grid.
-      - Created placeholder pages for , , , , , and .
-- Recently completed:
-  - Fixed a series of critical authentication bugs, eventually landing on a hybrid localStorage/cookie/bearer token solution that allowed the user to sign in and access the dashboard.
-  - Guided the user through the onboarding flow after fixing profile data fetching issues.
-  - Added test users to the database so the Find Partners feature would show results.
+- **App Rebranding:** Renamed the entire application from GOWITHME to WannaGo.
+- **Full UI Scaffolding & Refinement:**
+  - Built the initial framework for all core pages (, , , , , etc.).
+  - Fixed a critical  related to the dynamic .
+  - Implemented a complete, multi-step user flow on the dashboard for finding a companion, and refined it twice based on detailed user feedback (e.g., changing activity selection to a dropdown, adding dynamic button text).
+- **Major Feature Implementations (Frontend):**
+  - **Dashboard:** Added Category selection (Athletic/Non-Athletic), adjusted layout to 50/50, and started adding enhanced filters.
+  - **Connection Types:** Added a new ACCESSIBLE option and adjusted the UI grid.
+  - **Profile Page:** Redesigned to include a user status badge, a media gallery, upload buttons, and privacy setting toggles.
+  - **Activity Log Page:** Redesigned with an editable My Availability section (with public/private toggle) and interactive activity cards.
+  - **Wellness Store:** Completely overhauled the UI to feature category navigation and product grids, in preparation for a Shopify integration.
+  - **Layout:** Implemented a fixed bottom navigation bar and a reusable Header component with a back button.
 
 **Earlier issues found/mentioned but not fixed**
-- Issue 1: AI Workout Generator API failure.
-    - Debug checklist: See All Pending/In progress Issue list.
-    - Why to solve this issue and what will be achieved with this? It's a key feature from the product spec that provides a unique selling point.
-    - Should Test frontend/backend/both after fix: backend
-    - Is recurring issue? N
+- **Issue 1: Fragile Authentication System**
+  - The custom JWT implementation remains a technical debt. It has not caused errors in this session but is complex and could fail in the future.
+  - Status: NOT STARTED
+- **Issue 2: Monolithic Backend API**
+  - The file  handles all backend logic and is very large, making it difficult to maintain.
+  - Status: NOT STARTED
 
 **Known issue recurrence from previous fork**
 - None.
@@ -134,90 +136,88 @@ Issues Detail:
 
 
 **Key Technical Concepts**
--   **Frontend**: Next.js 14 (App Router), React, Tailwind CSS, shadcn/ui.
--   **Backend**: Next.js API Routes (monolithic handler).
--   **Database**: MongoDB.
--   **Authentication**: Custom JWT-based authentication. A token is generated on sign-in, stored in both an HttpOnly cookie and localStorage. API requests are authenticated by checking the cookie or an  header (using the token from localStorage).
+- **Frontend**: Next.js 14 (App Router), React, Tailwind CSS, shadcn/ui.
+- **Mapping**:  and  for the interactive map.
+- **Backend**: Next.js API Routes (in a monolithic pattern).
+- **Database**: MongoDB.
+- **State Management**: Heavy reliance on  within a single large component () to manage a multi-step UI flow.
+- **Authentication**: Custom JWT-based system using localStorage and Bearer tokens.
 
 **key DB schema**
-(As per original problem statement, implemented in MongoDB)
--   : id, email, password, name, dob, gender, fitness_level, bio, etc.
--   : user_id, height, weight, etc.
--   : creator_id, activity_type, location, start_time, etc.
--   : (implicitly part of the  collection in the current implementation) includes  flag.
+- No significant changes were made to the DB schema in this session, as work was frontend-focused. The existing schemas for , , etc., are still in place. New schemas will be needed for profile media, availability, etc.
 
 **changes in tech stack**
--   **Database**: The user's spec called for PostgreSQL (Supabase/Neon) with Prisma, but due to environment constraints, **MongoDB** was used instead.
--   **Authentication**: The spec mentioned NextAuth.js or Clerk. NextAuth.js was attempted but proved unstable in the environment and was replaced with a **custom JWT-based authentication system**.
+- Added  and  for mapping functionality.
 
 **All files of reference**
--   : The monolithic backend containing almost all application logic. Critical for understanding any backend feature.
--   : Contains the core logic for the custom authentication (creating/verifying sessions/tokens).
--   : The main application page after login. Currently an activity grid, needs to be redesigned into a map.
--   : The frontend sign-in logic, which now saves the auth token to localStorage.
--   : Defines the GOWITHME theme colors and styles.
+- : **The most critical file.** A very large god component that controls the entire main user flow.
+- : Modified to make the bottom navigation fixed.
+- : New reusable component for page headers and back navigation.
+- : The newly enhanced profile page UI.
+- : The newly enhanced activity log/availability page UI.
+- : The newly redesigned store page UI.
+- : The monolithic backend that will need significant additions to support the new frontend features.
 
 **Areas that need refactoring**:
--   The monolithic API in  is over 1100 lines long. It should be broken down into separate files by resource (e.g., , ) for maintainability.
--   The custom authentication logic is spread across multiple files and uses a complex hybrid approach. It should be consolidated and simplified. A frontend auth context/provider would significantly clean up the session management code in  and other pages.
+- ****: This component is urgently in need of refactoring. It manages the state and rendering for at least five distinct steps (Category, Activity, Type, Broadcast, Find). It should be broken down into smaller, single-responsibility components to improve readability and maintainability.
+- ****: This monolithic API is a major liability. It should be split into multiple route files based on resources (e.g., , , ).
+- **State Management**: A global state management solution (like React Context or Zustand) should be considered to handle user session and other shared state, instead of passing props down or re-fetching on every page.
 
 **key api endpoints**
--   : Creates a new user.
--   : Authenticates a user and returns a session token.
--   : Retrieves the current user's session data.
--   : Gets the logged-in user's profile details.
--   : Updates the user's profile during onboarding.
--   : Fetches compatible users based on the matching algorithm.
--   : (Currently broken) Generates a workout plan using an LLM.
+- 
+- 
+- 
+- 
+- 
+*No new endpoints were created in this session, but many are now required to support the new frontend UIs.*
 
 **Critical Info for New Agent**
--   **Auth is Fragile:** The custom authentication system is the biggest technical debt. Be prepared to debug it. The current pattern is: sign-in sets a token in localStorage, and subsequent API calls must include this token in an  header.
--   **User Vision Changed:** The project pivoted from FITTR to GOWITHME. All frontend work must align with the GOWITHME design images and the Uber/Facebook hybrid concept. Ignore the old FITTR UI.
--   **Map is Priority:** The user explicitly asked for a map-based interface like Uber. This is the highest priority for the frontend and a major deviation from the current activity grid on the dashboard.
--   **Monolithic API:** All backend logic is in a single large file: . You will need to navigate this file carefully when working on any backend feature.
+- **Prioritize Backend Implementation:** The immediate priority after fixing the current task is to implement the backend logic for the numerous new frontend features. The Profile, Calendar, and Wellness pages are currently just UI mocks.
+- **Beware the God Component:** Be extremely cautious when editing . It's very large and complex. Consider refactoring it before adding more features.
+- **Systematic Approach:** The user provides feedback in large, multi-point batches. Address each point systematically and confirm with the user. The current page-by-page approach is working well.
+- **User Vision:** The core vision is a map-based Uber-like connection flow with social features. The user is very specific about UI/UX details.
 
 **documents created in this job**
--   
--    (partially updated)
+- None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **user:** the tabs are visible. if i click on find partners, it says no matches found. im assuming because there are no other users - *Status: Resolved. Agent added test users.*
-2.  **user:** nothing happening, no examples users visible - *Status: Resolved. Agent fixed the API call to include the auth token.*
-3.  **user:** ok the sample users are visible, their info isnt able to be interacted with, the connect button isnt doing any action - *Status: Partially addressed. Agent made the button show a toast notification but it's not fully functional.*
-4.  **user:** ok, lets proceed. whats next - *Status: Responded.*
-5.  **user:** this app isnt what i wanted. I have made a series of app flow images to explain the app I want created. can you generate the app from image flows? - *Status: Responded. This initiated the pivot to GOWITHME.*
-6.  **user:** (Uploaded images) - *Status: Acknowledged.*
-7.  **user:** use all of the previous architecture that can be applied so this doesnt have to be rebuilt from the ground up. - *Status: Acknowledged. Agent agreed to keep backend and redesign frontend.*
-8.  **user:** proceed forward with the full build, i added more credits - *Status: Acknowledged. Agent resumed the build.*
-9.  **user:** proceed. I have saved to Github - *Status: Acknowledged.*
-10. **user:** i want the whole app to be build out and completed...id like to stick to the style i asked for which is in the design of the uber app with the feel of facebook. there is no location service map and way to quickly connect... - *Status: In Progress. This is the current high-level directive.*
+1.  **user:** (Message 122) - Massive request list: rename to WannaGo, add media to reviews, add Disabled connection type, make Activity Log interactive, enhance Profile with media/status, redesign Wellness store. *Status: Mostly implemented (frontend only).*
+2.  **agent:** (Message 123) - Confirms understanding and plan to implement the large request list. *Status: Done.*
+3.  **agent:** (Message 170) - Reports completion of the large request list and asks for review. *Status: Done.*
+4.  **user:** (Message 171) - New refinements: make activity dropdown text-only, make My Availability editable. *Status: Implemented.*
+5.  **agent:** (Message 172) - Confirms plan to implement the two refinements. *Status: Done.*
+6.  **agent:** (Message 201) - Reports completion of the refinements and asks for next steps. *Status: Done.*
+7.  **user:** (Message 202) - Another massive request list: fixed bottom menu, back buttons, category selection, 50/50 layout, cancel meetup flow, advanced filters, easier reset/home button. *Status: IN PROGRESS.*
+8.  **agent:** (Message 203) - Acknowledges the new list and starts implementation. *Status: Done.*
+9.  **agent:** (Message 208) - Overwrites the dashboard with major changes to address the user's request. *Status: Done.*
+10. **agent:** (Message 209) - States intent to update the Connect page for the cancel/emergency feature. *Status: This is the current pending action.*
 
 **Project Health Check:**
 -   **Broken**:
-    -   Authentication flow is fragile and has required numerous patches.
-    -   AI Workout Generator endpoint () is failing.
+    -   Authentication is still considered fragile due to its custom, complex nature.
 -   **Mocked**:
-    -   Payment/Marketplace functionality.
-    -   The Connect button on the Find Partners page only shows a notification.
-    -   User distances are mocked values.
+    -   **Profile Page:** Media gallery, status updates, and privacy settings are frontend-only.
+    -   **Activity Log:** Editable availability and interactive activity checklists are frontend-only.
+    -   **Rate Experience Page:** Media upload functionality is not implemented.
+    -   **Wellness Store:** The entire page is a UI mock with no backend cart or Shopify integration.
+    -   **Chat/Messaging:** The page exists but has no functionality.
 
 **3rd Party Integrations**
--   **OpenAI GPT-4 (Text Generation)** — uses Emergent LLM Key. Integrated via  library for the AI Workout Generator, but is currently non-functional due to an API connectivity issue.
--   **NextAuth.js** — Attempted integration but was removed due to technical issues. Remnant files may exist.
+-   **OpenAI GPT-4:** Deprecated. The user requested the removal of the AI workout generator.
+-   **react-leaflet / leaflet:** Used for map rendering.
 
 **Testing status**
--   Testing agent used after significant changes: YES (backend testing agent was run once).
--   Troubleshoot agent used after agent stuck in loop: N/A.
+-   Testing agent used after significant changes: NO (Agent is using  for manual visual verification).
+-   Troubleshoot agent used after agent stuck in loop: NO.
 -   Test files created: None.
--   Known regressions: The entire authentication system is a regression from a stable library (like a working NextAuth.js) to a brittle custom solution.
+-   Known regressions: None identified in this session.
 
 **Credentials to test flow:**
 -   **Email:** 
 -   **Password:** 
 
 **What agent forgot to execute**
--   The agent did not implement the map-based Uber-like interface that the user explicitly requested after the pivot to GOWITHME. It built a grid-based dashboard instead.
--   The agent did not resolve the failing AI Workout Generator endpoint identified during backend testing.
--   The agent's last action was blocked by a file already exists error when trying to create . It did not use  to proceed.
+- The agent has not yet implemented the backend logic for the vast majority of the new UI features it created. This includes saving profile media/status, user availability, activity checklists, and anything related to the wellness store.
+- The request to add a back button for each of the main menu pages has been partially addressed by creating a  component, but it has not been confirmed if this component was added to all relevant pages (, , , etc.).
 
 </analysis>
