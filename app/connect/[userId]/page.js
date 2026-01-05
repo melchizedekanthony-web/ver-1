@@ -334,13 +334,13 @@ export default function ConnectPage() {
 
       {/* Cancel Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <Card className={`w-full max-w-md p-6 ${isEmergency ? 'border-2 border-red-500' : ''}`}>
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+          <Card className={`w-full max-w-md p-6 max-h-[90vh] overflow-y-auto ${isEmergency ? 'border-2 border-red-500' : ''}`}>
             <div className="flex items-center justify-between mb-4">
               <h3 className={`text-xl font-bold ${isEmergency ? 'text-red-600' : 'text-gray-800'}`}>
                 {isEmergency ? '⚠️ Emergency Exit' : 'Cancel Meetup'}
               </h3>
-              <button onClick={() => setShowCancelModal(false)}>
+              <button onClick={() => setShowCancelModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
                 <X className="w-6 h-6 text-gray-400" />
               </button>
             </div>
@@ -356,9 +356,9 @@ export default function ConnectPage() {
             {/* Reason Selection */}
             <div className="mb-4">
               <p className="text-sm font-medium text-gray-700 mb-2">
-                {isEmergency ? 'What happened?' : 'Reason for cancelling'}
+                {isEmergency ? 'What happened?' : 'Reason for cancelling (optional)'}
               </p>
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-40 overflow-y-auto">
                 {cancelReasons.map((reason) => (
                   <button
                     key={reason}
@@ -377,7 +377,7 @@ export default function ConnectPage() {
               </div>
             </div>
 
-            {/* Rating (optional) */}
+            {/* Rating (optional) - only for non-emergency */}
             {!isEmergency && (
               <div className="mb-4">
                 <p className="text-sm font-medium text-gray-700 mb-2">Rate your experience (optional)</p>
@@ -406,29 +406,38 @@ export default function ConnectPage() {
               <p className="text-sm font-medium text-gray-700 mb-2">Additional details (optional)</p>
               <Textarea 
                 placeholder={isEmergency ? "Please describe what happened..." : "Any additional notes..."}
-                value={cancelReason.includes(cancelReasons[0]) ? '' : ''}
-                onChange={(e) => setCancelReason(prev => {
-                  const selected = cancelReasons.find(r => prev.startsWith(r));
-                  return selected ? `${selected}: ${e.target.value}` : e.target.value;
-                })}
+                value={additionalDetails}
+                onChange={(e) => setAdditionalDetails(e.target.value)}
                 rows={3}
+                className="resize-none"
               />
             </div>
 
             {/* Submit */}
-            <div className="flex gap-3">
+            <div className="space-y-3">
               <Button 
-                variant="outline"
-                className="flex-1"
+                className={`w-full py-4 ${isEmergency ? 'bg-red-600 hover:bg-red-700' : 'bg-[#2B2D9E] hover:bg-[#1f2175]'}`}
+                onClick={submitCancellation}
+              >
+                {isEmergency ? 'Exit & Report' : 'Cancel Meetup'}
+              </Button>
+              
+              {isEmergency && (
+                <Button 
+                  variant="outline"
+                  className="w-full py-4 border-red-300 text-red-600"
+                  onClick={skipAndExit}
+                >
+                  Exit Without Reporting
+                </Button>
+              )}
+              
+              <Button 
+                variant="ghost"
+                className="w-full py-3 text-gray-500"
                 onClick={() => setShowCancelModal(false)}
               >
                 Go Back
-              </Button>
-              <Button 
-                className={`flex-1 ${isEmergency ? 'bg-red-600 hover:bg-red-700' : 'bg-[#2B2D9E] hover:bg-[#1f2175]'}`}
-                onClick={submitCancellation}
-              >
-                {isEmergency ? 'Exit Now' : 'Cancel Meetup'}
               </Button>
             </div>
           </Card>
