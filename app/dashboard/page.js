@@ -140,6 +140,7 @@ export default function Dashboard() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedConnection, setSelectedConnection] = useState(null);
   const [selectedGroupOption, setSelectedGroupOption] = useState(null);
+  const [selectedAccessibleOption, setSelectedAccessibleOption] = useState(null);
   
   // Broadcast Parameters
   const [broadcastRadius, setBroadcastRadius] = useState([5]);
