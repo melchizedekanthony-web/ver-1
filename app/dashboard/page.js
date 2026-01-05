@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { 
   Search, MapPin, Coffee, Film, Music, Dumbbell, Mountain, Bike, 
   BookOpen, Heart, Users, Utensils, X, Star, ChevronUp, ChevronDown,
-  Camera, Dog, Palette, Trophy, Whistle, UserPlus, UsersRound,
+  Camera, Dog, Palette, Trophy, GraduationCap, UserPlus, UsersRound,
   MessageSquare, Send, Clock, Filter, Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
