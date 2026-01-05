@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Build FITTR - A premium, location-based fitness social platform combining Uber's on-demand UX with social networking. Connect users for workouts, training sessions, and athletic activities with AI-powered workout generation, smart matching, session management, social feed, ratings, and subscription tiers."
+user_problem_statement: "Build WannaGo - A map-based social connection platform to connect users for activities, split into Athletic and Non-Athletic categories. Features include: map-centric UI with 50/50 layout, category selection (Athletic/Non-Athletic), activity selection dropdown, connection types (Buddy, Trainer, Competitor, Group, Accessible), broadcast system with dynamic button text, Emergency Exit safety feature, fixed bottom navigation, Profile page with media gallery, Calendar/Activity Log with availability, Wellness Store, and Rate Experience page."
 
 backend:
   - task: "User Registration"
