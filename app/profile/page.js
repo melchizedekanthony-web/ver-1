@@ -185,12 +185,20 @@ export default function ProfilePage() {
     // In production, integrate with social media APIs
   };
 
-  const updateStatus = (status, activity) => {
-    setCurrentStatus(status);
-    setCurrentActivity(activity);
-    setShowStatusModal(false);
-    toast.success('Status updated!');
-    // In production, sync to backend
+  const updateStatus = async (status, activity) => {
+    try {
+      await fetchWithAuth('/api/profile/status', {
+        method: 'POST',
+        body: JSON.stringify({ status, activity })
+      });
+      setCurrentStatus(status);
+      setCurrentActivity(activity);
+      setShowStatusModal(false);
+      toast.success('Status updated!');
+    } catch (error) {
+      console.error('Status update error:', error);
+      toast.error('Failed to update status');
+    }
   };
 
   const menuItems = [
