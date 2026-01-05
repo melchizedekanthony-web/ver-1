@@ -36,6 +36,17 @@ export default function CalendarPage() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [editingActivity, setEditingActivity] = useState(null);
+  
+  // Availability State
+  const [availabilitySlots, setAvailabilitySlots] = useState([
+    { id: 1, days: 'Mon-Fri', startTime: '6:00 PM', endTime: '9:00 PM' },
+    { id: 2, days: 'Thu', startTime: '10:00 AM', endTime: '8:00 PM' },
+    { id: 3, days: 'Sat', startTime: '7:00 AM', endTime: '10:00 PM' },
+  ]);
+  const [availabilityPublic, setAvailabilityPublic] = useState(true);
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [editingSlot, setEditingSlot] = useState(null);
+  const [slotForm, setSlotForm] = useState({ days: '', startTime: '', endTime: '' });
 
   // Activity form state
   const [activityForm, setActivityForm] = useState({
