@@ -168,22 +168,16 @@ export default function ConnectPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 pb-24">
       {/* Header */}
       <header className="bg-[#2B2D9E] px-4 py-3 flex items-center justify-between">
         <button onClick={() => router.back()} className="text-white text-2xl">←</button>
         <h1 className="text-xl font-bold text-white">LOCATION CONNECT</h1>
-        <button 
-          onClick={handleEmergencyCancel}
-          className="bg-red-500 text-white px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1"
-        >
-          <Shield className="w-3 h-3" />
-          SOS
-        </button>
+        <div className="w-8"></div>
       </header>
 
       {/* Map */}
-      <div className="h-[45vh] relative">
+      <div className="h-[40vh] relative">
         <MapComponent
           center={[(userLocation.lat + targetLocation.lat) / 2, (userLocation.lng + targetLocation.lng) / 2]}
           zoom={14}
@@ -208,7 +202,7 @@ export default function ConnectPage() {
       </div>
 
       {/* Connection Panel */}
-      <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-4 py-6 min-h-[45vh]">
+      <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-4 py-6">
         <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6"></div>
 
         {targetUser && (
@@ -283,7 +277,7 @@ export default function ConnectPage() {
                 </Button>
                 <Button 
                   variant="outline"
-                  className="w-full py-4 border-red-300 text-red-600 hover:bg-red-50"
+                  className="w-full py-4 border-gray-300 text-gray-600 hover:bg-gray-50"
                   onClick={handleCancelMeetup}
                 >
                   Cancel Meetup
@@ -301,7 +295,7 @@ export default function ConnectPage() {
                 </Button>
                 <Button 
                   variant="outline"
-                  className="w-full py-4 border-red-300 text-red-600 hover:bg-red-50"
+                  className="w-full py-4 border-gray-300 text-gray-600 hover:bg-gray-50"
                   onClick={handleCancelMeetup}
                 >
                   Cancel Meetup
@@ -317,18 +311,25 @@ export default function ConnectPage() {
                 >
                   ARRIVED
                 </Button>
-                <Button 
-                  variant="outline"
-                  className="w-full py-4 border-red-300 text-red-600 hover:bg-red-50"
-                  onClick={handleCancelMeetup}
-                >
-                  <AlertTriangle className="w-4 h-4 mr-2" />
-                  Cancel & Exit
-                </Button>
               </div>
             )}
           </>
         )}
+      </div>
+
+      {/* PROMINENT EMERGENCY EXIT BUTTON - Fixed at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50 shadow-lg">
+        <button
+          onClick={handleEmergencyCancel}
+          className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-md"
+        >
+          <Shield className="w-6 h-6" />
+          EMERGENCY EXIT
+          <XCircle className="w-6 h-6" />
+        </button>
+        <p className="text-center text-xs text-gray-500 mt-2">
+          Tap anytime if you feel unsafe or need to leave immediately
+        </p>
       </div>
 
       {/* Cancel Modal */}
