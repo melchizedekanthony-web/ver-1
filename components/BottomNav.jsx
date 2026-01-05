@@ -16,8 +16,8 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="bg-white border-t border-gray-100 shadow-lg safe-area-bottom">
-      <div className="flex justify-around items-center h-16">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg z-50">
+      <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.path || pathname.startsWith(item.path + '/');
@@ -46,6 +46,8 @@ export default function BottomNav() {
           );
         })}
       </div>
+      {/* Safe area padding for mobile */}
+      <div className="h-safe-area-inset-bottom bg-white" />
     </nav>
   );
 }
