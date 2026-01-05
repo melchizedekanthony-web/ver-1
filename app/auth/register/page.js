@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Register() {
@@ -63,23 +62,24 @@ export default function Register() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-orange-50 to-white py-12 px-4">
+    <div className="min-h-screen bg-[#1a1aff] flex flex-col items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-4">
-            <Dumbbell className="w-10 h-10 text-orange-600" />
-            <span className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-              FITTR
-            </span>
+          <Link href="/" className="inline-block mb-6">
+            <h1 className="text-5xl font-black text-white tracking-wider"
+                style={{
+                  textShadow: '0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 255, 255, 0.6)'
+                }}>
+              GOWITHME
+            </h1>
           </Link>
-          <h1 className="text-2xl font-bold">Create your account</h1>
-          <p className="text-gray-600 mt-2">Start your fitness journey today</p>
+          <p className="text-white/80 text-lg">Create your account</p>
         </div>
 
-        <Card>
+        <Card className="bg-white/95 backdrop-blur border-0 shadow-2xl">
           <CardHeader>
-            <CardTitle>Sign Up</CardTitle>
-            <CardDescription>Enter your details to create your account</CardDescription>
+            <CardTitle className="text-2xl text-center">Join Up</CardTitle>
+            <CardDescription className="text-center">Start connecting with people today</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -92,6 +92,7 @@ export default function Register() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="John Doe"
+                  className="mt-1"
                 />
               </div>
 
@@ -104,6 +105,7 @@ export default function Register() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
+                  className="mt-1"
                 />
               </div>
 
@@ -116,6 +118,7 @@ export default function Register() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  className="mt-1"
                 />
               </div>
 
@@ -128,17 +131,22 @@ export default function Register() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
+                  className="mt-1"
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button 
+                type="submit" 
+                className="w-full bg-[#4a3aff] hover:bg-[#3a2aef] text-white font-semibold" 
+                disabled={loading}
+              >
                 {loading ? 'Creating account...' : 'Create Account'}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm">
               Already have an account?{' '}
-              <Link href="/auth/signin" className="text-orange-600 hover:underline font-medium">
+              <Link href="/auth/signin" className="text-[#4a3aff] hover:underline font-medium">
                 Sign in
               </Link>
             </div>
