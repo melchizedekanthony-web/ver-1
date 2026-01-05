@@ -6,7 +6,7 @@ import { Toaster } from 'sonner';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'GOWITHME - Connect & Share Activities',
+  title: 'WannaGo - Connect & Share Activities',
   description: 'Connect with people for activities, share locations, and meet up in real-time',
 };
 

@@ -84,14 +84,14 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a1aff] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#2B2D9E] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <h1 
           className="text-4xl font-black text-white text-center mb-8 tracking-wider"
           style={{ textShadow: '0 0 15px rgba(255, 255, 255, 0.6)' }}
         >
-          GOWITHME
+          WannaGo
         </h1>
 
         <Card className="p-6">
@@ -148,7 +148,7 @@ export default function Register() {
 
             <Button 
               type="submit" 
-              className="w-full py-6 bg-[#1a1aff] hover:bg-[#1515dd] text-lg font-semibold"
+              className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-lg font-semibold"
               disabled={loading}
             >
               {loading ? 'Creating account...' : 'JOIN UP'}
@@ -158,7 +158,7 @@ export default function Register() {
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               Already have an account?{' '}
-              <Link href="/auth/signin" className="text-[#1a1aff] font-semibold hover:underline">
+              <Link href="/auth/signin" className="text-[#2B2D9E] font-semibold hover:underline">
                 Sign in
               </Link>
             </p>

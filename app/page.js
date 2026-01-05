@@ -14,12 +14,12 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#1a1aff] flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-[#2B2D9E] flex flex-col items-center justify-center relative overflow-hidden">
       {/* Animated background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1a1aff] via-[#2525ff] to-[#1515dd]"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-[#2B2D9E] via-[#3535b0] to-[#1f2175]"></div>
       
       <div className="relative z-10 text-center px-4">
-        {/* GOWITHME Logo */}
+        {/* WannaGo Logo */}
         <h1 
           className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-white mb-8 tracking-wider"
           style={{
@@ -28,7 +28,7 @@ export default function Home() {
             letterSpacing: '0.05em'
           }}
         >
-          GOWITHME
+          WannaGo
         </h1>
 
         <p className="text-white/80 text-lg md:text-xl mb-12 max-w-md mx-auto">

@@ -9,7 +9,7 @@ export default function Header({ user, showBack, title }) {
   const router = useRouter();
 
   return (
-    <header className="bg-[#1a1aff] sticky top-0 z-40 safe-area-top">
+    <header className="bg-[#2B2D9E] sticky top-0 z-40 safe-area-top">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           {showBack ? (
@@ -22,7 +22,7 @@ export default function Header({ user, showBack, title }) {
             onClick={() => router.push('/dashboard')}
             style={{ textShadow: '0 0 10px rgba(255, 255, 255, 0.5)' }}
           >
-            {title || 'GOWITHME'}
+            {title || 'WannaGo'}
           </h1>
         </div>
         
