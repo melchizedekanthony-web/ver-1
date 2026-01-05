@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 import os
 
 # Configuration
-BASE_URL = "https://workout-buddy-839.preview.emergentagent.com/api"
+BASE_URL = "https://activity-match-3.preview.emergentagent.com/api"
 TEST_USER_EMAIL = "john@example.com"
 TEST_USER_PASSWORD = "password123"
 
@@ -64,7 +64,7 @@ class FittrAPITester:
         """Test NextAuth signin flow - Note: Complex due to NextAuth v5 session handling"""
         try:
             # Check if there's already a session
-            session_response = self.session.get(f"https://workout-buddy-839.preview.emergentagent.com/api/auth/session")
+            session_response = self.session.get(f"https://activity-match-3.preview.emergentagent.com/api/auth/session")
             if session_response.status_code == 200:
                 session_data = session_response.json()
                 if session_data and session_data.get('user'):
@@ -72,7 +72,7 @@ class FittrAPITester:
                     return True
             
             # Try to get CSRF token
-            csrf_response = self.session.get(f"https://workout-buddy-839.preview.emergentagent.com/api/auth/csrf")
+            csrf_response = self.session.get(f"https://activity-match-3.preview.emergentagent.com/api/auth/csrf")
             csrf_token = None
             if csrf_response.status_code == 200:
                 csrf_data = csrf_response.json()
@@ -87,13 +87,13 @@ class FittrAPITester:
                 'email': TEST_USER_EMAIL,
                 'password': TEST_USER_PASSWORD,
                 'csrfToken': csrf_token,
-                'callbackUrl': 'https://workout-buddy-839.preview.emergentagent.com/dashboard',
+                'callbackUrl': 'https://activity-match-3.preview.emergentagent.com/dashboard',
                 'json': 'true'
             }
             
             # Try signin with proper form encoding
             signin_response = self.session.post(
-                f"https://workout-buddy-839.preview.emergentagent.com/api/auth/callback/credentials",
+                f"https://activity-match-3.preview.emergentagent.com/api/auth/callback/credentials",
                 data=form_data,
                 headers={
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -107,7 +107,7 @@ class FittrAPITester:
             
             if signin_response.status_code == 200 or has_session_cookie:
                 # Verify session is working
-                verify_response = self.session.get(f"https://workout-buddy-839.preview.emergentagent.com/api/auth/session")
+                verify_response = self.session.get(f"https://activity-match-3.preview.emergentagent.com/api/auth/session")
                 if verify_response.status_code == 200:
                     verify_data = verify_response.json()
                     if verify_data and verify_data.get('user'):
