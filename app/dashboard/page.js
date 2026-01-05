@@ -480,10 +480,10 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Bottom Panel - 60% of screen */}
-      <div className="flex-1 bg-white rounded-t-3xl shadow-2xl -mt-4 relative z-10 overflow-hidden flex flex-col">
+      {/* Bottom Panel - Activities section */}
+      <div className="flex-1 bg-white rounded-t-3xl shadow-2xl relative z-10 overflow-hidden flex flex-col">
         {/* Panel Handle */}
-        <div className="py-2 flex justify-center flex-shrink-0">
+        <div className="py-3 flex justify-center flex-shrink-0">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
         </div>
 
