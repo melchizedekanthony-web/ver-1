@@ -17,10 +17,20 @@ import BottomNav from '@/components/BottomNav';
 import { getUser, getAuthToken, fetchWithAuth, signOut } from '@/lib/auth';
 
 // Dynamic import for map to avoid SSR issues
-const MapComponent = dynamic(() => import('@/components/MapComponent'), { 
-  ssr: false,
-  loading: () => <div className="h-full bg-gray-100 flex items-center justify-center">Loading map...</div>
-});
+const MapComponent = dynamic(
+  () => import('@/components/MapComponent').then(mod => mod.default),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="h-full bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-[#1a1aff] border-t-transparent rounded-full mx-auto mb-2"></div>
+          <p className="text-gray-500">Loading map...</p>
+        </div>
+      </div>
+    )
+  }
+);
 
 const activities = [
   { id: 'hiking', name: 'Hiking', icon: Mountain, color: 'bg-green-100 text-green-700' },
