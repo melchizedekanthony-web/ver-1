@@ -65,7 +65,7 @@ const connectionTypes = [
     id: 'trainer', 
     name: 'TRAINER', 
     description: 'Connect with an expert',
-    icon: Whistle, 
+    icon: GraduationCap, 
     color: 'bg-orange-500',
     borderColor: 'border-orange-500',
     textColor: 'text-orange-500'
