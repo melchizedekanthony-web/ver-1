@@ -1,20 +1,39 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { Bell, Settings } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { Bell, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-export default function Header({ user, showBack, title }) {
+export default function Header({ user, showBack = true, title, onBack }) {
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Main pages that should show back to dashboard
+  const mainPages = ['/connections', '/messages', '/wellness', '/profile', '/calendar', '/alerts'];
+  const isMainPage = mainPages.some(page => pathname.startsWith(page));
+  const isDashboard = pathname === '/dashboard';
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else if (isMainPage) {
+      router.push('/dashboard');
+    } else {
+      router.back();
+    }
+  };
 
   return (
-    <header className="bg-[#2B2D9E] sticky top-0 z-40 safe-area-top">
+    <header className="bg-[#2B2D9E] sticky top-0 z-40">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          {showBack ? (
-            <button onClick={() => router.back()} className="text-white text-2xl">
-              ←
+          {showBack && !isDashboard ? (
+            <button 
+              onClick={handleBack} 
+              className="text-white p-1 -ml-1 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <ArrowLeft className="w-6 h-6" />
             </button>
           ) : null}
           <h1 
@@ -27,6 +46,16 @@ export default function Header({ user, showBack, title }) {
         </div>
         
         <div className="flex items-center gap-2">
+          {!isDashboard && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-white hover:bg-white/20"
+              onClick={() => router.push('/dashboard')}
+            >
+              <Home className="w-5 h-5" />
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="icon" 
