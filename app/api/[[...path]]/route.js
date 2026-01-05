@@ -1987,6 +1987,23 @@ export async function POST(request, { params }) {
     return updateHealthMetrics(request);
   } else if (path === 'profile/preferences') {
     return updateActivityPreferences(request);
+  } else if (path === 'profile/media') {
+    return uploadProfileMedia(request);
+  } else if (path === 'profile/status') {
+    return updateProfileStatus(request);
+  } else if (path === 'calendar/availability') {
+    return saveAvailability(request);
+  } else if (path === 'activities') {
+    return createActivity(request);
+  } else if (path === 'cart/add') {
+    return addToCart(request);
+  } else if (path === 'cart/clear') {
+    return clearCart(request);
+  } else if (path === 'broadcast') {
+    return createBroadcast(request);
+  } else if (path.startsWith('broadcasts/') && path.endsWith('/respond')) {
+    const id = path.split('/')[1];
+    return respondToBroadcast(request, id);
   } else if (path === 'sessions') {
     return createSession(request);
   } else if (path.startsWith('sessions/') && path.endsWith('/join')) {
