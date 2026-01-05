@@ -1,36 +1,68 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
 import { 
-  User, Bell, MapPin, Coffee, Film, Music, Dumbbell, 
-  Utensils, ShoppingBag, Users, Calendar, MessageSquare,
-  Settings, LogOut, Mountain, Bike, BookOpen, Heart
+  Search, MapPin, Coffee, Film, Music, Dumbbell, Mountain, Bike, 
+  BookOpen, Heart, Users, Utensils, X
 } from 'lucide-react';
 import { toast } from 'sonner';
+import Header from '@/components/Header';
+import BottomNav from '@/components/BottomNav';
+import { getUser, getAuthToken, fetchWithAuth, signOut } from '@/lib/auth';
+
+// Dynamic import for map to avoid SSR issues
+const MapComponent = dynamic(() => import('@/components/MapComponent'), { 
+  ssr: false,
+  loading: () => <div className="h-full bg-gray-100 flex items-center justify-center">Loading map...</div>
+});
+
+const activities = [
+  { id: 'hiking', name: 'Hiking', icon: Mountain, color: 'bg-green-100 text-green-700' },
+  { id: 'coffee', name: 'Coffee', icon: Coffee, color: 'bg-amber-100 text-amber-700' },
+  { id: 'cinema', name: 'Cinema', icon: Film, color: 'bg-purple-100 text-purple-700' },
+  { id: 'concert', name: 'Concert', icon: Music, color: 'bg-pink-100 text-pink-700' },
+  { id: 'gym', name: 'Gym', icon: Dumbbell, color: 'bg-blue-100 text-blue-700' },
+  { id: 'cycling', name: 'Cycling', icon: Bike, color: 'bg-cyan-100 text-cyan-700' },
+  { id: 'dining', name: 'Dining', icon: Utensils, color: 'bg-red-100 text-red-700' },
+  { id: 'reading', name: 'Book Club', icon: BookOpen, color: 'bg-indigo-100 text-indigo-700' },
+];
 
 export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedActivity, setSelectedActivity] = useState(null);
+  const [showActivityPicker, setShowActivityPicker] = useState(false);
+  const [nearbyUsers, setNearbyUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userLocation, setUserLocation] = useState({ lat: 40.7128, lng: -74.0060 });
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     checkAuth();
+    getUserLocation();
   }, []);
+
+  useEffect(() => {
+    if (user && selectedActivity) {
+      fetchNearbyUsers(selectedActivity.id);
+    }
+  }, [user, selectedActivity]);
 
   const checkAuth = async () => {
     try {
-      const storedUser = localStorage.getItem('fittr_user');
-      if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-      } else {
+      const storedUser = getUser();
+      if (!storedUser) {
         router.push('/auth/signin');
         return;
       }
+      setUser(storedUser);
     } catch (error) {
       console.error('Auth check failed:', error);
       router.push('/auth/signin');
@@ -39,31 +71,60 @@ export default function Dashboard() {
     }
   };
 
-  const handleSignOut = async () => {
-    localStorage.removeItem('fittr_user');
-    localStorage.removeItem('fittr_token');
-    await fetch('/api/signout', { method: 'POST' });
-    window.location.href = '/';
+  const getUserLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.log('Geolocation error:', error);
+          // Use default NYC location
+        }
+      );
+    }
   };
 
-  // Activity options matching your flow images
-  const activities = [
-    { id: 'hiking', name: 'Hiking', icon: Mountain, color: 'bg-green-100 text-green-700' },
-    { id: 'coffee', name: 'Coffee', icon: Coffee, color: 'bg-amber-100 text-amber-700' },
-    { id: 'cinema', name: 'Cinema', icon: Film, color: 'bg-purple-100 text-purple-700' },
-    { id: 'concert', name: 'Concert', icon: Music, color: 'bg-pink-100 text-pink-700' },
-    { id: 'gym', name: 'Gym', icon: Dumbbell, color: 'bg-blue-100 text-blue-700' },
-    { id: 'dining', name: 'Dining', icon: Utensils, color: 'bg-red-100 text-red-700' },
-    { id: 'shopping', name: 'Shopping', icon: ShoppingBag, color: 'bg-yellow-100 text-yellow-700' },
-    { id: 'cycling', name: 'Cycling', icon: Bike, color: 'bg-cyan-100 text-cyan-700' },
-    { id: 'reading', name: 'Reading', icon: BookOpen, color: 'bg-indigo-100 text-indigo-700' },
-    { id: 'wellness', name: 'Wellness', icon: Heart, color: 'bg-rose-100 text-rose-700' },
-  ];
+  const fetchNearbyUsers = async (activityId) => {
+    try {
+      const res = await fetchWithAuth(`/api/matches?activity=${activityId}`);
+      const data = await res.json();
+      if (data.matches) {
+        // Add mock locations for demo
+        const usersWithLocations = data.matches.map((match, index) => ({
+          ...match,
+          location: {
+            lat: userLocation.lat + (Math.random() - 0.5) * 0.05,
+            lng: userLocation.lng + (Math.random() - 0.5) * 0.05
+          },
+          activity: selectedActivity?.name,
+          distance: Math.floor(Math.random() * 10) + 1
+        }));
+        setNearbyUsers(usersWithLocations);
+      }
+    } catch (error) {
+      console.error('Failed to fetch nearby users:', error);
+    }
+  };
 
-  const handleActivityClick = (activity) => {
-    toast.success(`Let's find people for ${activity.name}!`);
-    // Navigate to matches filtered by activity
-    router.push(`/activity/${activity.id}`);
+  const handleActivitySelect = (activity) => {
+    setSelectedActivity(activity);
+    setShowActivityPicker(false);
+    setSelectedUser(null);
+    toast.success(`Looking for ${activity.name} partners nearby!`);
+  };
+
+  const handleUserClick = (clickedUser) => {
+    setSelectedUser(clickedUser);
+  };
+
+  const handleConnect = () => {
+    if (selectedUser) {
+      router.push(`/connect/${selectedUser.id}?activity=${selectedActivity?.id}`);
+    }
   };
 
   if (loading) {
@@ -75,160 +136,172 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1aff]">
-      {/* Header */}
-      <header className="bg-white/10 backdrop-blur-md border-b border-white/20 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-2xl font-black text-white tracking-wider"
-              style={{
-                textShadow: '0 0 10px rgba(255, 255, 255, 0.6)'
-              }}>
-            GOWITHME
-          </h1>
-          
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-white hover:bg-white/20"
-            >
-              <Bell className="w-5 h-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-white hover:bg-white/20"
-              onClick={handleSignOut}
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
-            <Avatar className="border-2 border-white/40">
-              <AvatarFallback className="bg-[#4a3aff] text-white">
-                {user?.name?.charAt(0) || 'U'}
+    <div className="min-h-screen bg-gray-100 pb-20">
+      <Header user={user} />
+      
+      {/* Search Bar */}
+      <div className="bg-white px-4 py-3 shadow-sm">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Input
+            placeholder="Search activities or people..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-gray-50 border-gray-200"
+          />
+        </div>
+      </div>
+
+      {/* Map Section */}
+      <div className="relative h-[45vh] bg-gray-200">
+        <MapComponent
+          center={[userLocation.lat, userLocation.lng]}
+          zoom={14}
+          users={nearbyUsers}
+          currentUser={{ location: userLocation }}
+          selectedUser={selectedUser}
+          onUserClick={handleUserClick}
+          showRoute={!!selectedUser}
+          className="h-full w-full"
+        />
+
+        {/* Activity indicator on map */}
+        {selectedActivity && (
+          <div className="absolute top-4 left-4 bg-white rounded-full px-4 py-2 shadow-lg flex items-center gap-2">
+            <selectedActivity.icon className="w-5 h-5 text-[#1a1aff]" />
+            <span className="font-medium">{selectedActivity.name}</span>
+            <button onClick={() => setSelectedActivity(null)} className="ml-2">
+              <X className="w-4 h-4 text-gray-400" />
+            </button>
+          </div>
+        )}
+
+        {/* Current location button */}
+        <button 
+          onClick={getUserLocation}
+          className="absolute bottom-4 right-4 bg-white rounded-full p-3 shadow-lg"
+        >
+          <MapPin className="w-5 h-5 text-[#1a1aff]" />
+        </button>
+      </div>
+
+      {/* Activity Selection Drawer */}
+      {!selectedActivity && (
+        <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-4 py-6 shadow-lg">
+          <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+          <h2 className="text-lg font-bold text-gray-800 mb-4">CHOOSE ACTIVITY</h2>
+          <div className="grid grid-cols-4 gap-3">
+            {activities.map((activity) => {
+              const Icon = activity.icon;
+              return (
+                <button
+                  key={activity.id}
+                  onClick={() => handleActivitySelect(activity)}
+                  className="flex flex-col items-center p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <div className={`w-12 h-12 rounded-full ${activity.color} flex items-center justify-center mb-2`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-medium text-gray-700">{activity.name}</span>
+                </button>
+              );
+            })}
+          </div>
+          <Button 
+            className="w-full mt-4 bg-[#1a1aff] hover:bg-[#1515dd] text-white font-semibold py-6"
+            onClick={() => setShowActivityPicker(true)}
+          >
+            SELECT
+          </Button>
+        </div>
+      )}
+
+      {/* Selected User Panel */}
+      {selectedUser && selectedActivity && (
+        <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-4 py-6 shadow-lg">
+          <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+          <div className="flex items-center gap-4 mb-4">
+            <Avatar className="w-16 h-16 border-2 border-[#1a1aff]">
+              <AvatarImage src={selectedUser.profilePhoto} />
+              <AvatarFallback className="bg-[#4a3aff] text-white text-xl">
+                {selectedUser.name?.charAt(0)}
               </AvatarFallback>
             </Avatar>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-gray-800">{selectedUser.name}</h3>
+              <p className="text-gray-500">{selectedUser.distance} km away</p>
+              <div className="flex items-center gap-1 mt-1">
+                {[1,2,3,4,5].map((star) => (
+                  <span key={star} className={`text-sm ${star <= (selectedUser.averageRating || 4) ? 'text-yellow-400' : 'text-gray-300'}`}>
+                    ★
+                  </span>
+                ))}
+                <span className="text-xs text-gray-500 ml-1">({selectedUser.averageRating || '4.0'})</span>
+              </div>
+            </div>
+            <button onClick={() => setSelectedUser(null)}>
+              <X className="w-6 h-6 text-gray-400" />
+            </button>
+          </div>
+          
+          <div className="flex gap-3">
+            <Button 
+              variant="outline"
+              className="flex-1 py-6 border-[#1a1aff] text-[#1a1aff]"
+              onClick={() => router.push(`/user/${selectedUser.id}`)}
+            >
+              View Profile
+            </Button>
+            <Button 
+              className="flex-1 py-6 bg-[#1a1aff] hover:bg-[#1515dd] text-white"
+              onClick={handleConnect}
+            >
+              CONNECT
+            </Button>
           </div>
         </div>
-      </header>
+      )}
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2"
-              style={{
-                textShadow: '0 0 15px rgba(255, 255, 255, 0.5)'
-              }}>
-            What would you like to do?
-          </h2>
-          <p className="text-white/70 text-lg">Choose an activity and find companions nearby</p>
-        </div>
-
-        {/* Activity Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 max-w-6xl mx-auto mb-12">
-          {activities.map((activity) => {
-            const Icon = activity.icon;
-            return (
-              <Card 
-                key={activity.id}
-                className="bg-white/95 backdrop-blur hover:bg-white transition-all duration-300 hover:scale-105 cursor-pointer border-0 shadow-xl"
-                onClick={() => handleActivityClick(activity)}
+      {/* Nearby Users List (when activity selected but no user selected) */}
+      {selectedActivity && !selectedUser && nearbyUsers.length > 0 && (
+        <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-4 py-6 shadow-lg">
+          <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+          <h2 className="text-lg font-bold text-gray-800 mb-4">FIND COMPANION</h2>
+          <div className="space-y-3 max-h-[30vh] overflow-y-auto">
+            {nearbyUsers.slice(0, 5).map((nearbyUser) => (
+              <button
+                key={nearbyUser.id}
+                onClick={() => handleUserClick(nearbyUser)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
               >
-                <div className="p-6 flex flex-col items-center text-center">
-                  <div className={`w-16 h-16 rounded-full ${activity.color} flex items-center justify-center mb-3`}>
-                    <Icon className="w-8 h-8" />
-                  </div>
-                  <h3 className="font-semibold text-gray-800">{activity.name}</h3>
+                <Avatar className="w-12 h-12">
+                  <AvatarImage src={nearbyUser.profilePhoto} />
+                  <AvatarFallback className="bg-[#4a3aff] text-white">
+                    {nearbyUser.name?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-gray-800">{nearbyUser.name}</p>
+                  <p className="text-sm text-gray-500">{nearbyUser.distance} km away</p>
                 </div>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          <Card 
-            className="bg-white/95 backdrop-blur hover:bg-white transition-all cursor-pointer border-0 shadow-xl"
-            onClick={() => router.push('/connections')}
+                <div className="text-right">
+                  <div className="flex items-center gap-1">
+                    <span className="text-yellow-400">★</span>
+                    <span className="text-sm font-medium">{nearbyUser.averageRating || '4.0'}</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+          <Button 
+            className="w-full mt-4 bg-[#1a1aff] hover:bg-[#1515dd] text-white font-semibold py-6"
           >
-            <div className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-[#4a3aff]/10 flex items-center justify-center">
-                <Users className="w-6 h-6 text-[#4a3aff]" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">My Connections</h3>
-                <p className="text-sm text-gray-600">View your network</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card 
-            className="bg-white/95 backdrop-blur hover:bg-white transition-all cursor-pointer border-0 shadow-xl"
-            onClick={() => router.push('/calendar')}
-          >
-            <div className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-[#4a3aff]/10 flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-[#4a3aff]" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">My Schedule</h3>
-                <p className="text-sm text-gray-600">Upcoming activities</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card 
-            className="bg-white/95 backdrop-blur hover:bg-white transition-all cursor-pointer border-0 shadow-xl"
-            onClick={() => router.push('/wellness')}
-          >
-            <div className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-[#4a3aff]/10 flex items-center justify-center">
-                <ShoppingBag className="w-6 h-6 text-[#4a3aff]" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">Wellness Store</h3>
-                <p className="text-sm text-gray-600">Shop products</p>
-              </div>
-            </div>
-          </Card>
+            CONNECT
+          </Button>
         </div>
+      )}
 
-        {/* Map placeholder - showing it's coming */}
-        <div className="mt-12 max-w-4xl mx-auto">
-          <Card className="bg-white/95 backdrop-blur border-0 shadow-xl">
-            <div className="p-8 text-center">
-              <MapPin className="w-12 h-12 text-[#4a3aff] mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Find People Nearby</h3>
-              <p className="text-gray-600 mb-4">See who's active in your area</p>
-              <Button className="bg-[#4a3aff] hover:bg-[#3a2aef] text-white">
-                View Map
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </main>
-
-      {/* Bottom Navigation - Mobile */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
-        <div className="grid grid-cols-4 gap-1">
-          <button className="p-4 flex flex-col items-center text-[#4a3aff]">
-            <MapPin className="w-6 h-6 mb-1" />
-            <span className="text-xs">Explore</span>
-          </button>
-          <button className="p-4 flex flex-col items-center text-gray-600">
-            <Users className="w-6 h-6 mb-1" />
-            <span className="text-xs">Connections</span>
-          </button>
-          <button className="p-4 flex flex-col items-center text-gray-600">
-            <MessageSquare className="w-6 h-6 mb-1" />
-            <span className="text-xs">Messages</span>
-          </button>
-          <button className="p-4 flex flex-col items-center text-gray-600">
-            <User className="w-6 h-6 mb-1" />
-            <span className="text-xs">Profile</span>
-          </button>
-        </div>
-      </nav>
+      <BottomNav />
     </div>
   );
 }
