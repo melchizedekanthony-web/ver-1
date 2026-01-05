@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Check, Star, MessageSquare } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Check, Star, MessageSquare, Shield, XCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUser, fetchWithAuth } from '@/lib/auth';
 
@@ -31,6 +33,19 @@ export default function MeetupPage() {
   const [user, setUser] = useState(null);
   const [targetUser, setTargetUser] = useState(null);
   const [meetupLocation, setMeetupLocation] = useState({ lat: 40.7128, lng: -74.0060 });
+  
+  // Emergency state
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const [emergencyReason, setEmergencyReason] = useState('');
+  const [additionalDetails, setAdditionalDetails] = useState('');
+
+  const emergencyReasons = [
+    'Felt unsafe',
+    'Person was not who they said',
+    'Inappropriate behavior',
+    'Location seemed dangerous',
+    'Other safety concern'
+  ];
 
   useEffect(() => {
     const storedUser = getUser();
@@ -79,17 +94,52 @@ export default function MeetupPage() {
     router.push(`/messages/${userId}`);
   };
 
+  const handleEmergencyExit = () => {
+    setShowEmergencyModal(true);
+  };
+
+  const submitEmergency = async () => {
+    try {
+      const fullReason = additionalDetails 
+        ? `${emergencyReason}: ${additionalDetails}` 
+        : emergencyReason;
+
+      await fetchWithAuth('/api/reviews', {
+        method: 'POST',
+        body: JSON.stringify({
+          targetId: targetUser?.id || userId,
+          targetType: 'user',
+          rating: 1,
+          reviewText: fullReason,
+          isCancellation: true,
+          isEmergency: true
+        })
+      });
+
+      toast.error('Emergency exit recorded. Stay safe!', { duration: 5000 });
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error submitting emergency:', error);
+      router.push('/dashboard');
+    }
+  };
+
+  const skipAndExit = () => {
+    toast.error('Emergency exit. Stay safe!', { duration: 5000 });
+    router.push('/dashboard');
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 pb-24">
       {/* Header */}
-      <header className="bg-[#1a1aff] px-4 py-3 flex items-center justify-between">
+      <header className="bg-[#2B2D9E] px-4 py-3 flex items-center justify-between">
         <button onClick={() => router.back()} className="text-white text-2xl">←</button>
         <h1 className="text-xl font-bold text-white">MEET UP!</h1>
         <div className="w-8"></div>
       </header>
 
       {/* Map showing meetup location */}
-      <div className="h-[50vh] relative">
+      <div className="h-[45vh] relative">
         <MapComponent
           center={[meetupLocation.lat, meetupLocation.lng]}
           zoom={16}
@@ -145,15 +195,14 @@ export default function MeetupPage() {
 
         {/* Location info */}
         <div className="bg-gray-50 rounded-xl p-4 mb-6">
-          <h3 className="font-semibold text-gray-700 mb-2">Nestay Point:</h3>
-          <p className="text-gray-600">Soccer Field</p>
-          <p className="text-sm text-gray-500">Secor Filed, Matt Denny</p>
-          <p className="text-right font-semibold text-[#1a1aff]">$18.00</p>
+          <h3 className="font-semibold text-gray-700 mb-2">Meetup Location</h3>
+          <p className="text-gray-600 capitalize">{activity || 'Activity'} spot</p>
+          <p className="text-sm text-gray-500">Current meetup location</p>
         </div>
 
         {/* Action Buttons */}
         <Button 
-          className="w-full py-6 bg-[#1a1aff] hover:bg-[#1515dd] text-white text-lg font-semibold mb-3"
+          className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-semibold mb-3"
           onClick={handleMessageGroup}
         >
           <MessageSquare className="w-5 h-5 mr-2" />
@@ -162,13 +211,106 @@ export default function MeetupPage() {
 
         <Button 
           variant="outline"
-          className="w-full py-6 border-[#1a1aff] text-[#1a1aff] text-lg font-semibold"
+          className="w-full py-6 border-[#2B2D9E] text-[#2B2D9E] text-lg font-semibold"
           onClick={handleComplete}
         >
           <Star className="w-5 h-5 mr-2" />
           Complete & Rate
         </Button>
       </div>
+
+      {/* PROMINENT EMERGENCY EXIT BUTTON - Fixed at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50 shadow-lg">
+        <button
+          onClick={handleEmergencyExit}
+          className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-md"
+        >
+          <Shield className="w-6 h-6" />
+          EMERGENCY EXIT
+          <XCircle className="w-6 h-6" />
+        </button>
+        <p className="text-center text-xs text-gray-500 mt-2">
+          Tap anytime if you feel unsafe or need to leave immediately
+        </p>
+      </div>
+
+      {/* Emergency Modal */}
+      {showEmergencyModal && (
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md p-6 border-2 border-red-500 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-red-600">⚠️ Emergency Exit</h3>
+              <button onClick={() => setShowEmergencyModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
+                <X className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+              <p className="text-red-800 text-sm">
+                <strong>Your safety is our priority.</strong> This will immediately end the meetup and your feedback will help keep the community safe.
+              </p>
+            </div>
+
+            {/* Reason Selection */}
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">What happened?</p>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {emergencyReasons.map((reason) => (
+                  <button
+                    key={reason}
+                    onClick={() => setEmergencyReason(reason)}
+                    className={`w-full p-3 rounded-lg border text-left text-sm transition-all ${
+                      emergencyReason === reason
+                        ? 'border-red-500 bg-red-50 text-red-800'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Additional Notes */}
+            <div className="mb-6">
+              <p className="text-sm font-medium text-gray-700 mb-2">Additional details (optional)</p>
+              <Textarea 
+                placeholder="Please describe what happened..."
+                value={additionalDetails}
+                onChange={(e) => setAdditionalDetails(e.target.value)}
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Submit */}
+            <div className="space-y-3">
+              <Button 
+                className="w-full py-4 bg-red-600 hover:bg-red-700"
+                onClick={submitEmergency}
+              >
+                Exit & Report
+              </Button>
+              
+              <Button 
+                variant="outline"
+                className="w-full py-4 border-red-300 text-red-600"
+                onClick={skipAndExit}
+              >
+                Exit Without Reporting
+              </Button>
+              
+              <Button 
+                variant="ghost"
+                className="w-full py-3 text-gray-500"
+                onClick={() => setShowEmergencyModal(false)}
+              >
+                Go Back
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
