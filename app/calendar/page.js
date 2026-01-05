@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
-import { getUser } from '@/lib/auth';
+import { getUser, fetchWithAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 
 const activityIcons = {
@@ -38,11 +38,7 @@ export default function CalendarPage() {
   const [editingActivity, setEditingActivity] = useState(null);
   
   // Availability State
-  const [availabilitySlots, setAvailabilitySlots] = useState([
-    { id: 1, days: 'Mon-Fri', startTime: '6:00 PM', endTime: '9:00 PM' },
-    { id: 2, days: 'Thu', startTime: '10:00 AM', endTime: '8:00 PM' },
-    { id: 3, days: 'Sat', startTime: '7:00 AM', endTime: '10:00 PM' },
-  ]);
+  const [availabilitySlots, setAvailabilitySlots] = useState([]);
   const [availabilityPublic, setAvailabilityPublic] = useState(true);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [editingSlot, setEditingSlot] = useState(null);
@@ -75,65 +71,132 @@ export default function CalendarPage() {
       return;
     }
     setUser(storedUser);
-    generateMockActivities();
+    fetchActivities();
+    fetchAvailability();
   }, []);
 
-  const generateMockActivities = () => {
-    const mockActivities = [
-      { 
-        id: '1', 
-        name: 'Morning Hike', 
-        time: '9:00 AM', 
-        partner: 'Sarah', 
-        type: 'hiking', 
-        completed: true, 
-        date: new Date(),
-        location: 'Bear Mountain Trail',
-        locationDetails: 'Meet at main parking lot',
-        checklist: [
-          { id: 1, text: 'Water bottle', checked: true },
-          { id: 2, text: 'Sunscreen', checked: true },
-          { id: 3, text: 'Trail snacks', checked: false }
-        ],
-        notes: 'Bring hiking poles if available'
-      },
-      { 
-        id: '2', 
-        name: 'Morning Run', 
-        time: '7:00 AM', 
-        partner: 'Alex', 
-        type: 'running', 
-        completed: true, 
-        date: new Date(),
-        location: 'Central Park',
-        checklist: []
-      },
-      { 
-        id: '3', 
-        name: 'Yoga Session', 
-        time: '5:30 PM', 
-        partner: 'Luna', 
-        type: 'yoga', 
-        completed: false, 
-        date: new Date(),
-        location: 'Zen Studio',
-        checklist: [
-          { id: 1, text: 'Yoga mat', checked: false },
-          { id: 2, text: 'Water', checked: false }
-        ]
-      },
-      { 
-        id: '4', 
-        name: 'Spin Session', 
-        time: '6:00 PM', 
-        partner: 'Mike', 
-        type: 'cycling', 
-        completed: false, 
-        date: new Date(Date.now() + 86400000),
-        location: 'SoulCycle Downtown'
-      },
-    ];
-    setActivities(mockActivities);
+  const fetchActivities = async () => {
+    try {
+      const res = await fetchWithAuth('/api/activities');
+      const data = await res.json();
+      if (data.activities) {
+        setActivities(data.activities.map(a => ({
+          id: a.id,
+          name: a.title,
+          time: a.time,
+          type: a.activityType,
+          completed: a.status === 'completed',
+          date: new Date(a.date),
+          location: a.location,
+          checklist: a.checklist || [],
+          notes: a.notes,
+          isPublic: a.isPublic
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to fetch activities:', error);
+    }
+  };
+
+  const fetchAvailability = async () => {
+    try {
+      const res = await fetchWithAuth('/api/calendar/availability');
+      const data = await res.json();
+      if (data.availability && data.availability.slots) {
+        setAvailabilitySlots(data.availability.slots.map((s, i) => ({
+          id: i + 1,
+          days: s.day,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          activity: s.activity
+        })));
+        setAvailabilityPublic(data.availability.isPublic);
+      }
+    } catch (error) {
+      console.error('Failed to fetch availability:', error);
+    }
+  };
+
+  const saveAvailability = async () => {
+    try {
+      const slots = availabilitySlots.map(s => ({
+        day: s.days,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        activity: s.activity || ''
+      }));
+      
+      await fetchWithAuth('/api/calendar/availability', {
+        method: 'POST',
+        body: JSON.stringify({ slots, isPublic: availabilityPublic })
+      });
+      
+      toast.success('Availability saved!');
+    } catch (error) {
+      console.error('Failed to save availability:', error);
+      toast.error('Failed to save availability');
+    }
+  };
+
+  const saveActivity = async (activityData) => {
+    try {
+      if (editingActivity) {
+        // Update existing activity
+        await fetchWithAuth(`/api/activities/${editingActivity.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            title: activityData.name,
+            activityType: activityData.type,
+            date: selectedDate.toISOString().split('T')[0],
+            time: activityData.time,
+            location: activityData.location,
+            checklist: activityData.checklist,
+            notes: activityData.notes,
+            isPublic: activityData.isPublic
+          })
+        });
+        toast.success('Activity updated!');
+      } else {
+        // Create new activity
+        const res = await fetchWithAuth('/api/activities', {
+          method: 'POST',
+          body: JSON.stringify({
+            title: activityData.name,
+            activityType: activityData.type,
+            date: selectedDate.toISOString().split('T')[0],
+            time: activityData.time,
+            location: activityData.location,
+            checklist: activityData.checklist,
+            notes: activityData.notes,
+            isPublic: activityData.isPublic,
+            includInBroadcast: activityData.broadcastMessage ? true : false
+          })
+        });
+        const data = await res.json();
+        toast.success('Activity created!');
+      }
+      
+      fetchActivities();
+      setShowActivityModal(false);
+      setEditingActivity(null);
+    } catch (error) {
+      console.error('Failed to save activity:', error);
+      toast.error('Failed to save activity');
+    }
+  };
+
+  const deleteActivity = async (activityId) => {
+    try {
+      await fetchWithAuth(`/api/activities/${activityId}`, {
+        method: 'DELETE'
+      });
+      toast.success('Activity deleted!');
+      fetchActivities();
+      setSelectedActivity(null);
+    } catch (error) {
+      console.error('Failed to delete activity:', error);
+      toast.error('Failed to delete activity');
+    }
   };
 
   const getDaysInMonth = (date) => {
