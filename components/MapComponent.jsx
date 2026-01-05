@@ -1,36 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-
-// Dynamically import map components to avoid SSR issues
-const MapContainer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const TileLayer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const Marker = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Marker),
-  { ssr: false }
-);
-const Popup = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Popup),
-  { ssr: false }
-);
-const Polyline = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Polyline),
-  { ssr: false }
-);
-const useMap = dynamic(
-  () => import('react-leaflet').then((mod) => mod.useMap),
-  { ssr: false }
-);
+import { useEffect, useState, useRef } from 'react';
 
 export default function MapComponent({ 
-  center = [40.7128, -74.0060], // Default NYC
+  center = [40.7128, -74.0060],
   zoom = 13,
   users = [],
   currentUser = null,
@@ -39,118 +12,139 @@ export default function MapComponent({
   showRoute = false,
   className = ''
 }) {
-  const [isClient, setIsClient] = useState(false);
-  const [L, setL] = useState(null);
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markersRef = useRef([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-    // Import Leaflet on client side
-    import('leaflet').then((leaflet) => {
-      setL(leaflet.default);
-      // Fix default marker icon
-      delete leaflet.default.Icon.Default.prototype._getIconUrl;
-      leaflet.default.Icon.Default.mergeOptions({
+    // Load Leaflet dynamically on client side only
+    const loadLeaflet = async () => {
+      if (typeof window === 'undefined') return;
+      
+      const L = (await import('leaflet')).default;
+      
+      // Fix default marker icons
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
         iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
       });
-    });
+
+      if (mapRef.current && !mapInstanceRef.current) {
+        // Initialize map
+        const map = L.map(mapRef.current).setView(center, zoom);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        mapInstanceRef.current = map;
+        setIsLoaded(true);
+      }
+    };
+
+    loadLeaflet();
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
   }, []);
 
-  if (!isClient || !L) {
-    return (
-      <div className={`bg-gray-200 flex items-center justify-center ${className}`}>
-        <div className="text-gray-500">Loading map...</div>
-      </div>
-    );
-  }
+  // Update markers when users change
+  useEffect(() => {
+    const updateMarkers = async () => {
+      if (!mapInstanceRef.current || !isLoaded) return;
 
-  // Create custom icons
-  const userIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-  });
+      const L = (await import('leaflet')).default;
+      const map = mapInstanceRef.current;
 
-  const currentUserIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-  });
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
 
-  const selectedUserIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-  });
+      // Create custom icons
+      const createIcon = (color) => new L.Icon({
+        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+
+      // Add current user marker
+      if (currentUser?.location) {
+        const marker = L.marker([currentUser.location.lat, currentUser.location.lng], {
+          icon: createIcon('green')
+        }).addTo(map);
+        marker.bindPopup('<strong>You</strong>');
+        markersRef.current.push(marker);
+      }
+
+      // Add other users
+      users.forEach(user => {
+        if (!user.location) return;
+        
+        const isSelected = selectedUser?.id === user.id;
+        const marker = L.marker([user.location.lat, user.location.lng], {
+          icon: createIcon(isSelected ? 'red' : 'blue')
+        }).addTo(map);
+
+        marker.bindPopup(`
+          <div style="text-align: center; min-width: 100px;">
+            <strong>${user.name || 'User'}</strong>
+            <p style="margin: 5px 0; color: #666;">${user.activity || 'Available'}</p>
+            ${user.distance ? `<p style="font-size: 12px; color: #999;">${user.distance} km away</p>` : ''}
+          </div>
+        `);
+
+        marker.on('click', () => {
+          if (onUserClick) onUserClick(user);
+        });
+
+        markersRef.current.push(marker);
+      });
+
+      // Draw route line if needed
+      if (showRoute && currentUser?.location && selectedUser?.location) {
+        const routeLine = L.polyline([
+          [currentUser.location.lat, currentUser.location.lng],
+          [selectedUser.location.lat, selectedUser.location.lng]
+        ], {
+          color: '#1a1aff',
+          weight: 4,
+          dashArray: '10, 10'
+        }).addTo(map);
+        markersRef.current.push(routeLine);
+      }
+    };
+
+    updateMarkers();
+  }, [users, currentUser, selectedUser, showRoute, isLoaded, onUserClick]);
+
+  // Update map center when it changes
+  useEffect(() => {
+    if (mapInstanceRef.current && isLoaded) {
+      mapInstanceRef.current.setView(center, zoom);
+    }
+  }, [center, zoom, isLoaded]);
 
   return (
-    <MapContainer 
-      center={center} 
-      zoom={zoom} 
-      className={className}
-      style={{ height: '100%', width: '100%' }}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    <div className={`relative ${className}`}>
+      <div 
+        ref={mapRef} 
+        style={{ height: '100%', width: '100%', minHeight: '300px' }}
       />
-      
-      {/* Current user marker */}
-      {currentUser && currentUser.location && (
-        <Marker 
-          position={[currentUser.location.lat, currentUser.location.lng]} 
-          icon={currentUserIcon}
-        >
-          <Popup>
-            <div className="text-center">
-              <strong>You</strong>
-            </div>
-          </Popup>
-        </Marker>
+      {!isLoaded && (
+        <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+          <div className="text-gray-500">Loading map...</div>
+        </div>
       )}
-
-      {/* Other users */}
-      {users.map((user) => (
-        <Marker
-          key={user.id}
-          position={[user.location?.lat || 40.7128, user.location?.lng || -74.0060]}
-          icon={selectedUser?.id === user.id ? selectedUserIcon : userIcon}
-          eventHandlers={{
-            click: () => onUserClick?.(user),
-          }}
-        >
-          <Popup>
-            <div className="text-center min-w-[120px]">
-              <strong>{user.name}</strong>
-              <p className="text-sm text-gray-600">{user.activity || 'Available'}</p>
-              {user.distance && <p className="text-xs text-gray-500">{user.distance} km away</p>}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-
-      {/* Route line between current user and selected user */}
-      {showRoute && currentUser?.location && selectedUser?.location && (
-        <Polyline
-          positions={[
-            [currentUser.location.lat, currentUser.location.lng],
-            [selectedUser.location.lat, selectedUser.location.lng]
-          ]}
-          color="#1a1aff"
-          weight={4}
-          dashArray="10, 10"
-        />
-      )}
-    </MapContainer>
+    </div>
   );
 }
