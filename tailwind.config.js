@@ -79,9 +79,9 @@ module.exports = {
                         md: 'calc(var(--radius) - 2px)',
                         sm: 'calc(var(--radius) - 4px)'
                 },
-                        textShadow: {
-                                'glow': '0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.6)',
-                        },
+                textShadow: {
+                        'glow': '0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.6)',
+                },
                 keyframes: {
                         'accordion-down': {
                                 from: {
