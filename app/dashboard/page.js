@@ -493,7 +493,7 @@ export default function Dashboard() {
           {/* STEP 0: Category Selection */}
           {currentStep === 'category' && (
             <div className="animate-fadeIn">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">CHOOSE CATEGORY</h2>
+              <h2 className="text-lg font-bold text-gray-800 mb-4">Choose Your Activity</h2>
               
               <div className="space-y-3 mb-4">
                 {activityCategories.map((category) => {
