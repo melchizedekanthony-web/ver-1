@@ -67,7 +67,7 @@ module.exports = {
                                 'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
                                 border: 'hsl(var(--sidebar-border))',
                                 ring: 'hsl(var(--sidebar-ring))'
-                        }
+                        },
                         gowithme: {
                                 blue: '#1a1aff',
                                 purple: '#4a3aff',
