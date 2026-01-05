@@ -492,20 +492,20 @@ export default function Dashboard() {
           
           {/* STEP 0: Category Selection */}
           {currentStep === 'category' && (
-            <div className="animate-fadeIn">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">Choose Your Activity</h2>
+            <div className="animate-fadeIn h-full flex flex-col justify-center items-center">
+              <h2 className="text-lg font-bold text-gray-800 mb-6 text-center">Choose Your Activity</h2>
               
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-2 gap-6 w-full max-w-md">
                 {activityCategories.map((category) => {
                   const Icon = category.icon;
                   return (
                     <button
                       key={category.id}
                       onClick={() => handleCategorySelect(category)}
-                      className="flex flex-col items-center justify-center p-5 bg-gray-50 rounded-2xl hover:bg-blue-50 hover:border-[#2B2D9E] border-2 border-transparent transition-all shadow-sm hover:shadow-md"
+                      className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl hover:bg-blue-50 hover:border-[#2B2D9E] border-2 border-transparent transition-all shadow-sm hover:shadow-md"
                     >
-                      <div className="w-14 h-14 rounded-full bg-[#2B2D9E] flex items-center justify-center mb-3">
-                        <Icon className="w-7 h-7 text-white" />
+                      <div className="w-16 h-16 rounded-full bg-[#2B2D9E] flex items-center justify-center mb-3">
+                        <Icon className="w-8 h-8 text-white" />
                       </div>
                       <p className="font-bold text-gray-800 text-center">{category.name}</p>
                     </button>
