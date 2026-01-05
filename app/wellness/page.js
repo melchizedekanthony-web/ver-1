@@ -98,35 +98,100 @@ export default function WellnessPage() {
       return;
     }
     setUser(storedUser);
-    const savedCart = localStorage.getItem('wannago_cart');
-    if (savedCart) setCart(JSON.parse(savedCart));
+    fetchCart();
   }, []);
 
-  const addToCart = (product) => {
-    const existing = cart.find(item => item.id === product.id);
-    let newCart;
-    if (existing) {
-      newCart = cart.map(item => 
-        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-      );
-    } else {
-      newCart = [...cart, { ...product, quantity: 1 }];
+  const fetchCart = async () => {
+    try {
+      const res = await fetchWithAuth('/api/cart');
+      const data = await res.json();
+      if (data.cart) {
+        setCart(data.cart.map(item => ({
+          id: item.productId,
+          name: item.productName,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.imageUrl
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to fetch cart:', error);
+      // Fall back to localStorage
+      const savedCart = localStorage.getItem('wannago_cart');
+      if (savedCart) setCart(JSON.parse(savedCart));
     }
-    setCart(newCart);
-    localStorage.setItem('wannago_cart', JSON.stringify(newCart));
-    toast.success(`${product.name} added to cart!`);
   };
 
-  const updateQuantity = (productId, delta) => {
-    const newCart = cart.map(item => {
-      if (item.id === productId) {
-        const newQty = item.quantity + delta;
-        return newQty > 0 ? { ...item, quantity: newQty } : null;
+  const addToCart = async (product) => {
+    try {
+      const res = await fetchWithAuth('/api/cart/add', {
+        method: 'POST',
+        body: JSON.stringify({
+          productId: product.id,
+          productName: product.name,
+          price: product.price,
+          quantity: 1,
+          imageUrl: product.image
+        })
+      });
+      
+      const data = await res.json();
+      if (data.cart) {
+        setCart(data.cart.map(item => ({
+          id: item.productId,
+          name: item.productName,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.imageUrl
+        })));
       }
-      return item;
-    }).filter(Boolean);
-    setCart(newCart);
-    localStorage.setItem('wannago_cart', JSON.stringify(newCart));
+      toast.success(`${product.name} added to cart!`);
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      // Fall back to local cart
+      const existing = cart.find(item => item.id === product.id);
+      let newCart;
+      if (existing) {
+        newCart = cart.map(item => 
+          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      } else {
+        newCart = [...cart, { ...product, quantity: 1 }];
+      }
+      setCart(newCart);
+      localStorage.setItem('wannago_cart', JSON.stringify(newCart));
+      toast.success(`${product.name} added to cart!`);
+    }
+  };
+
+  const updateQuantity = async (productId, delta) => {
+    const item = cart.find(i => i.id === productId);
+    if (!item) return;
+    
+    const newQuantity = item.quantity + delta;
+    
+    try {
+      if (newQuantity <= 0) {
+        await fetchWithAuth(`/api/cart/${productId}`, { method: 'DELETE' });
+      } else {
+        await fetchWithAuth(`/api/cart/${productId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ quantity: newQuantity })
+        });
+      }
+      fetchCart();
+    } catch (error) {
+      console.error('Update quantity error:', error);
+      // Fall back to local update
+      const newCart = cart.map(item => {
+        if (item.id === productId) {
+          return newQuantity > 0 ? { ...item, quantity: newQuantity } : null;
+        }
+        return item;
+      }).filter(Boolean);
+      setCart(newCart);
+      localStorage.setItem('wannago_cart', JSON.stringify(newCart));
+    }
   };
 
   const toggleFavorite = (productId) => {
