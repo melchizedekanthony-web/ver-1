@@ -116,6 +116,15 @@ const groupOptions = [
   { id: 'merge', name: 'Merge Groups', description: 'Combine with others' },
 ];
 
+// Accessible options
+const accessibleOptions = [
+  { id: 'wheelchair', name: 'Wheelchair Accessible', description: 'Activities suitable for wheelchair users' },
+  { id: 'visual', name: 'Visual Impairment', description: 'Connect with visually impaired users' },
+  { id: 'hearing', name: 'Hearing Impairment', description: 'Connect with deaf/hard of hearing users' },
+  { id: 'mobility', name: 'Limited Mobility', description: 'Adaptive activities for mobility needs' },
+  { id: 'any', name: 'All Inclusive', description: 'Open to connecting with anyone' },
+];
+
 export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
