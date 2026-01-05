@@ -417,54 +417,45 @@ export default function Dashboard() {
         {/* Panel Content */}
         <div className="px-4 pb-4 overflow-y-auto max-h-[calc(55vh-60px)]">
           
-          {/* STEP 1: Activity Selection (Dropdown) */}
+          {/* STEP 1: Activity Selection (Simple Text Dropdown) */}
           {currentStep === 'activity' && (
             <div className="animate-fadeIn">
               <h2 className="text-lg font-bold text-gray-800 mb-4">CHOOSE ACTIVITY</h2>
               
-              {/* Activity Dropdown */}
+              {/* Simple Text Dropdown */}
               <div className="relative mb-4">
                 <button
                   onClick={() => setShowActivityDropdown(!showActivityDropdown)}
-                  className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-2xl border-2 border-gray-200 hover:border-[#2B2D9E] transition-colors"
+                  className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border-2 border-gray-200 hover:border-[#2B2D9E] transition-colors"
                 >
-                  <span className="text-gray-500">
-                    {selectedActivity ? (
-                      <span className="flex items-center gap-2 text-gray-800">
-                        <selectedActivity.icon className="w-5 h-5" />
-                        {selectedActivity.name}
-                      </span>
-                    ) : (
-                      'Select an activity...'
-                    )}
+                  <span className={selectedActivity ? 'text-[#2B2D9E] font-semibold' : 'text-gray-500'}>
+                    {selectedActivity ? selectedActivity.name : 'Select an activity...'}
                   </span>
                   <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showActivityDropdown ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Dropdown Menu */}
+                {/* Simple Text Dropdown Menu */}
                 {showActivityDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 max-h-64 overflow-y-auto">
-                    {activities.map((activity) => {
-                      const Icon = activity.icon;
-                      return (
-                        <button
-                          key={activity.id}
-                          onClick={() => handleActivitySelect(activity)}
-                          className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors first:rounded-t-2xl last:rounded-b-2xl"
-                        >
-                          <div className={`w-10 h-10 rounded-full ${activity.color} flex items-center justify-center`}>
-                            <Icon className="w-5 h-5" />
-                          </div>
-                          <span className="font-medium text-gray-800">{activity.name}</span>
-                        </button>
-                      );
-                    })}
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 max-h-72 overflow-y-auto">
+                    {activities.map((activity) => (
+                      <button
+                        key={activity.id}
+                        onClick={() => handleActivitySelect(activity)}
+                        className={`w-full text-left px-4 py-3 transition-colors first:rounded-t-2xl last:rounded-b-2xl ${
+                          selectedActivity?.id === activity.id
+                            ? 'bg-[#2B2D9E] text-white font-semibold'
+                            : 'text-gray-700 hover:bg-blue-50 hover:text-[#2B2D9E]'
+                        }`}
+                      >
+                        {activity.name}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
 
               <p className="text-center text-gray-400 text-sm">
-                Select an activity to find companions nearby
+                Tap to select, then proceed to find companions
               </p>
             </div>
           )}
