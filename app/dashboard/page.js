@@ -8,11 +8,14 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Search, MapPin, Coffee, Film, Music, Dumbbell, Mountain, Bike, 
   BookOpen, Heart, Users, Utensils, X, Star, ChevronUp, ChevronDown,
   Camera, Dog, Palette, Trophy, GraduationCap, UserPlus, UsersRound,
-  MessageSquare, Send, Clock, Filter, Zap, ArrowLeft, Check, Accessibility
+  MessageSquare, Send, Clock, Filter, Zap, ArrowLeft, Check, Accessibility,
+  Home, RotateCcw, Car, Gamepad2, Wrench, Mic, Brush
 } from 'lucide-react';
 import { toast } from 'sonner';
 import BottomNav from '@/components/BottomNav';
@@ -34,20 +37,37 @@ const MapComponent = dynamic(
   }
 );
 
-// Activity definitions with icons and colors
-const activities = [
+// Categories
+const activityCategories = [
+  { id: 'athletic', name: 'Athletic', description: 'Physical & fitness activities', icon: Dumbbell },
+  { id: 'non-athletic', name: 'Non-Athletic', description: 'Social & creative activities', icon: Palette },
+];
+
+// Athletic activities
+const athleticActivities = [
   { id: 'hiking', name: 'Hiking', icon: Mountain, color: 'bg-green-100 text-green-600' },
   { id: 'running', name: 'Running', icon: Zap, color: 'bg-orange-100 text-orange-600' },
+  { id: 'gym', name: 'Gym', icon: Dumbbell, color: 'bg-blue-100 text-blue-600' },
+  { id: 'cycling', name: 'Cycling', icon: Bike, color: 'bg-cyan-100 text-cyan-600' },
+  { id: 'yoga', name: 'Yoga', icon: Heart, color: 'bg-rose-100 text-rose-600' },
+  { id: 'swimming', name: 'Swimming', icon: Zap, color: 'bg-sky-100 text-sky-600' },
+  { id: 'basketball', name: 'Basketball', icon: Zap, color: 'bg-amber-100 text-amber-600' },
+  { id: 'tennis', name: 'Tennis', icon: Zap, color: 'bg-lime-100 text-lime-600' },
+];
+
+// Non-athletic activities
+const nonAthleticActivities = [
   { id: 'coffee', name: 'Coffee', icon: Coffee, color: 'bg-amber-100 text-amber-600' },
   { id: 'cinema', name: 'Cinema', icon: Film, color: 'bg-purple-100 text-purple-600' },
   { id: 'concert', name: 'Concert', icon: Music, color: 'bg-pink-100 text-pink-600' },
-  { id: 'gym', name: 'Gym', icon: Dumbbell, color: 'bg-blue-100 text-blue-600' },
-  { id: 'cycling', name: 'Cycling', icon: Bike, color: 'bg-cyan-100 text-cyan-600' },
   { id: 'dining', name: 'Dining', icon: Utensils, color: 'bg-red-100 text-red-600' },
   { id: 'bookclub', name: 'Book Club', icon: BookOpen, color: 'bg-indigo-100 text-indigo-600' },
-  { id: 'yoga', name: 'Yoga', icon: Heart, color: 'bg-rose-100 text-rose-600' },
-  { id: 'dogwalking', name: 'Dog Walking', icon: Dog, color: 'bg-yellow-100 text-yellow-600' },
   { id: 'photography', name: 'Photography', icon: Camera, color: 'bg-slate-100 text-slate-600' },
+  { id: 'gaming', name: 'Gaming', icon: Gamepad2, color: 'bg-violet-100 text-violet-600' },
+  { id: 'music', name: 'Music/Jam', icon: Mic, color: 'bg-fuchsia-100 text-fuchsia-600' },
+  { id: 'cars', name: 'Cars/Mechanics', icon: Wrench, color: 'bg-gray-100 text-gray-600' },
+  { id: 'art', name: 'Art/Creative', icon: Brush, color: 'bg-teal-100 text-teal-600' },
+  { id: 'dogwalking', name: 'Dog Walking', icon: Dog, color: 'bg-yellow-100 text-yellow-600' },
 ];
 
 // Connection types
@@ -131,12 +151,13 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   
   // UI State
-  const [currentStep, setCurrentStep] = useState('activity'); // activity, connection, broadcast, matching, chat
+  const [currentStep, setCurrentStep] = useState('category'); // category, activity, connection, broadcast, matching, chat
   const [panelExpanded, setPanelExpanded] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [showActivityDropdown, setShowActivityDropdown] = useState(false);
   
   // Selection State
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedConnection, setSelectedConnection] = useState(null);
   const [selectedGroupOption, setSelectedGroupOption] = useState(null);
@@ -145,7 +166,25 @@ export default function Dashboard() {
   // Broadcast Parameters
   const [broadcastRadius, setBroadcastRadius] = useState([5]);
   const [targetingOption, setTargetingOption] = useState('anyone');
-  const [skillLevel, setSkillLevel] = useState('any');
+  
+  // Advanced Filters
+  const [advancedFilters, setAdvancedFilters] = useState({
+    skillLevel: 'any',
+    intensity: 'moderate',
+    hasInjury: false,
+    injuryNotes: '',
+    ageRange: [18, 60],
+    genderPreference: 'any',
+    comments: '',
+    // Trainer specific
+    trainerCertified: false,
+    trainerSpecialty: '',
+    trainerExperience: 'any',
+    // Competitor specific
+    competitorLevel: 'any',
+    competitorStyle: 'friendly',
+    wagerAllowed: false
+  });
   
   // Map & Users State
   const [nearbyUsers, setNearbyUsers] = useState([]);
@@ -224,6 +263,11 @@ export default function Dashboard() {
     }
   };
 
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);
+    setCurrentStep('activity');
+  };
+
   const handleActivitySelect = (activity) => {
     setSelectedActivity(activity);
     setShowActivityDropdown(false);
@@ -234,6 +278,9 @@ export default function Dashboard() {
     setSelectedConnection(connectionId);
     if (connectionId !== 'group') {
       setSelectedGroupOption(null);
+    }
+    if (connectionId !== 'accessible') {
+      setSelectedAccessibleOption(null);
     }
   };
 
@@ -261,7 +308,6 @@ export default function Dashboard() {
 
     setIsBroadcasting(true);
 
-    // Simulate broadcast with "Spreading The Word..." message
     await new Promise(resolve => setTimeout(resolve, 2500));
 
     setIsBroadcasting(false);
@@ -285,7 +331,6 @@ export default function Dashboard() {
     }]);
     setNewMessage('');
 
-    // Simulate reply
     setTimeout(() => {
       setChatMessages(prev => [...prev, {
         id: Date.now() + 1,
@@ -301,8 +346,40 @@ export default function Dashboard() {
     router.push(`/connect/${selectedUser.id}?activity=${selectedActivity?.id}`);
   };
 
+  const resetFlow = () => {
+    setCurrentStep('category');
+    setSelectedCategory(null);
+    setSelectedActivity(null);
+    setSelectedConnection(null);
+    setSelectedGroupOption(null);
+    setSelectedAccessibleOption(null);
+    setSelectedUser(null);
+    setChatMessages([]);
+    setShowFilters(false);
+    setAdvancedFilters({
+      skillLevel: 'any',
+      intensity: 'moderate',
+      hasInjury: false,
+      injuryNotes: '',
+      ageRange: [18, 60],
+      genderPreference: 'any',
+      comments: '',
+      trainerCertified: false,
+      trainerSpecialty: '',
+      trainerExperience: 'any',
+      competitorLevel: 'any',
+      competitorStyle: 'friendly',
+      wagerAllowed: false
+    });
+    toast.info('Starting over');
+  };
+
   const goBack = () => {
     switch (currentStep) {
+      case 'activity':
+        setCurrentStep('category');
+        setSelectedCategory(null);
+        break;
       case 'connection':
         setCurrentStep('activity');
         setSelectedActivity(null);
@@ -323,6 +400,12 @@ export default function Dashboard() {
     }
   };
 
+  const getActivitiesForCategory = () => {
+    if (selectedCategory?.id === 'athletic') return athleticActivities;
+    if (selectedCategory?.id === 'non-athletic') return nonAthleticActivities;
+    return [];
+  };
+
   const quickMessages = ['Sounds good!', 'What time?', 'Where should we meet?', 'What\'s your pace?', 'I\'m flexible'];
 
   if (loading) {
@@ -334,9 +417,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
-      {/* Map Section - Takes remaining space */}
-      <div className="flex-1 relative">
+    <div className="h-screen flex flex-col bg-gray-100 overflow-hidden pb-16">
+      {/* Map Section - 50% of screen */}
+      <div className="h-[40vh] relative">
         <MapComponent
           center={[userLocation.lat, userLocation.lng]}
           zoom={13}
@@ -352,75 +435,103 @@ export default function Dashboard() {
         {isBroadcasting && (
           <div className="absolute inset-0 bg-[#2B2D9E]/80 flex items-center justify-center z-20">
             <div className="text-center text-white">
-              <div className="relative w-24 h-24 mx-auto mb-4">
+              <div className="relative w-20 h-20 mx-auto mb-4">
                 <div className="absolute inset-0 rounded-full border-4 border-white/30 animate-ping"></div>
                 <div className="absolute inset-2 rounded-full border-4 border-white/50 animate-ping animation-delay-200"></div>
                 <div className="absolute inset-4 rounded-full border-4 border-white/70 animate-ping animation-delay-400"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <MapPin className="w-10 h-10 text-white" />
+                  <MapPin className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <p className="text-2xl font-bold mb-2">Spreading The Word...</p>
-              <p className="text-white/70">Looking for {selectedActivity?.name} {getSelectedConnectionType()?.name}s nearby</p>
+              <p className="text-xl font-bold mb-2">Spreading The Word...</p>
+              <p className="text-white/70 text-sm">Looking for {selectedActivity?.name} {getSelectedConnectionType()?.name}s</p>
             </div>
           </div>
         )}
 
-        {/* Radius Indicator Overlay */}
-        {currentStep === 'broadcast' && !isBroadcasting && (
-          <div className="absolute top-4 left-4 bg-white/95 backdrop-blur rounded-2xl px-4 py-2 shadow-lg">
-            <p className="text-sm font-medium text-gray-700">
-              <span className="text-[#2B2D9E] font-bold">{usersInRadius}</span> users within {broadcastRadius[0]} mi
-            </p>
-          </div>
-        )}
-
-        {/* Activity & Connection Badge */}
-        {selectedActivity && currentStep !== 'activity' && currentStep !== 'chat' && !isBroadcasting && (
-          <div className="absolute top-4 right-4 bg-white/95 backdrop-blur rounded-2xl px-4 py-2 shadow-lg flex items-center gap-2">
-            <selectedActivity.icon className="w-4 h-4 text-[#2B2D9E]" />
-            <span className="text-sm font-medium">{selectedActivity.name}</span>
-            {selectedConnection && (
-              <>
-                <span className="text-gray-300">|</span>
-                <span className={`text-sm font-medium ${getSelectedConnectionType()?.textColor}`}>
-                  {getSelectedConnectionType()?.name}
-                </span>
-              </>
-            )}
-          </div>
-        )}
+        {/* Top Controls */}
+        <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
+          {/* Status Badge */}
+          {currentStep !== 'category' && (
+            <div className="bg-white/95 backdrop-blur rounded-xl px-3 py-2 shadow-lg">
+              <p className="text-xs font-medium text-gray-600">
+                {selectedCategory?.name} {selectedActivity && `› ${selectedActivity.name}`}
+              </p>
+            </div>
+          )}
+          
+          {/* Reset Button */}
+          {currentStep !== 'category' && (
+            <button 
+              onClick={resetFlow}
+              className="bg-white/95 backdrop-blur rounded-full p-2 shadow-lg hover:bg-white transition-colors"
+            >
+              <RotateCcw className="w-5 h-5 text-[#2B2D9E]" />
+            </button>
+          )}
+        </div>
 
         {/* Center on User Button */}
         <button 
           onClick={getUserLocation}
-          className="absolute bottom-4 right-4 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow z-10"
+          className="absolute bottom-3 right-3 bg-white rounded-full p-2.5 shadow-lg hover:shadow-xl transition-shadow z-10"
         >
           <MapPin className="w-5 h-5 text-[#2B2D9E]" />
         </button>
       </div>
 
-      {/* Bottom Panel - Sliding Sheet */}
-      <div 
-        className={`bg-white rounded-t-3xl shadow-2xl transition-all duration-300 ease-out ${
-          panelExpanded ? 'max-h-[55vh]' : 'max-h-20'
-        } overflow-hidden`}
-      >
+      {/* Bottom Panel - 60% of screen */}
+      <div className="flex-1 bg-white rounded-t-3xl shadow-2xl -mt-4 relative z-10 overflow-hidden flex flex-col">
         {/* Panel Handle */}
-        <button 
-          onClick={() => setPanelExpanded(!panelExpanded)}
-          className="w-full py-3 flex justify-center"
-        >
-          <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-        </button>
+        <div className="py-2 flex justify-center flex-shrink-0">
+          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+        </div>
 
         {/* Panel Content */}
-        <div className="px-4 pb-4 overflow-y-auto max-h-[calc(55vh-60px)]">
+        <div className="flex-1 px-4 pb-4 overflow-y-auto">
           
-          {/* STEP 1: Activity Selection (Simple Text Dropdown) */}
+          {/* STEP 0: Category Selection */}
+          {currentStep === 'category' && (
+            <div className="animate-fadeIn">
+              <h2 className="text-lg font-bold text-gray-800 mb-4">CHOOSE CATEGORY</h2>
+              
+              <div className="space-y-3 mb-4">
+                {activityCategories.map((category) => {
+                  const Icon = category.icon;
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => handleCategorySelect(category)}
+                      className="w-full flex items-center gap-4 p-4 bg-gray-50 rounded-2xl hover:bg-blue-50 hover:border-[#2B2D9E] border-2 border-transparent transition-all"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-[#2B2D9E] flex items-center justify-center">
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-gray-800">{category.name}</p>
+                        <p className="text-sm text-gray-500">{category.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* STEP 1: Activity Selection */}
           {currentStep === 'activity' && (
             <div className="animate-fadeIn">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">CHOOSE ACTIVITY</h2>
+              <button 
+                onClick={goBack}
+                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-3 hover:opacity-70 transition-opacity"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span>Back</span>
+              </button>
+
+              <h2 className="text-lg font-bold text-gray-800 mb-3">
+                CHOOSE {selectedCategory?.name?.toUpperCase()} ACTIVITY
+              </h2>
               
               {/* Simple Text Dropdown */}
               <div className="relative mb-4">
@@ -434,10 +545,9 @@ export default function Dashboard() {
                   <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showActivityDropdown ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Simple Text Dropdown Menu */}
                 {showActivityDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 max-h-72 overflow-y-auto">
-                    {activities.map((activity) => (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 max-h-48 overflow-y-auto">
+                    {getActivitiesForCategory().map((activity) => (
                       <button
                         key={activity.id}
                         onClick={() => handleActivitySelect(activity)}
@@ -453,28 +563,23 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-
-              <p className="text-center text-gray-400 text-sm">
-                Tap to select, then proceed to find companions
-              </p>
             </div>
           )}
 
           {/* STEP 2: Connection Type */}
           {currentStep === 'connection' && (
             <div className="animate-fadeIn">
-              {/* Back Button */}
               <button 
                 onClick={goBack}
-                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-4 hover:opacity-70 transition-opacity"
+                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-3 hover:opacity-70 transition-opacity"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span>Back</span>
               </button>
 
-              <h2 className="text-lg font-bold text-gray-800 mb-4">CONNECTION TYPE</h2>
+              <h2 className="text-lg font-bold text-gray-800 mb-3">CONNECTION TYPE</h2>
 
-              <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="grid grid-cols-2 gap-2 mb-3">
                 {connectionTypes.map((type) => {
                   const Icon = type.icon;
                   const isSelected = selectedConnection === type.id;
@@ -482,19 +587,19 @@ export default function Dashboard() {
                     <button
                       key={type.id}
                       onClick={() => handleConnectionSelect(type.id)}
-                      className={`p-4 rounded-2xl border-2 transition-all duration-200 text-left ${
+                      className={`p-3 rounded-xl border-2 transition-all duration-200 text-left ${
                         isSelected
                           ? `${type.borderColor} ${type.lightBg}`
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-full ${type.color} flex items-center justify-center mb-2`}>
-                        <Icon className="w-5 h-5 text-white" />
+                      <div className={`w-8 h-8 rounded-full ${type.color} flex items-center justify-center mb-1`}>
+                        <Icon className="w-4 h-4 text-white" />
                       </div>
-                      <p className={`font-bold text-sm ${isSelected ? type.textColor : 'text-gray-800'}`}>
+                      <p className={`font-bold text-xs ${isSelected ? type.textColor : 'text-gray-800'}`}>
                         {type.displayName}
                       </p>
-                      <p className="text-xs text-gray-500">{type.description}</p>
+                      <p className="text-[10px] text-gray-500 leading-tight">{type.description}</p>
                     </button>
                   );
                 })}
@@ -502,21 +607,20 @@ export default function Dashboard() {
 
               {/* Group Options */}
               {selectedConnection === 'group' && (
-                <div className="mb-4 p-4 bg-green-50 rounded-2xl">
-                  <p className="text-sm font-semibold text-green-800 mb-3">Group Options</p>
-                  <div className="space-y-2">
+                <div className="mb-3 p-3 bg-green-50 rounded-xl">
+                  <p className="text-xs font-semibold text-green-800 mb-2">Group Options</p>
+                  <div className="space-y-1">
                     {groupOptions.map((option) => (
                       <button
                         key={option.id}
                         onClick={() => setSelectedGroupOption(option.id)}
-                        className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
+                        className={`w-full p-2 rounded-lg border text-left transition-all text-sm ${
                           selectedGroupOption === option.id
                             ? 'border-green-500 bg-green-100'
                             : 'border-gray-200 bg-white hover:border-green-300'
                         }`}
                       >
-                        <p className="font-medium text-sm">{option.name}</p>
-                        <p className="text-xs text-gray-500">{option.description}</p>
+                        <p className="font-medium text-xs">{option.name}</p>
                       </button>
                     ))}
                   </div>
@@ -525,21 +629,20 @@ export default function Dashboard() {
 
               {/* Accessible Options */}
               {selectedConnection === 'accessible' && (
-                <div className="mb-4 p-4 bg-purple-50 rounded-2xl">
-                  <p className="text-sm font-semibold text-purple-800 mb-3">Accessibility Preferences</p>
-                  <div className="space-y-2">
+                <div className="mb-3 p-3 bg-purple-50 rounded-xl">
+                  <p className="text-xs font-semibold text-purple-800 mb-2">Accessibility Preferences</p>
+                  <div className="space-y-1">
                     {accessibleOptions.map((option) => (
                       <button
                         key={option.id}
                         onClick={() => setSelectedAccessibleOption(option.id)}
-                        className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
+                        className={`w-full p-2 rounded-lg border text-left transition-all text-sm ${
                           selectedAccessibleOption === option.id
                             ? 'border-purple-500 bg-purple-100'
                             : 'border-gray-200 bg-white hover:border-purple-300'
                         }`}
                       >
-                        <p className="font-medium text-sm">{option.name}</p>
-                        <p className="text-xs text-gray-500">{option.description}</p>
+                        <p className="font-medium text-xs">{option.name}</p>
                       </button>
                     ))}
                   </div>
@@ -549,7 +652,7 @@ export default function Dashboard() {
               <Button 
                 onClick={() => selectedConnection && setCurrentStep('broadcast')}
                 disabled={!selectedConnection || (selectedConnection === 'group' && !selectedGroupOption) || (selectedConnection === 'accessible' && !selectedAccessibleOption)}
-                className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-bold rounded-2xl disabled:opacity-50 transition-all"
+                className="w-full py-5 bg-[#2B2D9E] hover:bg-[#1f2175] text-white font-bold rounded-xl disabled:opacity-50 transition-all"
               >
                 CONTINUE
               </Button>
@@ -559,22 +662,21 @@ export default function Dashboard() {
           {/* STEP 3: Broadcast Parameters */}
           {currentStep === 'broadcast' && (
             <div className="animate-fadeIn">
-              {/* Back Button */}
               <button 
                 onClick={goBack}
-                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-4 hover:opacity-70 transition-opacity"
+                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-3 hover:opacity-70 transition-opacity"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span>Back</span>
               </button>
 
-              <h2 className="text-lg font-bold text-gray-800 mb-4">BROADCAST</h2>
+              <h2 className="text-lg font-bold text-gray-800 mb-3">BROADCAST</h2>
 
               {/* Radius Slider */}
-              <div className="mb-6">
-                <div className="flex justify-between items-center mb-2">
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-1">
                   <span className="text-sm font-medium text-gray-700">Search Radius</span>
-                  <span className="text-sm font-bold text-[#2B2D9E]">{broadcastRadius[0]} miles</span>
+                  <span className="text-sm font-bold text-[#2B2D9E]">{broadcastRadius[0]} mi</span>
                 </div>
                 <Slider
                   value={broadcastRadius}
@@ -584,26 +686,22 @@ export default function Dashboard() {
                   step={0.5}
                   className="w-full"
                 />
-                <div className="flex justify-between text-xs text-gray-400 mt-1">
-                  <span>0.5 mi</span>
-                  <span>25 mi</span>
-                </div>
               </div>
 
               {/* Targeting Options */}
-              <div className="mb-6">
-                <p className="text-sm font-medium text-gray-700 mb-2">Who to Broadcast To</p>
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Broadcast To</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { id: 'anyone', label: 'Anyone Available' },
-                    { id: 'connections', label: 'Previous Connections' },
-                    { id: 'favorites', label: 'Favorites Only' },
-                    { id: 'specific', label: 'Specific Person' },
+                    { id: 'anyone', label: 'Anyone' },
+                    { id: 'connections', label: 'Connections' },
+                    { id: 'favorites', label: 'Favorites' },
+                    { id: 'specific', label: 'Specific' },
                   ].map((option) => (
                     <button
                       key={option.id}
                       onClick={() => setTargetingOption(option.id)}
-                      className={`p-3 rounded-xl text-sm font-medium transition-all ${
+                      className={`p-2 rounded-lg text-xs font-medium transition-all ${
                         targetingOption === option.id
                           ? 'bg-[#2B2D9E] text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -618,7 +716,7 @@ export default function Dashboard() {
               {/* Advanced Filters Toggle */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 text-sm text-[#2B2D9E] font-medium mb-4"
+                className="flex items-center gap-2 text-sm text-[#2B2D9E] font-medium mb-3"
               >
                 <Filter className="w-4 h-4" />
                 Advanced Filters
@@ -626,16 +724,17 @@ export default function Dashboard() {
               </button>
 
               {showFilters && (
-                <div className="mb-6 p-4 bg-gray-50 rounded-2xl space-y-4">
+                <div className="mb-4 p-3 bg-gray-50 rounded-xl space-y-4 text-sm">
+                  {/* Intensity */}
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Skill Level</p>
+                    <p className="font-medium text-gray-700 mb-2">Intensity Level</p>
                     <div className="flex gap-2">
-                      {['any', 'beginner', 'intermediate', 'advanced'].map((level) => (
+                      {['light', 'moderate', 'intense', 'extreme'].map((level) => (
                         <button
                           key={level}
-                          onClick={() => setSkillLevel(level)}
-                          className={`px-3 py-2 rounded-lg text-xs font-medium capitalize transition-all ${
-                            skillLevel === level
+                          onClick={() => setAdvancedFilters(f => ({ ...f, intensity: level }))}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${
+                            advancedFilters.intensity === level
                               ? 'bg-[#2B2D9E] text-white'
                               : 'bg-white text-gray-600 hover:bg-gray-100'
                           }`}
@@ -645,14 +744,167 @@ export default function Dashboard() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Skill Level */}
+                  <div>
+                    <p className="font-medium text-gray-700 mb-2">Skill Level</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {['any', 'beginner', 'intermediate', 'advanced', 'pro'].map((level) => (
+                        <button
+                          key={level}
+                          onClick={() => setAdvancedFilters(f => ({ ...f, skillLevel: level }))}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${
+                            advancedFilters.skillLevel === level
+                              ? 'bg-[#2B2D9E] text-white'
+                              : 'bg-white text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Injury Considerations */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-medium text-gray-700">Injury/Limitation?</p>
+                      <Switch 
+                        checked={advancedFilters.hasInjury}
+                        onCheckedChange={(checked) => setAdvancedFilters(f => ({ ...f, hasInjury: checked }))}
+                      />
+                    </div>
+                    {advancedFilters.hasInjury && (
+                      <Input 
+                        placeholder="Describe injury/limitation..."
+                        value={advancedFilters.injuryNotes}
+                        onChange={(e) => setAdvancedFilters(f => ({ ...f, injuryNotes: e.target.value }))}
+                        className="text-sm"
+                      />
+                    )}
+                  </div>
+
+                  {/* Comments/Preferences */}
+                  <div>
+                    <p className="font-medium text-gray-700 mb-2">Comments & Preferences</p>
+                    <Textarea 
+                      placeholder="Any specific preferences or notes..."
+                      value={advancedFilters.comments}
+                      onChange={(e) => setAdvancedFilters(f => ({ ...f, comments: e.target.value }))}
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* Trainer Specific Options */}
+                  {selectedConnection === 'trainer' && (
+                    <div className="p-3 bg-orange-50 rounded-lg space-y-3">
+                      <p className="font-semibold text-orange-800 text-xs">Trainer Preferences</p>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700 text-xs">Certified Only</span>
+                        <Switch 
+                          checked={advancedFilters.trainerCertified}
+                          onCheckedChange={(checked) => setAdvancedFilters(f => ({ ...f, trainerCertified: checked }))}
+                        />
+                      </div>
+                      
+                      <div>
+                        <p className="text-xs text-gray-700 mb-1">Specialty</p>
+                        <select 
+                          className="w-full p-2 border rounded-lg text-xs"
+                          value={advancedFilters.trainerSpecialty}
+                          onChange={(e) => setAdvancedFilters(f => ({ ...f, trainerSpecialty: e.target.value }))}
+                        >
+                          <option value="">Any Specialty</option>
+                          <option value="strength">Strength Training</option>
+                          <option value="cardio">Cardio</option>
+                          <option value="flexibility">Flexibility/Yoga</option>
+                          <option value="sports">Sports Specific</option>
+                          <option value="rehab">Rehabilitation</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-700 mb-1">Experience Level</p>
+                        <div className="flex gap-1">
+                          {['any', '1-3 yrs', '3-5 yrs', '5+ yrs'].map((exp) => (
+                            <button
+                              key={exp}
+                              onClick={() => setAdvancedFilters(f => ({ ...f, trainerExperience: exp }))}
+                              className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
+                                advancedFilters.trainerExperience === exp
+                                  ? 'bg-orange-500 text-white'
+                                  : 'bg-white text-gray-600'
+                              }`}
+                            >
+                              {exp}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Competitor Specific Options */}
+                  {selectedConnection === 'competitor' && (
+                    <div className="p-3 bg-red-50 rounded-lg space-y-3">
+                      <p className="font-semibold text-red-800 text-xs">Competitor Preferences</p>
+                      
+                      <div>
+                        <p className="text-xs text-gray-700 mb-1">Competition Level</p>
+                        <div className="flex gap-1">
+                          {['any', 'casual', 'serious', 'pro'].map((level) => (
+                            <button
+                              key={level}
+                              onClick={() => setAdvancedFilters(f => ({ ...f, competitorLevel: level }))}
+                              className={`px-2 py-1 rounded text-[10px] font-medium capitalize transition-all ${
+                                advancedFilters.competitorLevel === level
+                                  ? 'bg-red-500 text-white'
+                                  : 'bg-white text-gray-600'
+                              }`}
+                            >
+                              {level}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-gray-700 mb-1">Competition Style</p>
+                        <div className="flex gap-1">
+                          {['friendly', 'competitive', 'intense'].map((style) => (
+                            <button
+                              key={style}
+                              onClick={() => setAdvancedFilters(f => ({ ...f, competitorStyle: style }))}
+                              className={`px-2 py-1 rounded text-[10px] font-medium capitalize transition-all ${
+                                advancedFilters.competitorStyle === style
+                                  ? 'bg-red-500 text-white'
+                                  : 'bg-white text-gray-600'
+                              }`}
+                            >
+                              {style}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700 text-xs">Open to Wagers?</span>
+                        <Switch 
+                          checked={advancedFilters.wagerAllowed}
+                          onCheckedChange={(checked) => setAdvancedFilters(f => ({ ...f, wagerAllowed: checked }))}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Dynamic Broadcast Button */}
               <Button 
                 onClick={handleBroadcast}
                 disabled={isBroadcasting}
-                className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-bold rounded-2xl disabled:opacity-50 transition-all"
+                className="w-full py-5 bg-[#2B2D9E] hover:bg-[#1f2175] text-white font-bold rounded-xl disabled:opacity-50 transition-all"
               >
                 {getBroadcastButtonText()}
               </Button>
@@ -662,53 +914,44 @@ export default function Dashboard() {
           {/* STEP 4: Matching / User List */}
           {currentStep === 'matching' && (
             <div className="animate-fadeIn">
-              {/* Back Button */}
               <button 
                 onClick={goBack}
-                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-4 hover:opacity-70 transition-opacity"
+                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-3 hover:opacity-70 transition-opacity"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span>Back</span>
               </button>
 
-              <h2 className="text-lg font-bold text-gray-800 mb-4">FIND COMPANION</h2>
+              <h2 className="text-lg font-bold text-gray-800 mb-3">FIND COMPANION</h2>
 
-              <div className="space-y-3 max-h-[30vh] overflow-y-auto">
+              <div className="space-y-2 max-h-[35vh] overflow-y-auto">
                 {nearbyUsers.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No users found in your area.</p>
-                    <p className="text-sm text-gray-400 mt-2">Try increasing your search radius</p>
+                  <div className="text-center py-6">
+                    <p className="text-gray-500">No users found nearby.</p>
+                    <p className="text-sm text-gray-400 mt-1">Try increasing your search radius</p>
                   </div>
                 ) : (
                   nearbyUsers.map((nearbyUser) => (
                     <button
                       key={nearbyUser.id}
                       onClick={() => handleUserClick(nearbyUser)}
-                      className="w-full flex items-center gap-3 p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-all"
+                      className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all"
                     >
-                      <Avatar className="w-14 h-14 border-2 border-white shadow">
+                      <Avatar className="w-12 h-12 border-2 border-white shadow">
                         <AvatarImage src={nearbyUser.profilePhoto} />
-                        <AvatarFallback className="bg-[#2B2D9E] text-white text-lg">
+                        <AvatarFallback className="bg-[#2B2D9E] text-white">
                           {nearbyUser.name?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 text-left">
                         <p className="font-semibold text-gray-800">{nearbyUser.name}</p>
-                        <p className="text-sm text-gray-500">{nearbyUser.distance} mi away</p>
+                        <p className="text-xs text-gray-500">{nearbyUser.distance} mi away</p>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                          <span className="text-sm font-medium">{nearbyUser.averageRating || '4.5'}</span>
+                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                          <span className="text-xs font-medium">{nearbyUser.averageRating || '4.5'}</span>
                         </div>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          nearbyUser.connectionType === 'buddy' ? 'bg-blue-100 text-blue-600' :
-                          nearbyUser.connectionType === 'trainer' ? 'bg-orange-100 text-orange-600' :
-                          nearbyUser.connectionType === 'competitor' ? 'bg-red-100 text-red-600' :
-                          'bg-green-100 text-green-600'
-                        }`}>
-                          {nearbyUser.connectionType}
-                        </span>
                       </div>
                     </button>
                   ))
@@ -716,7 +959,7 @@ export default function Dashboard() {
               </div>
 
               <Button 
-                className="w-full py-6 mt-4 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-bold rounded-2xl"
+                className="w-full py-5 mt-3 bg-[#2B2D9E] hover:bg-[#1f2175] text-white font-bold rounded-xl"
               >
                 CONNECT
               </Button>
@@ -726,53 +969,52 @@ export default function Dashboard() {
           {/* STEP 5: Pre-Match Chat */}
           {currentStep === 'chat' && selectedUser && (
             <div className="animate-fadeIn">
-              {/* Back Button */}
               <button 
                 onClick={goBack}
-                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-4 hover:opacity-70 transition-opacity"
+                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-3 hover:opacity-70 transition-opacity"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span>Back</span>
               </button>
 
-              <div className="flex items-center gap-3 mb-4">
-                <Avatar className="w-12 h-12 border-2 border-[#2B2D9E]">
+              <div className="flex items-center gap-3 mb-3">
+                <Avatar className="w-10 h-10 border-2 border-[#2B2D9E]">
                   <AvatarImage src={selectedUser.profilePhoto} />
                   <AvatarFallback className="bg-[#2B2D9E] text-white">
                     {selectedUser.name?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-bold text-gray-800">{selectedUser.name}</p>
-                  <p className="text-xs text-gray-500">{selectedUser.distance} mi away · {selectedActivity?.name}</p>
+                  <p className="font-bold text-gray-800 text-sm">{selectedUser.name}</p>
+                  <p className="text-xs text-gray-500">{selectedUser.distance} mi · {selectedActivity?.name}</p>
                 </div>
               </div>
 
               {/* Chat Messages */}
-              <div className="h-28 overflow-y-auto mb-3 space-y-2 bg-gray-50 rounded-2xl p-3">
+              <div className="h-24 overflow-y-auto mb-2 space-y-2 bg-gray-50 rounded-xl p-2">
                 {chatMessages.length === 0 && (
-                  <p className="text-center text-gray-400 text-sm py-4">Start the conversation!</p>
+                  <p className="text-center text-gray-400 text-xs py-4">Start the conversation!</p>
                 )}
                 {chatMessages.map((msg) => (
                   <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] px-4 py-2 rounded-2xl ${
+                    <div className={`max-w-[75%] px-3 py-1.5 rounded-xl text-sm ${
                       msg.sender === 'me' 
                         ? 'bg-[#2B2D9E] text-white rounded-br-sm' 
                         : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'
                     }`}>
-                      <p className="text-sm">{msg.text}</p>
+                      <p>{msg.text}</p>
                     </div>
                   </div>
                 ))}
               </div>
 
               {/* Quick Replies */}
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide">
+              <div className="flex gap-1 overflow-x-auto pb-2 mb-2 scrollbar-hide">
                 {quickMessages.map((msg) => (
                   <button
                     key={msg}
                     onClick={() => setNewMessage(msg)}
-                    className="flex-shrink-0 px-3 py-1.5 bg-gray-100 rounded-full text-xs font-medium text-gray-600 hover:bg-gray-200"
+                    className="flex-shrink-0 px-2 py-1 bg-gray-100 rounded-full text-[10px] font-medium text-gray-600 hover:bg-gray-200"
                   >
                     {msg}
                   </button>
@@ -780,18 +1022,18 @@ export default function Dashboard() {
               </div>
 
               {/* Chat Input */}
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2 mb-3">
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type a message..."
-                  className="flex-1 rounded-full"
+                  className="flex-1 rounded-full text-sm"
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 />
                 <Button 
                   onClick={handleSendMessage}
                   size="icon"
-                  className="rounded-full bg-[#2B2D9E] hover:bg-[#1f2175]"
+                  className="rounded-full bg-[#2B2D9E] hover:bg-[#1f2175] h-9 w-9"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
@@ -799,7 +1041,7 @@ export default function Dashboard() {
 
               <Button 
                 onClick={handleConfirmMeeting}
-                className="w-full py-6 bg-green-600 hover:bg-green-700 text-white text-lg font-bold rounded-2xl"
+                className="w-full py-5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl"
               >
                 CONFIRM & START TRACKING
               </Button>
@@ -825,12 +1067,6 @@ export default function Dashboard() {
         }
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out;
-        }
-        .animation-delay-200 {
-          animation-delay: 0.2s;
-        }
-        .animation-delay-400 {
-          animation-delay: 0.4s;
         }
       `}</style>
     </div>
