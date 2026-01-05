@@ -594,19 +594,182 @@ export default function CalendarPage() {
       )}
 
       {/* My Availability Section */}
-      <Card className="mx-4 p-4">
-        <h3 className="font-bold text-gray-800 mb-3">My Availability</h3>
-        <div className="flex gap-2 flex-wrap">
-          {['Mon-Fri\n6-9 PM', 'Thu\n10-8 PM', 'Sat\n7-10 PM'].map((slot, i) => (
-            <div key={i} className="bg-gray-100 rounded-lg px-4 py-2 text-center">
-              <p className="text-sm text-gray-700 whitespace-pre-line">{slot}</p>
+      <Card className="mx-4 p-4 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-gray-800">My Availability</h3>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setAvailabilityPublic(!availabilityPublic)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+                availabilityPublic 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+            >
+              {availabilityPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+              {availabilityPublic ? 'Public' : 'Private'}
+            </button>
+          </div>
+        </div>
+        
+        <div className="space-y-2 mb-4">
+          {availabilitySlots.map((slot) => (
+            <div 
+              key={slot.id} 
+              className="flex items-center justify-between bg-gray-50 rounded-xl p-3 group"
+            >
+              <div>
+                <p className="font-medium text-gray-800">{slot.days}</p>
+                <p className="text-sm text-gray-500">{slot.startTime} - {slot.endTime}</p>
+              </div>
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={() => {
+                    setEditingSlot(slot);
+                    setSlotForm({ days: slot.days, startTime: slot.startTime, endTime: slot.endTime });
+                    setShowAvailabilityModal(true);
+                  }}
+                  className="p-2 hover:bg-gray-200 rounded-lg"
+                >
+                  <Edit2 className="w-4 h-4 text-gray-500" />
+                </button>
+                <button 
+                  onClick={() => {
+                    setAvailabilitySlots(prev => prev.filter(s => s.id !== slot.id));
+                    toast.success('Availability slot removed');
+                  }}
+                  className="p-2 hover:bg-red-100 rounded-lg"
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </button>
+              </div>
             </div>
           ))}
+          
+          {availabilitySlots.length === 0 && (
+            <p className="text-center text-gray-400 py-4">No availability set</p>
+          )}
         </div>
-        <Button variant="outline" className="w-full mt-4 border-[#2B2D9E] text-[#2B2D9E]">
-          Add Activity Request
+
+        <Button 
+          variant="outline" 
+          className="w-full border-[#2B2D9E] text-[#2B2D9E]"
+          onClick={() => {
+            setEditingSlot(null);
+            setSlotForm({ days: '', startTime: '', endTime: '' });
+            setShowAvailabilityModal(true);
+          }}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Availability
         </Button>
       </Card>
+
+      {/* Availability Edit Modal */}
+      {showAvailabilityModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold">
+                {editingSlot ? 'Edit Availability' : 'Add Availability'}
+              </h3>
+              <button onClick={() => setShowAvailabilityModal(false)}>
+                <X className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label>Days</Label>
+                <select 
+                  className="w-full p-3 border rounded-xl mt-1"
+                  value={slotForm.days}
+                  onChange={(e) => setSlotForm(prev => ({ ...prev, days: e.target.value }))}
+                >
+                  <option value="">Select days...</option>
+                  <option value="Mon">Monday</option>
+                  <option value="Tue">Tuesday</option>
+                  <option value="Wed">Wednesday</option>
+                  <option value="Thu">Thursday</option>
+                  <option value="Fri">Friday</option>
+                  <option value="Sat">Saturday</option>
+                  <option value="Sun">Sunday</option>
+                  <option value="Mon-Fri">Weekdays (Mon-Fri)</option>
+                  <option value="Sat-Sun">Weekends (Sat-Sun)</option>
+                  <option value="Daily">Every Day</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Start Time</Label>
+                  <Input 
+                    type="time"
+                    value={slotForm.startTime.replace(' AM', '').replace(' PM', '')}
+                    onChange={(e) => {
+                      const time = e.target.value;
+                      const hour = parseInt(time.split(':')[0]);
+                      const ampm = hour >= 12 ? 'PM' : 'AM';
+                      const hour12 = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+                      setSlotForm(prev => ({ 
+                        ...prev, 
+                        startTime: `${hour12}:${time.split(':')[1]} ${ampm}` 
+                      }));
+                    }}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>End Time</Label>
+                  <Input 
+                    type="time"
+                    value={slotForm.endTime.replace(' AM', '').replace(' PM', '')}
+                    onChange={(e) => {
+                      const time = e.target.value;
+                      const hour = parseInt(time.split(':')[0]);
+                      const ampm = hour >= 12 ? 'PM' : 'AM';
+                      const hour12 = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+                      setSlotForm(prev => ({ 
+                        ...prev, 
+                        endTime: `${hour12}:${time.split(':')[1]} ${ampm}` 
+                      }));
+                    }}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+
+              <Button 
+                className="w-full bg-[#2B2D9E]"
+                onClick={() => {
+                  if (!slotForm.days || !slotForm.startTime || !slotForm.endTime) {
+                    toast.error('Please fill in all fields');
+                    return;
+                  }
+                  
+                  if (editingSlot) {
+                    setAvailabilitySlots(prev => prev.map(s => 
+                      s.id === editingSlot.id 
+                        ? { ...s, ...slotForm }
+                        : s
+                    ));
+                    toast.success('Availability updated');
+                  } else {
+                    setAvailabilitySlots(prev => [...prev, {
+                      id: Date.now(),
+                      ...slotForm
+                    }]);
+                    toast.success('Availability added');
+                  }
+                  setShowAvailabilityModal(false);
+                }}
+              >
+                {editingSlot ? 'Update' : 'Add'} Availability
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
 
       <BottomNav />
     </div>
