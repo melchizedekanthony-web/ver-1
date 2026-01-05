@@ -12,7 +12,7 @@ import {
   Search, MapPin, Coffee, Film, Music, Dumbbell, Mountain, Bike, 
   BookOpen, Heart, Users, Utensils, X, Star, ChevronUp, ChevronDown,
   Camera, Dog, Palette, Trophy, GraduationCap, UserPlus, UsersRound,
-  MessageSquare, Send, Clock, Filter, Zap
+  MessageSquare, Send, Clock, Filter, Zap, ArrowLeft, Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 import BottomNav from '@/components/BottomNav';
@@ -36,57 +36,65 @@ const MapComponent = dynamic(
 
 // Activity definitions with icons and colors
 const activities = [
-  { id: 'hiking', name: 'Hiking', icon: Mountain, color: 'bg-green-100 text-green-600 border-green-200' },
-  { id: 'running', name: 'Running', icon: Zap, color: 'bg-orange-100 text-orange-600 border-orange-200' },
-  { id: 'coffee', name: 'Coffee', icon: Coffee, color: 'bg-amber-100 text-amber-600 border-amber-200' },
-  { id: 'cinema', name: 'Cinema', icon: Film, color: 'bg-purple-100 text-purple-600 border-purple-200' },
-  { id: 'concert', name: 'Concert', icon: Music, color: 'bg-pink-100 text-pink-600 border-pink-200' },
-  { id: 'gym', name: 'Gym', icon: Dumbbell, color: 'bg-blue-100 text-blue-600 border-blue-200' },
-  { id: 'cycling', name: 'Cycling', icon: Bike, color: 'bg-cyan-100 text-cyan-600 border-cyan-200' },
-  { id: 'dining', name: 'Dining', icon: Utensils, color: 'bg-red-100 text-red-600 border-red-200' },
-  { id: 'bookclub', name: 'Book Club', icon: BookOpen, color: 'bg-indigo-100 text-indigo-600 border-indigo-200' },
-  { id: 'yoga', name: 'Yoga', icon: Heart, color: 'bg-rose-100 text-rose-600 border-rose-200' },
-  { id: 'dogwalking', name: 'Dog Walking', icon: Dog, color: 'bg-yellow-100 text-yellow-600 border-yellow-200' },
-  { id: 'photography', name: 'Photography', icon: Camera, color: 'bg-slate-100 text-slate-600 border-slate-200' },
+  { id: 'hiking', name: 'Hiking', icon: Mountain, color: 'bg-green-100 text-green-600' },
+  { id: 'running', name: 'Running', icon: Zap, color: 'bg-orange-100 text-orange-600' },
+  { id: 'coffee', name: 'Coffee', icon: Coffee, color: 'bg-amber-100 text-amber-600' },
+  { id: 'cinema', name: 'Cinema', icon: Film, color: 'bg-purple-100 text-purple-600' },
+  { id: 'concert', name: 'Concert', icon: Music, color: 'bg-pink-100 text-pink-600' },
+  { id: 'gym', name: 'Gym', icon: Dumbbell, color: 'bg-blue-100 text-blue-600' },
+  { id: 'cycling', name: 'Cycling', icon: Bike, color: 'bg-cyan-100 text-cyan-600' },
+  { id: 'dining', name: 'Dining', icon: Utensils, color: 'bg-red-100 text-red-600' },
+  { id: 'bookclub', name: 'Book Club', icon: BookOpen, color: 'bg-indigo-100 text-indigo-600' },
+  { id: 'yoga', name: 'Yoga', icon: Heart, color: 'bg-rose-100 text-rose-600' },
+  { id: 'dogwalking', name: 'Dog Walking', icon: Dog, color: 'bg-yellow-100 text-yellow-600' },
+  { id: 'photography', name: 'Photography', icon: Camera, color: 'bg-slate-100 text-slate-600' },
 ];
 
 // Connection types
 const connectionTypes = [
   { 
     id: 'buddy', 
-    name: 'BUDDY', 
+    name: 'Buddy', 
+    displayName: 'BUDDY',
     description: 'Find a 1-on-1 companion',
     icon: UserPlus, 
     color: 'bg-blue-500',
     borderColor: 'border-blue-500',
-    textColor: 'text-blue-500'
+    textColor: 'text-blue-500',
+    lightBg: 'bg-blue-50'
   },
   { 
     id: 'trainer', 
-    name: 'TRAINER', 
+    name: 'Trainer', 
+    displayName: 'TRAINER',
     description: 'Connect with an expert',
     icon: GraduationCap, 
     color: 'bg-orange-500',
     borderColor: 'border-orange-500',
-    textColor: 'text-orange-500'
+    textColor: 'text-orange-500',
+    lightBg: 'bg-orange-50'
   },
   { 
     id: 'competitor', 
-    name: 'COMPETITOR', 
+    name: 'Competitor', 
+    displayName: 'COMPETITOR',
     description: 'Challenge someone',
     icon: Trophy, 
     color: 'bg-red-500',
     borderColor: 'border-red-500',
-    textColor: 'text-red-500'
+    textColor: 'text-red-500',
+    lightBg: 'bg-red-50'
   },
   { 
     id: 'group', 
-    name: 'GROUP', 
+    name: 'Group', 
+    displayName: 'GROUP',
     description: 'Join or create group',
     icon: UsersRound, 
     color: 'bg-green-500',
     borderColor: 'border-green-500',
-    textColor: 'text-green-500'
+    textColor: 'text-green-500',
+    lightBg: 'bg-green-50'
   },
 ];
 
@@ -106,9 +114,10 @@ export default function Dashboard() {
   const [currentStep, setCurrentStep] = useState('activity'); // activity, connection, broadcast, matching, chat
   const [panelExpanded, setPanelExpanded] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [showActivityDropdown, setShowActivityDropdown] = useState(false);
   
   // Selection State
-  const [selectedActivities, setSelectedActivities] = useState([]);
+  const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedConnection, setSelectedConnection] = useState(null);
   const [selectedGroupOption, setSelectedGroupOption] = useState(null);
   
@@ -137,7 +146,7 @@ export default function Dashboard() {
     if (user) {
       fetchNearbyUsers();
     }
-  }, [user, selectedActivities, broadcastRadius]);
+  }, [user, selectedActivity, broadcastRadius]);
 
   const checkAuth = async () => {
     try {
@@ -173,8 +182,7 @@ export default function Dashboard() {
 
   const fetchNearbyUsers = async () => {
     try {
-      const activityParam = selectedActivities.length > 0 ? `?activity=${selectedActivities[0]}` : '';
-      const res = await fetchWithAuth(`/api/matches${activityParam}`);
+      const res = await fetchWithAuth('/api/matches');
       const data = await res.json();
       if (data.matches) {
         const usersWithLocations = data.matches.map((match, index) => ({
@@ -183,7 +191,7 @@ export default function Dashboard() {
             lat: userLocation.lat + (Math.random() - 0.5) * 0.04,
             lng: userLocation.lng + (Math.random() - 0.5) * 0.04
           },
-          activity: selectedActivities[0] || 'available',
+          activity: selectedActivity?.name || 'available',
           connectionType: ['buddy', 'trainer', 'competitor', 'group'][index % 4],
           distance: (Math.random() * broadcastRadius[0]).toFixed(1)
         }));
@@ -195,13 +203,10 @@ export default function Dashboard() {
     }
   };
 
-  const toggleActivity = (activityId) => {
-    setSelectedActivities(prev => {
-      if (prev.includes(activityId)) {
-        return prev.filter(a => a !== activityId);
-      }
-      return [...prev, activityId];
-    });
+  const handleActivitySelect = (activity) => {
+    setSelectedActivity(activity);
+    setShowActivityDropdown(false);
+    setCurrentStep('connection');
   };
 
   const handleConnectionSelect = (connectionId) => {
@@ -211,9 +216,21 @@ export default function Dashboard() {
     }
   };
 
+  const getSelectedConnectionType = () => {
+    return connectionTypes.find(c => c.id === selectedConnection);
+  };
+
+  const getBroadcastButtonText = () => {
+    if (!selectedActivity || !selectedConnection) {
+      return 'Find A Partner';
+    }
+    const connectionType = getSelectedConnectionType();
+    return `Find A ${selectedActivity.name} ${connectionType?.name || 'Partner'}`;
+  };
+
   const handleBroadcast = async () => {
-    if (selectedActivities.length === 0) {
-      toast.error('Please select at least one activity');
+    if (!selectedActivity) {
+      toast.error('Please select an activity');
       return;
     }
     if (!selectedConnection) {
@@ -222,15 +239,13 @@ export default function Dashboard() {
     }
 
     setIsBroadcasting(true);
-    toast.loading('Broadcasting your activity...');
 
-    // Simulate broadcast
-    setTimeout(() => {
-      toast.dismiss();
-      toast.success(`Broadcasting ${selectedActivities.join(', ')} to ${usersInRadius} users nearby!`);
-      setIsBroadcasting(false);
-      setCurrentStep('matching');
-    }, 1500);
+    // Simulate broadcast with "Spreading The Word..." message
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    setIsBroadcasting(false);
+    toast.success(`Found ${usersInRadius} potential ${selectedActivity.name.toLowerCase()} partners!`);
+    setCurrentStep('matching');
   };
 
   const handleUserClick = (clickedUser) => {
@@ -262,7 +277,29 @@ export default function Dashboard() {
 
   const handleConfirmMeeting = () => {
     toast.success('Meeting confirmed! Starting location tracking...');
-    router.push(`/connect/${selectedUser.id}?activity=${selectedActivities[0]}`);
+    router.push(`/connect/${selectedUser.id}?activity=${selectedActivity?.id}`);
+  };
+
+  const goBack = () => {
+    switch (currentStep) {
+      case 'connection':
+        setCurrentStep('activity');
+        setSelectedActivity(null);
+        break;
+      case 'broadcast':
+        setCurrentStep('connection');
+        setSelectedConnection(null);
+        break;
+      case 'matching':
+        setCurrentStep('broadcast');
+        break;
+      case 'chat':
+        setSelectedUser(null);
+        setCurrentStep('matching');
+        break;
+      default:
+        break;
+    }
   };
 
   const quickMessages = ['Sounds good!', 'What time?', 'Where should we meet?', 'What\'s your pace?', 'I\'m flexible'];
@@ -290,8 +327,26 @@ export default function Dashboard() {
           className="h-full w-full"
         />
 
+        {/* Broadcasting Overlay */}
+        {isBroadcasting && (
+          <div className="absolute inset-0 bg-[#2B2D9E]/80 flex items-center justify-center z-20">
+            <div className="text-center text-white">
+              <div className="relative w-24 h-24 mx-auto mb-4">
+                <div className="absolute inset-0 rounded-full border-4 border-white/30 animate-ping"></div>
+                <div className="absolute inset-2 rounded-full border-4 border-white/50 animate-ping animation-delay-200"></div>
+                <div className="absolute inset-4 rounded-full border-4 border-white/70 animate-ping animation-delay-400"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <MapPin className="w-10 h-10 text-white" />
+                </div>
+              </div>
+              <p className="text-2xl font-bold mb-2">Spreading The Word...</p>
+              <p className="text-white/70">Looking for {selectedActivity?.name} {getSelectedConnectionType()?.name}s nearby</p>
+            </div>
+          </div>
+        )}
+
         {/* Radius Indicator Overlay */}
-        {currentStep === 'broadcast' && (
+        {currentStep === 'broadcast' && !isBroadcasting && (
           <div className="absolute top-4 left-4 bg-white/95 backdrop-blur rounded-2xl px-4 py-2 shadow-lg">
             <p className="text-sm font-medium text-gray-700">
               <span className="text-[#2B2D9E] font-bold">{usersInRadius}</span> users within {broadcastRadius[0]} mi
@@ -299,32 +354,26 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Activity Badge */}
-        {selectedActivities.length > 0 && currentStep !== 'chat' && (
+        {/* Activity & Connection Badge */}
+        {selectedActivity && currentStep !== 'activity' && currentStep !== 'chat' && !isBroadcasting && (
           <div className="absolute top-4 right-4 bg-white/95 backdrop-blur rounded-2xl px-4 py-2 shadow-lg flex items-center gap-2">
-            {selectedActivities.slice(0, 2).map(actId => {
-              const activity = activities.find(a => a.id === actId);
-              const Icon = activity?.icon || Mountain;
-              return (
-                <div key={actId} className="flex items-center gap-1">
-                  <Icon className="w-4 h-4 text-[#2B2D9E]" />
-                  <span className="text-sm font-medium">{activity?.name}</span>
-                </div>
-              );
-            })}
-            {selectedActivities.length > 2 && (
-              <span className="text-sm text-gray-500">+{selectedActivities.length - 2}</span>
+            <selectedActivity.icon className="w-4 h-4 text-[#2B2D9E]" />
+            <span className="text-sm font-medium">{selectedActivity.name}</span>
+            {selectedConnection && (
+              <>
+                <span className="text-gray-300">|</span>
+                <span className={`text-sm font-medium ${getSelectedConnectionType()?.textColor}`}>
+                  {getSelectedConnectionType()?.name}
+                </span>
+              </>
             )}
-            <button onClick={() => setSelectedActivities([])} className="ml-1">
-              <X className="w-4 h-4 text-gray-400" />
-            </button>
           </div>
         )}
 
         {/* Center on User Button */}
         <button 
           onClick={getUserLocation}
-          className="absolute bottom-4 right-4 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow"
+          className="absolute bottom-4 right-4 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow z-10"
         >
           <MapPin className="w-5 h-5 text-[#2B2D9E]" />
         </button>
@@ -333,7 +382,7 @@ export default function Dashboard() {
       {/* Bottom Panel - Sliding Sheet */}
       <div 
         className={`bg-white rounded-t-3xl shadow-2xl transition-all duration-300 ease-out ${
-          panelExpanded ? 'max-h-[60vh]' : 'max-h-20'
+          panelExpanded ? 'max-h-[55vh]' : 'max-h-20'
         } overflow-hidden`}
       >
         {/* Panel Handle */}
@@ -345,63 +394,73 @@ export default function Dashboard() {
         </button>
 
         {/* Panel Content */}
-        <div className="px-4 pb-4 overflow-y-auto max-h-[calc(60vh-60px)]">
+        <div className="px-4 pb-4 overflow-y-auto max-h-[calc(55vh-60px)]">
           
-          {/* STEP 1: Activity Selection */}
+          {/* STEP 1: Activity Selection (Dropdown) */}
           {currentStep === 'activity' && (
             <div className="animate-fadeIn">
               <h2 className="text-lg font-bold text-gray-800 mb-4">CHOOSE ACTIVITY</h2>
               
-              {/* Activity Pills - Horizontal Scroll */}
-              <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-                {activities.map((activity) => {
-                  const Icon = activity.icon;
-                  const isSelected = selectedActivities.includes(activity.id);
-                  return (
-                    <button
-                      key={activity.id}
-                      onClick={() => toggleActivity(activity.id)}
-                      className={`flex-shrink-0 flex flex-col items-center p-3 rounded-2xl border-2 transition-all duration-200 min-w-[80px] ${
-                        isSelected
-                          ? 'bg-[#2B2D9E] border-[#2B2D9E] text-white scale-105 shadow-lg'
-                          : `${activity.color} border-transparent hover:scale-102`
-                      }`}
-                    >
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
-                        isSelected ? 'bg-white/20' : 'bg-white'
-                      }`}>
-                        <Icon className={`w-6 h-6 ${isSelected ? 'text-white' : ''}`} />
-                      </div>
-                      <span className="text-xs font-semibold whitespace-nowrap">{activity.name}</span>
-                      {isSelected && (
-                        <div className="absolute top-1 right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center">
-                          <div className="w-3 h-3 bg-[#2B2D9E] rounded-full" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+              {/* Activity Dropdown */}
+              <div className="relative mb-4">
+                <button
+                  onClick={() => setShowActivityDropdown(!showActivityDropdown)}
+                  className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-2xl border-2 border-gray-200 hover:border-[#2B2D9E] transition-colors"
+                >
+                  <span className="text-gray-500">
+                    {selectedActivity ? (
+                      <span className="flex items-center gap-2 text-gray-800">
+                        <selectedActivity.icon className="w-5 h-5" />
+                        {selectedActivity.name}
+                      </span>
+                    ) : (
+                      'Select an activity...'
+                    )}
+                  </span>
+                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showActivityDropdown ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showActivityDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 max-h-64 overflow-y-auto">
+                    {activities.map((activity) => {
+                      const Icon = activity.icon;
+                      return (
+                        <button
+                          key={activity.id}
+                          onClick={() => handleActivitySelect(activity)}
+                          className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors first:rounded-t-2xl last:rounded-b-2xl"
+                        >
+                          <div className={`w-10 h-10 rounded-full ${activity.color} flex items-center justify-center`}>
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <span className="font-medium text-gray-800">{activity.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              <Button 
-                onClick={() => selectedActivities.length > 0 && setCurrentStep('connection')}
-                disabled={selectedActivities.length === 0}
-                className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                SELECT
-              </Button>
+              <p className="text-center text-gray-400 text-sm">
+                Select an activity to find companions nearby
+              </p>
             </div>
           )}
 
           {/* STEP 2: Connection Type */}
           {currentStep === 'connection' && (
             <div className="animate-fadeIn">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-800">CONNECTION TYPE</h2>
-                <button onClick={() => setCurrentStep('activity')} className="text-[#2B2D9E] text-sm font-medium">
-                  ← Back
-                </button>
-              </div>
+              {/* Back Button */}
+              <button 
+                onClick={goBack}
+                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-4 hover:opacity-70 transition-opacity"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span>Back</span>
+              </button>
+
+              <h2 className="text-lg font-bold text-gray-800 mb-4">CONNECTION TYPE</h2>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {connectionTypes.map((type) => {
@@ -413,7 +472,7 @@ export default function Dashboard() {
                       onClick={() => handleConnectionSelect(type.id)}
                       className={`p-4 rounded-2xl border-2 transition-all duration-200 text-left ${
                         isSelected
-                          ? `${type.borderColor} bg-opacity-10 ${type.color.replace('bg-', 'bg-opacity-10 bg-')}`
+                          ? `${type.borderColor} ${type.lightBg}`
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
@@ -421,7 +480,7 @@ export default function Dashboard() {
                         <Icon className="w-5 h-5 text-white" />
                       </div>
                       <p className={`font-bold text-sm ${isSelected ? type.textColor : 'text-gray-800'}`}>
-                        {type.name}
+                        {type.displayName}
                       </p>
                       <p className="text-xs text-gray-500">{type.description}</p>
                     </button>
@@ -465,12 +524,16 @@ export default function Dashboard() {
           {/* STEP 3: Broadcast Parameters */}
           {currentStep === 'broadcast' && (
             <div className="animate-fadeIn">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-800">BROADCAST</h2>
-                <button onClick={() => setCurrentStep('connection')} className="text-[#2B2D9E] text-sm font-medium">
-                  ← Back
-                </button>
-              </div>
+              {/* Back Button */}
+              <button 
+                onClick={goBack}
+                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-4 hover:opacity-70 transition-opacity"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span>Back</span>
+              </button>
+
+              <h2 className="text-lg font-bold text-gray-800 mb-4">BROADCAST</h2>
 
               {/* Radius Slider */}
               <div className="mb-6">
@@ -550,19 +613,13 @@ export default function Dashboard() {
                 </div>
               )}
 
+              {/* Dynamic Broadcast Button */}
               <Button 
                 onClick={handleBroadcast}
                 disabled={isBroadcasting}
-                className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-bold rounded-2xl disabled:opacity-50 transition-all animate-pulse-subtle"
+                className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-bold rounded-2xl disabled:opacity-50 transition-all"
               >
-                {isBroadcasting ? (
-                  <span className="flex items-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Broadcasting...
-                  </span>
-                ) : (
-                  'BROADCAST ACTIVITY'
-                )}
+                {getBroadcastButtonText()}
               </Button>
             </div>
           )}
@@ -570,46 +627,57 @@ export default function Dashboard() {
           {/* STEP 4: Matching / User List */}
           {currentStep === 'matching' && (
             <div className="animate-fadeIn">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-800">FIND COMPANION</h2>
-                <button onClick={() => setCurrentStep('broadcast')} className="text-[#2B2D9E] text-sm font-medium">
-                  ← Back
-                </button>
-              </div>
+              {/* Back Button */}
+              <button 
+                onClick={goBack}
+                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-4 hover:opacity-70 transition-opacity"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span>Back</span>
+              </button>
 
-              <div className="space-y-3 max-h-[35vh] overflow-y-auto">
-                {nearbyUsers.map((nearbyUser) => (
-                  <button
-                    key={nearbyUser.id}
-                    onClick={() => handleUserClick(nearbyUser)}
-                    className="w-full flex items-center gap-3 p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-all"
-                  >
-                    <Avatar className="w-14 h-14 border-2 border-white shadow">
-                      <AvatarImage src={nearbyUser.profilePhoto} />
-                      <AvatarFallback className="bg-[#2B2D9E] text-white text-lg">
-                        {nearbyUser.name?.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-left">
-                      <p className="font-semibold text-gray-800">{nearbyUser.name}, {nearbyUser.age || 28}</p>
-                      <p className="text-sm text-gray-500">{nearbyUser.distance} mi away</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                        <span className="text-sm font-medium">{nearbyUser.averageRating || '4.5'}</span>
+              <h2 className="text-lg font-bold text-gray-800 mb-4">FIND COMPANION</h2>
+
+              <div className="space-y-3 max-h-[30vh] overflow-y-auto">
+                {nearbyUsers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No users found in your area.</p>
+                    <p className="text-sm text-gray-400 mt-2">Try increasing your search radius</p>
+                  </div>
+                ) : (
+                  nearbyUsers.map((nearbyUser) => (
+                    <button
+                      key={nearbyUser.id}
+                      onClick={() => handleUserClick(nearbyUser)}
+                      className="w-full flex items-center gap-3 p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-all"
+                    >
+                      <Avatar className="w-14 h-14 border-2 border-white shadow">
+                        <AvatarImage src={nearbyUser.profilePhoto} />
+                        <AvatarFallback className="bg-[#2B2D9E] text-white text-lg">
+                          {nearbyUser.name?.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 text-left">
+                        <p className="font-semibold text-gray-800">{nearbyUser.name}</p>
+                        <p className="text-sm text-gray-500">{nearbyUser.distance} mi away</p>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        nearbyUser.connectionType === 'buddy' ? 'bg-blue-100 text-blue-600' :
-                        nearbyUser.connectionType === 'trainer' ? 'bg-orange-100 text-orange-600' :
-                        nearbyUser.connectionType === 'competitor' ? 'bg-red-100 text-red-600' :
-                        'bg-green-100 text-green-600'
-                      }`}>
-                        {nearbyUser.connectionType}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                      <div className="text-right">
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                          <span className="text-sm font-medium">{nearbyUser.averageRating || '4.5'}</span>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          nearbyUser.connectionType === 'buddy' ? 'bg-blue-100 text-blue-600' :
+                          nearbyUser.connectionType === 'trainer' ? 'bg-orange-100 text-orange-600' :
+                          nearbyUser.connectionType === 'competitor' ? 'bg-red-100 text-red-600' :
+                          'bg-green-100 text-green-600'
+                        }`}>
+                          {nearbyUser.connectionType}
+                        </span>
+                      </div>
+                    </button>
+                  ))
+                )}
               </div>
 
               <Button 
@@ -623,26 +691,30 @@ export default function Dashboard() {
           {/* STEP 5: Pre-Match Chat */}
           {currentStep === 'chat' && selectedUser && (
             <div className="animate-fadeIn">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage src={selectedUser.profilePhoto} />
-                    <AvatarFallback className="bg-[#2B2D9E] text-white">
-                      {selectedUser.name?.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold text-gray-800">{selectedUser.name}</p>
-                    <p className="text-xs text-gray-500">{selectedUser.distance} mi away</p>
-                  </div>
+              {/* Back Button */}
+              <button 
+                onClick={goBack}
+                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-4 hover:opacity-70 transition-opacity"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span>Back</span>
+              </button>
+
+              <div className="flex items-center gap-3 mb-4">
+                <Avatar className="w-12 h-12 border-2 border-[#2B2D9E]">
+                  <AvatarImage src={selectedUser.profilePhoto} />
+                  <AvatarFallback className="bg-[#2B2D9E] text-white">
+                    {selectedUser.name?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-bold text-gray-800">{selectedUser.name}</p>
+                  <p className="text-xs text-gray-500">{selectedUser.distance} mi away · {selectedActivity?.name}</p>
                 </div>
-                <button onClick={() => { setSelectedUser(null); setCurrentStep('matching'); }} className="text-gray-400">
-                  <X className="w-5 h-5" />
-                </button>
               </div>
 
               {/* Chat Messages */}
-              <div className="h-32 overflow-y-auto mb-3 space-y-2">
+              <div className="h-28 overflow-y-auto mb-3 space-y-2 bg-gray-50 rounded-2xl p-3">
                 {chatMessages.length === 0 && (
                   <p className="text-center text-gray-400 text-sm py-4">Start the conversation!</p>
                 )}
@@ -651,7 +723,7 @@ export default function Dashboard() {
                     <div className={`max-w-[80%] px-4 py-2 rounded-2xl ${
                       msg.sender === 'me' 
                         ? 'bg-[#2B2D9E] text-white rounded-br-sm' 
-                        : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                        : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'
                     }`}>
                       <p className="text-sm">{msg.text}</p>
                     </div>
@@ -660,7 +732,7 @@ export default function Dashboard() {
               </div>
 
               {/* Quick Replies */}
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
+              <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide">
                 {quickMessages.map((msg) => (
                   <button
                     key={msg}
@@ -719,12 +791,11 @@ export default function Dashboard() {
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out;
         }
-        @keyframes pulse-subtle {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(43, 45, 158, 0.4); }
-          50% { box-shadow: 0 0 0 8px rgba(43, 45, 158, 0); }
+        .animation-delay-200 {
+          animation-delay: 0.2s;
         }
-        .animate-pulse-subtle {
-          animation: pulse-subtle 2s infinite;
+        .animation-delay-400 {
+          animation-delay: 0.4s;
         }
       `}</style>
     </div>
