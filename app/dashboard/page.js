@@ -532,9 +532,32 @@ export default function Dashboard() {
                 </div>
               )}
 
+              {/* Accessible Options */}
+              {selectedConnection === 'accessible' && (
+                <div className="mb-4 p-4 bg-purple-50 rounded-2xl">
+                  <p className="text-sm font-semibold text-purple-800 mb-3">Accessibility Preferences</p>
+                  <div className="space-y-2">
+                    {accessibleOptions.map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => setSelectedAccessibleOption(option.id)}
+                        className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
+                          selectedAccessibleOption === option.id
+                            ? 'border-purple-500 bg-purple-100'
+                            : 'border-gray-200 bg-white hover:border-purple-300'
+                        }`}
+                      >
+                        <p className="font-medium text-sm">{option.name}</p>
+                        <p className="text-xs text-gray-500">{option.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <Button 
                 onClick={() => selectedConnection && setCurrentStep('broadcast')}
-                disabled={!selectedConnection || (selectedConnection === 'group' && !selectedGroupOption)}
+                disabled={!selectedConnection || (selectedConnection === 'group' && !selectedGroupOption) || (selectedConnection === 'accessible' && !selectedAccessibleOption)}
                 className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-bold rounded-2xl disabled:opacity-50 transition-all"
               >
                 CONTINUE
