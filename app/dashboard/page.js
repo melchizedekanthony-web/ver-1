@@ -418,8 +418,8 @@ export default function Dashboard() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden pb-16">
-      {/* Map Section - 50% of screen */}
-      <div className="h-[40vh] relative">
+      {/* Map Section - 40% of screen */}
+      <div className="h-[35vh] min-h-[200px] relative flex-shrink-0">
         <MapComponent
           center={[userLocation.lat, userLocation.lng]}
           zoom={13}
