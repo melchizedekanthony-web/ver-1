@@ -6,7 +6,8 @@ import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, MessageSquare, Phone, X, Check, Navigation } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { MapPin, MessageSquare, Phone, X, Check, Navigation, AlertTriangle, Star, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUser, fetchWithAuth } from '@/lib/auth';
 
@@ -14,11 +15,7 @@ const MapComponent = dynamic(
   () => import('@/components/MapComponent').then(mod => mod.default),
   { 
     ssr: false,
-    loading: () => (
-      <div className="h-full bg-gray-100 flex items-center justify-center">
-        <div className="text-gray-500">Loading map...</div>
-      </div>
-    )
+    loading: () => <div className="h-full bg-gray-100 flex items-center justify-center">Loading map...</div>
   }
 );
 
@@ -34,6 +31,12 @@ export default function ConnectPage() {
   const [connectionStatus, setConnectionStatus] = useState('pending'); // pending, accepted, meeting
   const [userLocation, setUserLocation] = useState({ lat: 40.7128, lng: -74.0060 });
   const [targetLocation, setTargetLocation] = useState({ lat: 40.7180, lng: -74.0010 });
+  
+  // Cancel/Emergency state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelRating, setCancelRating] = useState(0);
+  const [isEmergency, setIsEmergency] = useState(false);
 
   useEffect(() => {
     const storedUser = getUser();
@@ -54,7 +57,6 @@ export default function ConnectPage() {
             lat: position.coords.latitude,
             lng: position.coords.longitude
           });
-          // Set target nearby
           setTargetLocation({
             lat: position.coords.latitude + (Math.random() - 0.5) * 0.02,
             lng: position.coords.longitude + (Math.random() - 0.5) * 0.02
@@ -74,7 +76,6 @@ export default function ConnectPage() {
         if (found) {
           setTargetUser(found);
         } else if (data.matches.length > 0) {
-          // Use first match as fallback for demo
           setTargetUser(data.matches[0]);
         }
       }
@@ -98,17 +99,76 @@ export default function ConnectPage() {
     router.push(`/meetup/${userId}?activity=${activity}`);
   };
 
+  const handleCancelMeetup = () => {
+    setShowCancelModal(true);
+    setIsEmergency(false);
+  };
+
+  const handleEmergencyCancel = () => {
+    setShowCancelModal(true);
+    setIsEmergency(true);
+  };
+
+  const submitCancellation = async () => {
+    try {
+      // In production, save the cancellation reason and rating
+      await fetchWithAuth('/api/reviews', {
+        method: 'POST',
+        body: JSON.stringify({
+          targetId: targetUser?.id || userId,
+          targetType: 'user',
+          rating: cancelRating,
+          reviewText: cancelReason,
+          isCancellation: true,
+          isEmergency: isEmergency
+        })
+      });
+
+      if (isEmergency) {
+        toast.error('Emergency exit recorded. Stay safe!', { duration: 5000 });
+      } else {
+        toast.info('Meetup cancelled. Your feedback has been recorded.');
+      }
+      
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error submitting cancellation:', error);
+      router.push('/dashboard');
+    }
+  };
+
+  const cancelReasons = isEmergency ? [
+    'Felt unsafe',
+    'Person was not who they said',
+    'Inappropriate behavior',
+    'Location seemed dangerous',
+    'Other safety concern'
+  ] : [
+    'Schedule conflict',
+    'Running late',
+    'Changed my mind',
+    'Weather conditions',
+    'Personal emergency',
+    'Found another partner'
+  ];
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <header className="bg-[#1a1aff] px-4 py-3 flex items-center justify-between">
+      <header className="bg-[#2B2D9E] px-4 py-3 flex items-center justify-between">
         <button onClick={() => router.back()} className="text-white text-2xl">←</button>
         <h1 className="text-xl font-bold text-white">LOCATION CONNECT</h1>
-        <div className="w-8"></div>
+        <button 
+          onClick={handleEmergencyCancel}
+          className="bg-red-500 text-white px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1"
+        >
+          <Shield className="w-3 h-3" />
+          SOS
+        </button>
       </header>
 
       {/* Map */}
-      <div className="h-[50vh] relative">
+      <div className="h-[45vh] relative">
         <MapComponent
           center={[(userLocation.lat + targetLocation.lat) / 2, (userLocation.lng + targetLocation.lng) / 2]}
           zoom={14}
@@ -133,14 +193,14 @@ export default function ConnectPage() {
       </div>
 
       {/* Connection Panel */}
-      <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-4 py-6 min-h-[40vh]">
+      <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-4 py-6 min-h-[45vh]">
         <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6"></div>
 
         {targetUser && (
           <>
             {/* User Info */}
             <div className="flex items-center gap-4 mb-6">
-              <Avatar className="w-16 h-16 border-2 border-[#1a1aff]">
+              <Avatar className="w-16 h-16 border-2 border-[#2B2D9E]">
                 <AvatarImage src={targetUser.profilePhoto} />
                 <AvatarFallback className="bg-[#4a3aff] text-white text-xl">
                   {targetUser.name?.charAt(0)}
@@ -197,36 +257,167 @@ export default function ConnectPage() {
               </Button>
             </div>
 
-            {/* Main Action Button */}
+            {/* Main Action Buttons */}
             {connectionStatus === 'pending' && (
-              <Button 
-                className="w-full py-6 bg-[#1a1aff] hover:bg-[#1515dd] text-white text-lg font-semibold"
-                onClick={handleAcceptConnection}
-              >
-                Accept Connection
-              </Button>
+              <div className="space-y-3">
+                <Button 
+                  className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-semibold"
+                  onClick={handleAcceptConnection}
+                >
+                  Accept Connection
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="w-full py-4 border-red-300 text-red-600 hover:bg-red-50"
+                  onClick={handleCancelMeetup}
+                >
+                  Cancel Meetup
+                </Button>
+              </div>
             )}
 
             {connectionStatus === 'accepted' && (
-              <Button 
-                className="w-full py-6 bg-[#1a1aff] hover:bg-[#1515dd] text-white text-lg font-semibold"
-                onClick={handleShareLocation}
-              >
-                SHARE LOCATION
-              </Button>
+              <div className="space-y-3">
+                <Button 
+                  className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-semibold"
+                  onClick={handleShareLocation}
+                >
+                  SHARE LOCATION
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="w-full py-4 border-red-300 text-red-600 hover:bg-red-50"
+                  onClick={handleCancelMeetup}
+                >
+                  Cancel Meetup
+                </Button>
+              </div>
             )}
 
             {connectionStatus === 'meeting' && (
-              <Button 
-                className="w-full py-6 bg-green-600 hover:bg-green-700 text-white text-lg font-semibold"
-                onClick={handleArrived}
-              >
-                ARRIVED
-              </Button>
+              <div className="space-y-3">
+                <Button 
+                  className="w-full py-6 bg-green-600 hover:bg-green-700 text-white text-lg font-semibold"
+                  onClick={handleArrived}
+                >
+                  ARRIVED
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="w-full py-4 border-red-300 text-red-600 hover:bg-red-50"
+                  onClick={handleCancelMeetup}
+                >
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Cancel & Exit
+                </Button>
+              </div>
             )}
           </>
         )}
       </div>
+
+      {/* Cancel Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <Card className={`w-full max-w-md p-6 ${isEmergency ? 'border-2 border-red-500' : ''}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-xl font-bold ${isEmergency ? 'text-red-600' : 'text-gray-800'}`}>
+                {isEmergency ? '⚠️ Emergency Exit' : 'Cancel Meetup'}
+              </h3>
+              <button onClick={() => setShowCancelModal(false)}>
+                <X className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
+
+            {isEmergency && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-red-800 text-sm">
+                  <strong>Your safety is our priority.</strong> This will immediately end the meetup and your feedback will help keep the community safe.
+                </p>
+              </div>
+            )}
+
+            {/* Reason Selection */}
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">
+                {isEmergency ? 'What happened?' : 'Reason for cancelling'}
+              </p>
+              <div className="space-y-2">
+                {cancelReasons.map((reason) => (
+                  <button
+                    key={reason}
+                    onClick={() => setCancelReason(reason)}
+                    className={`w-full p-3 rounded-lg border text-left text-sm transition-all ${
+                      cancelReason === reason
+                        ? isEmergency 
+                          ? 'border-red-500 bg-red-50 text-red-800'
+                          : 'border-[#2B2D9E] bg-blue-50 text-[#2B2D9E]'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Rating (optional) */}
+            {!isEmergency && (
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Rate your experience (optional)</p>
+                <div className="flex gap-1 justify-center">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setCancelRating(star)}
+                      className="p-1"
+                    >
+                      <Star 
+                        className={`w-8 h-8 transition-colors ${
+                          star <= cancelRating 
+                            ? 'text-yellow-400 fill-yellow-400' 
+                            : 'text-gray-300'
+                        }`} 
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Additional Notes */}
+            <div className="mb-6">
+              <p className="text-sm font-medium text-gray-700 mb-2">Additional details (optional)</p>
+              <Textarea 
+                placeholder={isEmergency ? "Please describe what happened..." : "Any additional notes..."}
+                value={cancelReason.includes(cancelReasons[0]) ? '' : ''}
+                onChange={(e) => setCancelReason(prev => {
+                  const selected = cancelReasons.find(r => prev.startsWith(r));
+                  return selected ? `${selected}: ${e.target.value}` : e.target.value;
+                })}
+                rows={3}
+              />
+            </div>
+
+            {/* Submit */}
+            <div className="flex gap-3">
+              <Button 
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowCancelModal(false)}
+              >
+                Go Back
+              </Button>
+              <Button 
+                className={`flex-1 ${isEmergency ? 'bg-red-600 hover:bg-red-700' : 'bg-[#2B2D9E] hover:bg-[#1f2175]'}`}
+                onClick={submitCancellation}
+              >
+                {isEmergency ? 'Exit Now' : 'Cancel Meetup'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
