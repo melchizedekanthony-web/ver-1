@@ -578,73 +578,78 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100 overflow-hidden pb-16">
-      {/* Map Section - 40% of screen */}
-      <div className="h-[35vh] min-h-[200px] relative flex-shrink-0">
-        <MapComponent
-          center={[userLocation.lat, userLocation.lng]}
-          zoom={13}
-          users={nearbyUsers}
-          currentUser={{ location: userLocation }}
-          selectedUser={selectedUser}
-          onUserClick={handleUserClick}
-          showRoute={currentStep === 'chat'}
-          className="h-full w-full"
-        />
+    <div className="min-h-screen bg-gray-100 pb-20">
+      {/* Map Section - Reduced and Centered */}
+      <div className="px-4 pt-4">
+        <div className="h-[25vh] max-h-[200px] relative rounded-2xl overflow-hidden shadow-lg mx-auto max-w-3xl">
+          <MapComponent
+            center={[userLocation.lat, userLocation.lng]}
+            zoom={13}
+            users={nearbyUsers}
+            currentUser={{ location: userLocation }}
+            selectedUser={selectedUser}
+            onUserClick={handleUserClick}
+            showRoute={currentStep === 'chat'}
+            className="h-full w-full"
+          />
 
-        {/* Broadcasting Overlay */}
-        {isBroadcasting && (
-          <div className="absolute inset-0 bg-[#2B2D9E]/80 flex items-center justify-center z-20">
-            <div className="text-center text-white">
-              <div className="relative w-20 h-20 mx-auto mb-4">
-                <div className="absolute inset-0 rounded-full border-4 border-white/30 animate-ping"></div>
-                <div className="absolute inset-2 rounded-full border-4 border-white/50 animate-ping animation-delay-200"></div>
-                <div className="absolute inset-4 rounded-full border-4 border-white/70 animate-ping animation-delay-400"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <MapPin className="w-8 h-8 text-white" />
+          {/* Broadcasting Overlay */}
+          {isBroadcasting && (
+            <div className="absolute inset-0 bg-[#2B2D9E]/80 flex items-center justify-center z-20 rounded-2xl">
+              <div className="text-center text-white">
+                <div className="relative w-16 h-16 mx-auto mb-3">
+                  <div className="absolute inset-0 rounded-full border-4 border-white/30 animate-ping"></div>
+                  <div className="absolute inset-2 rounded-full border-4 border-white/50 animate-ping animation-delay-200"></div>
+                  <div className="absolute inset-4 rounded-full border-4 border-white/70 animate-ping animation-delay-400"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <MapPin className="w-6 h-6 text-white" />
+                  </div>
                 </div>
+                <p className="text-lg font-bold mb-1">Spreading The Word...</p>
+                <p className="text-white/70 text-xs">Looking for {selectedActivity?.name} {getSelectedConnectionType()?.name}s</p>
               </div>
-              <p className="text-xl font-bold mb-2">Spreading The Word...</p>
-              <p className="text-white/70 text-sm">Looking for {selectedActivity?.name} {getSelectedConnectionType()?.name}s</p>
             </div>
+          )}
+
+          {/* Top Controls */}
+          <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
+            {/* Status Badge */}
+            {currentStep !== 'category' && (
+              <div className="bg-white/95 backdrop-blur rounded-lg px-2 py-1 shadow-lg">
+                <p className="text-xs font-medium text-gray-600">
+                  {selectedCategory?.name} {selectedActivity && `› ${selectedActivity.name}`}
+                </p>
+              </div>
+            )}
+            
+            {/* Reset Button */}
+            {currentStep !== 'category' && (
+              <button 
+                onClick={resetFlow}
+                className="bg-white/95 backdrop-blur rounded-full p-1.5 shadow-lg hover:bg-white transition-colors"
+              >
+                <RotateCcw className="w-4 h-4 text-[#2B2D9E]" />
+              </button>
+            )}
           </div>
-        )}
 
-        {/* Top Controls */}
-        <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-          {/* Status Badge */}
-          {currentStep !== 'category' && (
-            <div className="bg-white/95 backdrop-blur rounded-xl px-3 py-2 shadow-lg">
-              <p className="text-xs font-medium text-gray-600">
-                {selectedCategory?.name} {selectedActivity && `› ${selectedActivity.name}`}
-              </p>
-            </div>
-          )}
-          
-          {/* Reset Button */}
-          {currentStep !== 'category' && (
-            <button 
-              onClick={resetFlow}
-              className="bg-white/95 backdrop-blur rounded-full p-2 shadow-lg hover:bg-white transition-colors"
-            >
-              <RotateCcw className="w-5 h-5 text-[#2B2D9E]" />
-            </button>
-          )}
+          {/* Center on User Button */}
+          <button 
+            onClick={getUserLocation}
+            className="absolute bottom-2 right-2 bg-white rounded-full p-2 shadow-lg hover:shadow-xl transition-shadow z-10"
+          >
+            <MapPin className="w-4 h-4 text-[#2B2D9E]" />
+          </button>
         </div>
-
-        {/* Center on User Button */}
-        <button 
-          onClick={getUserLocation}
-          className="absolute bottom-3 right-3 bg-white rounded-full p-2.5 shadow-lg hover:shadow-xl transition-shadow z-10"
-        >
-          <MapPin className="w-5 h-5 text-[#2B2D9E]" />
-        </button>
       </div>
 
+      {/* Spacer */}
+      <div className="h-4"></div>
+
       {/* Bottom Panel - Activities section */}
-      <div className="flex-1 bg-white rounded-t-3xl shadow-2xl relative z-10 overflow-hidden flex flex-col">
+      <div className="flex-1 bg-white rounded-t-3xl shadow-2xl relative z-10 mx-4 mb-4 overflow-hidden">
         {/* Panel Handle */}
-        <div className="py-3 flex justify-center flex-shrink-0">
+        <div className="py-3 flex justify-center">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
         </div>
 
