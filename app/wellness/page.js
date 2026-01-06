@@ -271,7 +271,20 @@ export default function WellnessPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <Header user={user} title="WELLNESS STORE" />
+      {/* Custom Header with WannaGo Logo */}
+      <header className="bg-[#2B2D9E] px-4 py-3 flex items-center justify-between">
+        <button 
+          onClick={() => router.push('/dashboard')} 
+          className="flex items-center gap-2 text-white hover:opacity-80 transition-opacity"
+        >
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+            <span className="text-[#2B2D9E] font-black text-sm">W</span>
+          </div>
+          <span className="font-bold text-lg">WannaGo</span>
+        </button>
+        <h1 className="text-lg font-bold text-white">STORE</h1>
+        <div className="w-20"></div>
+      </header>
       
       {/* Search & Cart Bar */}
       <div className="bg-white px-4 py-3 shadow-sm sticky top-0 z-30">
