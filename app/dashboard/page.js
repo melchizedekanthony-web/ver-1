@@ -22,9 +22,24 @@ import { toast } from 'sonner';
 import BottomNav from '@/components/BottomNav';
 import { getUser, getAuthToken, fetchWithAuth, signOut } from '@/lib/auth';
 
-// Dynamic import for map
+// Dynamic import for map with error handling
 const MapComponent = dynamic(
-  () => import('@/components/MapComponent').then(mod => mod.default),
+  () => import('@/components/MapComponent').catch(err => {
+    console.error('Failed to load MapComponent:', err);
+    return () => (
+      <div className="h-full bg-gray-100 flex items-center justify-center">
+        <div className="text-center text-gray-500">
+          <p>Map could not be loaded</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-2 text-sm text-blue-500 underline"
+          >
+            Reload page
+          </button>
+        </div>
+      </div>
+    );
+  }),
   { 
     ssr: false,
     loading: () => (
