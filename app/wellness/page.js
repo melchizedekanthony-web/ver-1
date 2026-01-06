@@ -90,6 +90,8 @@ export default function WellnessPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [viewMode, setViewMode] = useState('grid'); // grid or list
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showProductModal, setShowProductModal] = useState(false);
 
   useEffect(() => {
     const storedUser = getUser();
