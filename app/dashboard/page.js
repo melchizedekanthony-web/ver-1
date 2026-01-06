@@ -430,7 +430,8 @@ export default function Dashboard() {
   };
 
   const getSelectedConnectionType = () => {
-    return connectionTypes.find(c => c.id === selectedConnection);
+    const types = getConnectionTypes();
+    return types.find(c => c.id === selectedConnection);
   };
 
   const getBroadcastButtonText = () => {
