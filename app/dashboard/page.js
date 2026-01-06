@@ -226,6 +226,11 @@ export default function Dashboard() {
   const [panelExpanded, setPanelExpanded] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [showActivityDropdown, setShowActivityDropdown] = useState(false);
+  const [showGoAgainModal, setShowGoAgainModal] = useState(false);
+  const [selectedRecentActivity, setSelectedRecentActivity] = useState(null);
+  
+  // Recent Activity State
+  const [recentActivities, setRecentActivities] = useState([]);
   
   // Selection State
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -267,6 +272,16 @@ export default function Dashboard() {
   const [chatMessages, setChatMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+
+  // Get the appropriate connection types based on category
+  const getConnectionTypes = () => {
+    if (selectedCategory?.id === 'athletic') {
+      return athleticConnectionTypes;
+    } else if (selectedCategory?.id === 'non-athletic') {
+      return nonAthleticConnectionTypes;
+    }
+    return athleticConnectionTypes; // default
+  };
 
   useEffect(() => {
     checkAuth();
