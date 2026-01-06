@@ -15,7 +15,8 @@ import {
   BookOpen, Heart, Users, Utensils, X, Star, ChevronUp, ChevronDown,
   Camera, Dog, Palette, Trophy, GraduationCap, UserPlus, UsersRound,
   MessageSquare, Send, Clock, Filter, Zap, ArrowLeft, Check, Accessibility,
-  Home, RotateCcw, Car, Gamepad2, Wrench, Mic, Brush
+  Home, RotateCcw, Car, Gamepad2, Wrench, Mic, Brush, RefreshCw, UserCheck,
+  Lightbulb, Award, BookMarked
 } from 'lucide-react';
 import { toast } from 'sonner';
 import BottomNav from '@/components/BottomNav';
