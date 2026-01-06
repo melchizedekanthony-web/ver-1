@@ -723,7 +723,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-bold text-gray-800 mb-3">CONNECTION TYPE</h2>
 
               <div className="grid grid-cols-2 gap-2 mb-3">
-                {connectionTypes.map((type) => {
+                {getConnectionTypes().map((type) => {
                   const Icon = type.icon;
                   const isSelected = selectedConnection === type.id;
                   return (
