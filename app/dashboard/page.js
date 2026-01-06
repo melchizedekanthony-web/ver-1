@@ -647,14 +647,14 @@ export default function Dashboard() {
       <div className="h-4"></div>
 
       {/* Bottom Panel - Activities section */}
-      <div className="flex-1 bg-white rounded-t-3xl shadow-2xl relative z-10 mx-4 mb-4 overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl relative z-10 mx-4 overflow-hidden">
         {/* Panel Handle */}
         <div className="py-3 flex justify-center">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
         </div>
 
         {/* Panel Content */}
-        <div className="flex-1 px-4 pb-4 overflow-y-auto">
+        <div className="px-4 pb-6 max-h-[60vh] overflow-y-auto">
           
           {/* STEP 0: Category Selection */}
           {currentStep === 'category' && (
