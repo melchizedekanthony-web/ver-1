@@ -515,6 +515,159 @@ export default function WellnessPage() {
         </div>
       )}
 
+      {/* Product Detail Modal - Mini Shopify Page */}
+      {showProductModal && selectedProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowProductModal(false)}></div>
+          <div className="relative bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between z-10">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-[#2B2D9E] rounded flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">W</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-600">WannaGo Store</span>
+              </div>
+              <button 
+                onClick={() => setShowProductModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Product Content */}
+            <div className="grid md:grid-cols-2 gap-6 p-6">
+              {/* Product Image Gallery */}
+              <div className="space-y-4">
+                <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden">
+                  <img 
+                    src={selectedProduct.image} 
+                    alt={selectedProduct.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden border-2 border-transparent hover:border-[#2B2D9E] cursor-pointer">
+                      <img 
+                        src={selectedProduct.image} 
+                        alt={`${selectedProduct.name} view ${i}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Product Details */}
+              <div className="space-y-4">
+                {selectedProduct.badge && (
+                  <Badge className="bg-yellow-500 text-white">{selectedProduct.badge}</Badge>
+                )}
+                
+                <h1 className="text-2xl font-bold text-gray-900">{selectedProduct.name}</h1>
+                
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star 
+                        key={star} 
+                        className={`w-5 h-5 ${star <= Math.floor(selectedProduct.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600">
+                    {selectedProduct.rating} ({selectedProduct.reviews} reviews)
+                  </span>
+                </div>
+
+                <p className="text-3xl font-bold text-[#2B2D9E]">${selectedProduct.price.toFixed(2)}</p>
+
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  Premium quality {selectedProduct.name.toLowerCase()} designed for optimal performance and results. 
+                  Sourced from the finest ingredients and manufactured under strict quality control standards.
+                  Perfect for athletes and fitness enthusiasts looking to enhance their wellness routine.
+                </p>
+
+                {/* Product Features */}
+                <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                  <h3 className="font-semibold text-gray-800">Key Features</h3>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-[#2B2D9E] rounded-full"></div>
+                      Premium quality ingredients
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-[#2B2D9E] rounded-full"></div>
+                      Third-party tested for purity
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-[#2B2D9E] rounded-full"></div>
+                      Fast absorption formula
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-[#2B2D9E] rounded-full"></div>
+                      30-day money back guarantee
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Quantity Selector */}
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium text-gray-700">Quantity:</span>
+                  <div className="flex items-center gap-2">
+                    <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="w-8 text-center font-semibold">1</span>
+                    <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200">
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-3 pt-4">
+                  <Button 
+                    className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-lg font-semibold"
+                    onClick={() => {
+                      addToCart(selectedProduct);
+                      setShowProductModal(false);
+                    }}
+                  >
+                    Add to Cart - ${selectedProduct.price.toFixed(2)}
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="w-full py-4 border-[#2B2D9E] text-[#2B2D9E]"
+                    onClick={() => {
+                      toggleFavorite(selectedProduct.id);
+                    }}
+                  >
+                    <Heart className={`w-5 h-5 mr-2 ${favorites.includes(selectedProduct.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                    {favorites.includes(selectedProduct.id) ? 'Saved to Favorites' : 'Save for Later'}
+                  </Button>
+                </div>
+
+                {/* Shipping Info */}
+                <div className="border-t pt-4 space-y-2 text-sm text-gray-600">
+                  <p className="flex items-center gap-2">
+                    <span>🚚</span> Free shipping on orders over $50
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span>🔄</span> 30-day hassle-free returns
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span>🔒</span> Secure checkout with Shopify
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <BottomNav />
 
       <style jsx>{`
