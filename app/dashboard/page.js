@@ -71,8 +71,8 @@ const nonAthleticActivities = [
   { id: 'dogwalking', name: 'Dog Walking', icon: Dog, color: 'bg-yellow-100 text-yellow-600' },
 ];
 
-// Connection types
-const connectionTypes = [
+// Connection types for ATHLETIC activities
+const athleticConnectionTypes = [
   { 
     id: 'buddy', 
     name: 'Buddy', 
@@ -105,6 +105,76 @@ const connectionTypes = [
     borderColor: 'border-red-500',
     textColor: 'text-red-500',
     lightBg: 'bg-red-50'
+  },
+  { 
+    id: 'group', 
+    name: 'Group', 
+    displayName: 'GROUP',
+    description: 'Join or create group',
+    icon: UsersRound, 
+    color: 'bg-green-500',
+    borderColor: 'border-green-500',
+    textColor: 'text-green-500',
+    lightBg: 'bg-green-50'
+  },
+  { 
+    id: 'accessible', 
+    name: 'Accessible', 
+    displayName: 'ACCESSIBLE',
+    description: 'Inclusive activities for all',
+    icon: Accessibility, 
+    color: 'bg-purple-500',
+    borderColor: 'border-purple-500',
+    textColor: 'text-purple-500',
+    lightBg: 'bg-purple-50'
+  },
+];
+
+// Connection types for NON-ATHLETIC activities
+const nonAthleticConnectionTypes = [
+  { 
+    id: 'buddy', 
+    name: 'Buddy', 
+    displayName: 'BUDDY',
+    description: 'Find a 1-on-1 companion',
+    icon: UserPlus, 
+    color: 'bg-blue-500',
+    borderColor: 'border-blue-500',
+    textColor: 'text-blue-500',
+    lightBg: 'bg-blue-50'
+  },
+  { 
+    id: 'mentor', 
+    name: 'Mentor', 
+    displayName: 'MENTOR',
+    description: 'Get guidance & advice',
+    icon: Lightbulb, 
+    color: 'bg-yellow-500',
+    borderColor: 'border-yellow-500',
+    textColor: 'text-yellow-500',
+    lightBg: 'bg-yellow-50'
+  },
+  { 
+    id: 'instructor', 
+    name: 'Instructor', 
+    displayName: 'INSTRUCTOR',
+    description: 'Learn from a teacher',
+    icon: BookMarked, 
+    color: 'bg-orange-500',
+    borderColor: 'border-orange-500',
+    textColor: 'text-orange-500',
+    lightBg: 'bg-orange-50'
+  },
+  { 
+    id: 'expert', 
+    name: 'Expert', 
+    displayName: 'EXPERT',
+    description: 'Connect with a specialist',
+    icon: Award, 
+    color: 'bg-emerald-500',
+    borderColor: 'border-emerald-500',
+    textColor: 'text-emerald-500',
+    lightBg: 'bg-emerald-50'
   },
   { 
     id: 'group', 
