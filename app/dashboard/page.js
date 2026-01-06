@@ -578,10 +578,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20">
-      {/* Map Section - Reduced and Centered */}
-      <div className="px-4 pt-4">
-        <div className="h-[25vh] max-h-[200px] relative rounded-2xl overflow-hidden shadow-lg mx-auto max-w-3xl">
+    <div className="min-h-screen bg-gray-100 pb-20 flex flex-col">
+      {/* Map Section - Vertical Rectangle, Half Page */}
+      <div className="flex-1 flex items-center justify-center p-4 min-h-[45vh]">
+        <div className="w-full max-w-[280px] h-[40vh] min-h-[300px] relative rounded-2xl overflow-hidden shadow-xl border-4 border-white">
           <MapComponent
             center={[userLocation.lat, userLocation.lng]}
             zoom={13}
@@ -597,16 +597,16 @@ export default function Dashboard() {
           {isBroadcasting && (
             <div className="absolute inset-0 bg-[#2B2D9E]/80 flex items-center justify-center z-20 rounded-2xl">
               <div className="text-center text-white">
-                <div className="relative w-16 h-16 mx-auto mb-3">
+                <div className="relative w-14 h-14 mx-auto mb-3">
                   <div className="absolute inset-0 rounded-full border-4 border-white/30 animate-ping"></div>
                   <div className="absolute inset-2 rounded-full border-4 border-white/50 animate-ping animation-delay-200"></div>
                   <div className="absolute inset-4 rounded-full border-4 border-white/70 animate-ping animation-delay-400"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-white" />
+                    <MapPin className="w-5 h-5 text-white" />
                   </div>
                 </div>
-                <p className="text-lg font-bold mb-1">Spreading The Word...</p>
-                <p className="text-white/70 text-xs">Looking for {selectedActivity?.name} {getSelectedConnectionType()?.name}s</p>
+                <p className="text-base font-bold mb-1">Spreading The Word...</p>
+                <p className="text-white/70 text-xs px-2">Looking for {selectedActivity?.name} {getSelectedConnectionType()?.name}s</p>
               </div>
             </div>
           )}
@@ -616,7 +616,7 @@ export default function Dashboard() {
             {/* Status Badge */}
             {currentStep !== 'category' && (
               <div className="bg-white/95 backdrop-blur rounded-lg px-2 py-1 shadow-lg">
-                <p className="text-xs font-medium text-gray-600">
+                <p className="text-[10px] font-medium text-gray-600">
                   {selectedCategory?.name} {selectedActivity && `› ${selectedActivity.name}`}
                 </p>
               </div>
@@ -643,18 +643,15 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Spacer */}
-      <div className="h-4"></div>
-
       {/* Bottom Panel - Activities section */}
-      <div className="bg-white rounded-3xl shadow-2xl relative z-10 mx-4 overflow-hidden">
+      <div className="bg-white rounded-t-3xl shadow-2xl relative z-10 mx-2">
         {/* Panel Handle */}
         <div className="py-3 flex justify-center">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
         </div>
 
         {/* Panel Content */}
-        <div className="px-4 pb-6 max-h-[60vh] overflow-y-auto">
+        <div className="px-4 pb-6 max-h-[45vh] overflow-y-auto">
           
           {/* STEP 0: Category Selection */}
           {currentStep === 'category' && (
