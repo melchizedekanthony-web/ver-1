@@ -291,6 +291,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (user) {
       fetchNearbyUsers();
+      fetchRecentActivities();
     }
   }, [user, selectedActivity, broadcastRadius]);
 
@@ -324,6 +325,64 @@ export default function Dashboard() {
         }
       );
     }
+  };
+
+  const fetchRecentActivities = async () => {
+    try {
+      const res = await fetchWithAuth('/api/sessions');
+      const data = await res.json();
+      if (data.sessions && data.sessions.length > 0) {
+        setRecentActivities(data.sessions.slice(0, 5).map(session => ({
+          id: session.id,
+          activity: session.activity || session.title,
+          partner: session.participants?.[0]?.name || 'Solo',
+          partnerId: session.participants?.[0]?.id || null,
+          date: new Date(session.scheduledAt || session.createdAt),
+          location: session.location || 'Unknown location',
+          rating: session.rating || 4.5,
+          connectionType: session.mode || 'buddy',
+          category: session.category || 'athletic'
+        })));
+      } else {
+        // Mock data for demo
+        setRecentActivities([
+          { id: '1', activity: 'Running', partner: 'Sarah M.', partnerId: 'user-1', date: new Date(Date.now() - 86400000), location: 'Central Park', rating: 5, connectionType: 'buddy', category: 'athletic' },
+          { id: '2', activity: 'Coffee', partner: 'Mike T.', partnerId: 'user-2', date: new Date(Date.now() - 172800000), location: 'Starbucks Downtown', rating: 4.5, connectionType: 'buddy', category: 'non-athletic' },
+          { id: '3', activity: 'Yoga', partner: 'Luna K.', partnerId: 'user-3', date: new Date(Date.now() - 259200000), location: 'Zen Studio', rating: 5, connectionType: 'group', category: 'athletic' },
+        ]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch recent activities:', error);
+      // Mock data fallback
+      setRecentActivities([
+        { id: '1', activity: 'Running', partner: 'Sarah M.', partnerId: 'user-1', date: new Date(Date.now() - 86400000), location: 'Central Park', rating: 5, connectionType: 'buddy', category: 'athletic' },
+        { id: '2', activity: 'Coffee', partner: 'Mike T.', partnerId: 'user-2', date: new Date(Date.now() - 172800000), location: 'Starbucks Downtown', rating: 4.5, connectionType: 'buddy', category: 'non-athletic' },
+      ]);
+    }
+  };
+
+  const handleGoAgain = (recentActivity, option) => {
+    // option: 'broadcast_all', 'same_user', 'friends_list'
+    const category = recentActivity.category === 'athletic' ? activityCategories[0] : activityCategories[1];
+    const activities = recentActivity.category === 'athletic' ? athleticActivities : nonAthleticActivities;
+    const activity = activities.find(a => a.name.toLowerCase() === recentActivity.activity.toLowerCase()) || activities[0];
+    
+    setSelectedCategory(category);
+    setSelectedActivity(activity);
+    
+    if (option === 'broadcast_all') {
+      setCurrentStep('connection');
+      toast.success(`Let's find a new ${recentActivity.activity} partner!`);
+    } else if (option === 'same_user') {
+      // Navigate directly to connect with the same user
+      router.push(`/connect/${recentActivity.partnerId}?activity=${recentActivity.activity}`);
+    } else if (option === 'friends_list') {
+      // Go to connections page to pick from friends
+      router.push('/connections');
+    }
+    
+    setShowGoAgainModal(false);
+    setSelectedRecentActivity(null);
   };
 
   const fetchNearbyUsers = async () => {
