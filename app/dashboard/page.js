@@ -581,7 +581,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-100 pb-20 flex flex-col">
       {/* Map Section - Vertical Rectangle, Half Page */}
       <div className="flex-1 flex items-center justify-center p-4 min-h-[45vh]">
-        <div className="w-full max-w-[280px] h-[40vh] min-h-[300px] relative rounded-2xl overflow-hidden shadow-xl border-4 border-white">
+        <div className="w-full max-w-[420px] h-[40vh] min-h-[300px] relative rounded-2xl overflow-hidden shadow-xl border-4 border-white">
           <MapComponent
             center={[userLocation.lat, userLocation.lng]}
             zoom={13}
