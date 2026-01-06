@@ -638,26 +638,129 @@ export default function Dashboard() {
           
           {/* STEP 0: Category Selection */}
           {currentStep === 'category' && (
-            <div className="animate-fadeIn h-full flex flex-col justify-center items-center">
-              <h2 className="text-lg font-bold text-gray-800 mb-6 text-center">Choose Your Activity</h2>
-              
-              <div className="grid grid-cols-2 gap-6 w-full max-w-md">
-                {activityCategories.map((category) => {
-                  const Icon = category.icon;
-                  return (
-                    <button
-                      key={category.id}
-                      onClick={() => handleCategorySelect(category)}
-                      className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-2xl hover:bg-blue-50 hover:border-[#2B2D9E] border-2 border-transparent transition-all shadow-sm hover:shadow-md"
-                    >
-                      <div className="w-16 h-16 rounded-full bg-[#2B2D9E] flex items-center justify-center mb-3">
-                        <Icon className="w-8 h-8 text-white" />
-                      </div>
-                      <p className="font-bold text-gray-800 text-center">{category.name}</p>
-                    </button>
-                  );
-                })}
+            <div className="animate-fadeIn flex flex-col">
+              <div className="flex flex-col justify-center items-center py-4">
+                <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">Choose Your Activity</h2>
+                
+                <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+                  {activityCategories.map((category) => {
+                    const Icon = category.icon;
+                    return (
+                      <button
+                        key={category.id}
+                        onClick={() => handleCategorySelect(category)}
+                        className="flex flex-col items-center justify-center p-5 bg-gray-50 rounded-2xl hover:bg-blue-50 hover:border-[#2B2D9E] border-2 border-transparent transition-all shadow-sm hover:shadow-md"
+                      >
+                        <div className="w-14 h-14 rounded-full bg-[#2B2D9E] flex items-center justify-center mb-2">
+                          <Icon className="w-7 h-7 text-white" />
+                        </div>
+                        <p className="font-bold text-gray-800 text-center text-sm">{category.name}</p>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Recent Activity Section */}
+              {recentActivities.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <h3 className="text-md font-bold text-gray-800 mb-3">Recent Activity</h3>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {recentActivities.map((activity) => (
+                      <div 
+                        key={activity.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            activity.category === 'athletic' ? 'bg-blue-100' : 'bg-purple-100'
+                          }`}>
+                            {activity.category === 'athletic' ? (
+                              <Dumbbell className="w-5 h-5 text-blue-600" />
+                            ) : (
+                              <Palette className="w-5 h-5 text-purple-600" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-800 text-sm truncate">{activity.activity}</p>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <span>with {activity.partner}</span>
+                              <span>•</span>
+                              <span>{activity.date.toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs">
+                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                            <span className="text-gray-600">{activity.rating}</span>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="ml-2 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-xs px-3"
+                          onClick={() => {
+                            setSelectedRecentActivity(activity);
+                            setShowGoAgainModal(true);
+                          }}
+                        >
+                          <RefreshCw className="w-3 h-3 mr-1" />
+                          Go Again
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Go Again Modal */}
+          {showGoAgainModal && selectedRecentActivity && (
+            <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+              <Card className="w-full max-w-sm p-5">
+                <h3 className="text-lg font-bold text-gray-800 mb-2">Go Again!</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Redo <span className="font-semibold">{selectedRecentActivity.activity}</span> - How would you like to find a partner?
+                </p>
+                
+                <div className="space-y-2">
+                  <Button
+                    className="w-full bg-[#2B2D9E] hover:bg-[#1f2175] text-white justify-start"
+                    onClick={() => handleGoAgain(selectedRecentActivity, 'broadcast_all')}
+                  >
+                    <Users className="w-4 h-4 mr-3" />
+                    Broadcast to All Available Users
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="w-full border-[#2B2D9E] text-[#2B2D9E] justify-start"
+                    onClick={() => handleGoAgain(selectedRecentActivity, 'same_user')}
+                  >
+                    <UserCheck className="w-4 h-4 mr-3" />
+                    Same Partner ({selectedRecentActivity.partner})
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="w-full border-gray-300 text-gray-700 justify-start"
+                    onClick={() => handleGoAgain(selectedRecentActivity, 'friends_list')}
+                  >
+                    <Heart className="w-4 h-4 mr-3" />
+                    Choose from Friends List
+                  </Button>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  className="w-full mt-3 text-gray-500"
+                  onClick={() => {
+                    setShowGoAgainModal(false);
+                    setSelectedRecentActivity(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </Card>
             </div>
           )}
 
