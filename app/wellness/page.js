@@ -212,10 +212,25 @@ export default function WellnessPage() {
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  const openProductDetail = (product) => {
+    setSelectedProduct(product);
+    setShowProductModal(true);
+  };
+
   const renderProductCard = (product, size = 'normal') => (
     <Card 
       key={product.id} 
-      className={`overflow-hidden ${size === 'small' ? 'flex-shrink-0 w-36' : ''}`}
+      className={`overflow-hidden cursor-pointer hover:shadow-lg transition-shadow ${size === 'small' ? 'flex-shrink-0 w-36' : ''}`}
+      onClick={() => openProductDetail(product)}
+      onMouseEnter={(e) => {
+        // Optional: Show preview on hover for desktop
+        if (window.innerWidth > 768) {
+          e.currentTarget.classList.add('ring-2', 'ring-[#2B2D9E]');
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.classList.remove('ring-2', 'ring-[#2B2D9E]');
+      }}
     >
       <div className={`relative ${size === 'small' ? 'h-28' : 'aspect-square'} bg-gray-100`}>
         <img
@@ -246,7 +261,7 @@ export default function WellnessPage() {
         <p className="text-[#2B2D9E] font-bold mt-1">${product.price.toFixed(2)}</p>
         <Button 
           className={`w-full mt-2 bg-[#2B2D9E] hover:bg-[#1f2175] ${size === 'small' ? 'text-xs py-1' : 'text-sm'}`}
-          onClick={() => addToCart(product)}
+          onClick={(e) => { e.stopPropagation(); addToCart(product); }}
         >
           Add to Cart
         </Button>
