@@ -1,7 +1,7 @@
-# FITTR - Fitness Social Platform MVP
+# WannaGo - Fitness Social Platform MVP
 
 ## Overview
-FITTR is a location-based fitness social platform that connects users for workouts, training sessions, and athletic activities. Think "Uber for fitness partners" with social networking features.
+WannaGo is a location-based fitness social platform that connects users for workouts, training sessions, and athletic activities. Think "Uber for fitness partners" with social networking features.
 
 ## Features Implemented (MVP - Phase 1)
 
