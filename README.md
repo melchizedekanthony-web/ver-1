@@ -129,8 +129,8 @@ WannaGo is a location-based fitness social platform that connects users for work
 ```
 MONGO_URL=mongodb://localhost:27017
 DB_NAME=fittr_db
-NEXT_PUBLIC_BASE_URL=https://wannago-app.preview.emergentagent.com
-NEXTAUTH_URL=https://wannago-app.preview.emergentagent.com
+NEXT_PUBLIC_BASE_URL=https://explore-wannago.preview.emergentagent.com
+NEXTAUTH_URL=https://explore-wannago.preview.emergentagent.com
 NEXTAUTH_SECRET=fittr_super_secret_key_2024_production_ready
 OPENAI_API_KEY=sk-emergent-53d5cDfB6Ae5a850d6
 ```
@@ -258,7 +258,7 @@ yarn dev
 ```
 http://localhost:3000
 or
-https://wannago-app.preview.emergentagent.com
+https://explore-wannago.preview.emergentagent.com
 ```
 
 ## Testing
