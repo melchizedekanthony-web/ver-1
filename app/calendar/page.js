@@ -288,8 +288,8 @@ export default function CalendarPage() {
     }));
   };
 
-  const saveActivity = () => {
-    // Update the activity
+  const updateActivityLocal = () => {
+    // Update the activity locally
     setActivities(prev => prev.map(a => 
       a.id === selectedActivity.id 
         ? { ...a, ...activityForm }
