@@ -33,12 +33,10 @@ export default function ConnectionsPage() {
       const res = await fetchWithAuth('/api/matches');
       const data = await res.json();
       if (data.matches) {
-        setConnections(data.matches.map(m => ({
-          ...m,
-          status: ['Active', 'Available', 'Busy'][Math.floor(Math.random() * 3)],
-          lastActivity: ['Trail Run', 'Coffee & Code', 'Power Yoga', 'Rock Climbing'][Math.floor(Math.random() * 4)],
-          connectionDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000)
-        })));
+        // Use only real, backend-computed fields — no fabricated status,
+        // activity history, or connection dates. commonActivities and
+        // compatibilityScore come straight from the matching algorithm.
+        setConnections(data.matches);
       }
     } catch (error) {
       console.error('Failed to fetch connections:', error);
@@ -91,15 +89,15 @@ export default function ConnectionsPage() {
       {/* Connections List */}
       <div className="p-4 max-w-2xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-black text-white text-lg tracking-tight">Active Activity Network ({filteredConnections.length})</h2>
+          <h2 className="font-black text-white text-lg tracking-tight">People Nearby ({filteredConnections.length})</h2>
           <span className="text-xs font-bold text-[#FBBF24] bg-[#FBBF24]/10 border border-[#FBBF24]/20 px-2.5 py-0.5 rounded-full">
-            LIVE FRIENDS
+            SUGGESTED
           </span>
         </div>
-        
+
         {filteredConnections.map((connection) => (
-          <div 
-            key={connection.id} 
+          <div
+            key={connection.id}
             className="dark-glass-card p-4 hover:border-[#DC2626]/40 transition-all cursor-pointer"
             onClick={() => router.push(`/user/${connection.id}`)}
           >
@@ -111,27 +109,34 @@ export default function ConnectionsPage() {
                     {connection.name?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-[#0A0C10] ${
-                  connection.status === 'Active' ? 'bg-[#DC2626]' : 
-                  connection.status === 'Available' ? 'bg-[#FBBF24]' : 'bg-[#94A3B8]'
-                }`}></div>
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-white text-base truncate">{connection.name}</h3>
-                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                    connection.status === 'Active' ? 'bg-[#DC2626]/15 text-[#FF6B6B] border-[#DC2626]/30' : 
-                    connection.status === 'Available' ? 'bg-[#FBBF24]/15 text-[#FBBF24] border-[#FBBF24]/30' : 'bg-white/5 text-[#94A3B8] border-white/10'
-                  }`}>
-                    {connection.status}
-                  </span>
+                  {typeof connection.compatibilityScore === 'number' && (
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-[#DC2626]/15 text-[#FF6B6B] border-[#DC2626]/30">
+                      {connection.compatibilityScore}% Match
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-[#94A3B8] mt-0.5 flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-[#DC2626]" /> {connection.lastActivity} partner
+                  <Flame className="w-3 h-3 text-[#DC2626]" />
+                  {connection.commonActivities?.length
+                    ? `${connection.commonActivities.slice(0, 2).join(', ')} in common`
+                    : 'New here'}
                 </p>
                 <div className="flex items-center gap-1 mt-1.5">
-                  {renderStars(connection.averageRating)}
+                  {connection.avgRating ? (
+                    <>
+                      {renderStars(connection.avgRating)}
+                      <span className="text-[11px] text-[#94A3B8] ml-1">
+                        {connection.avgRating} · {connection.reviewCount} review{connection.reviewCount === 1 ? '' : 's'}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-[11px] text-[#94A3B8]">No reviews yet</span>
+                  )}
                 </div>
               </div>
             </div>

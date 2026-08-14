@@ -192,8 +192,13 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="w-full border-t border-white/5 py-8 text-center text-xs text-[#94A3B8]">
+      <footer className="w-full border-t border-white/5 py-8 text-center text-xs text-[#94A3B8] space-y-2">
         <p>© 2026 WannaGo Social Activity Platform. Built for spontaneous real-world connections.</p>
+        <p className="flex items-center justify-center gap-3">
+          <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+          <span className="text-white/20">•</span>
+          <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+        </p>
       </footer>
     </div>
   );

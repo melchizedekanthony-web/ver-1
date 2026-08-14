@@ -364,7 +364,7 @@ export default function Dashboard() {
           partnerId: session.participants?.[0]?.id || null,
           date: new Date(session.scheduledAt || session.createdAt),
           location: session.location || 'Unknown location',
-          rating: session.rating || 4.5,
+          rating: session.rating ?? null,
           connectionType: session.mode || 'buddy',
           category: session.category || 'athletic'
         })));
@@ -450,26 +450,34 @@ export default function Dashboard() {
     setSelectedRecentActivity(null);
   };
 
+  // Live preview of who's actually broadcasting nearby right now, using real
+  // GPS coordinates and real distance — this is a preview only (the user
+  // hasn't committed to broadcasting yet), so it doesn't create a broadcast
+  // record. An empty result is honest: nobody else happens to be live within
+  // this radius at this moment, which is expected with a small user base.
   const fetchNearbyUsers = async () => {
+    if (!userLocation?.lat || !userLocation?.lng) {
+      setNearbyUsers([]);
+      setUsersInRadius(0);
+      return;
+    }
     try {
-      const res = await fetchWithAuth('/api/matches');
+      const params = new URLSearchParams({
+        lat: String(userLocation.lat),
+        lng: String(userLocation.lng),
+        radius: String(effectiveBroadcastRadius)
+      });
+      if (selectedActivity?.id) params.set('activity', selectedActivity.id);
+
+      const res = await fetchWithAuth(`/api/broadcasts/nearby?${params.toString()}`);
       const data = await res.json();
-      if (data.matches) {
-        const usersWithLocations = data.matches.map((match, index) => ({
-          ...match,
-          location: {
-            lat: userLocation.lat + (Math.random() - 0.5) * 0.04,
-            lng: userLocation.lng + (Math.random() - 0.5) * 0.04
-          },
-          activity: selectedActivity?.name || 'available',
-          connectionType: ['buddy', 'trainer', 'competitor', 'group'][index % 4],
-          distance: (Math.random() * effectiveBroadcastRadius).toFixed(1)
-        }));
-        setNearbyUsers(usersWithLocations);
-        setUsersInRadius(usersWithLocations.length);
-      }
+      const matches = data.matches || [];
+      setNearbyUsers(matches);
+      setUsersInRadius(matches.length);
     } catch (error) {
       console.error('Failed to fetch nearby users:', error);
+      setNearbyUsers([]);
+      setUsersInRadius(0);
     }
   };
 
@@ -516,40 +524,87 @@ export default function Dashboard() {
       toast.error('Please select a connection type');
       return;
     }
+    if (!userLocation?.lat || !userLocation?.lng) {
+      toast.error('Enable location access to broadcast on the radar');
+      return;
+    }
 
     setIsBroadcasting(true);
 
-    await new Promise(resolve => setTimeout(resolve, 2500));
-
-    setIsBroadcasting(false);
-    toast.success(`Found ${usersInRadius} potential ${selectedActivity.name.toLowerCase()} partners!`);
-    setCurrentStep('matching');
+    try {
+      const res = await fetchWithAuth('/api/broadcast', {
+        method: 'POST',
+        body: JSON.stringify({
+          category: selectedCategory?.id,
+          activity: selectedActivity.id,
+          connectionType: selectedConnection,
+          radius: effectiveBroadcastRadius,
+          location: userLocation
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Could not start broadcasting');
+        return;
+      }
+      setNearbyUsers(data.matches || []);
+      setUsersInRadius(data.matchesFound || 0);
+      if (data.matchesFound > 0) {
+        toast.success(`Found ${data.matchesFound} ${selectedActivity.name.toLowerCase()} ${data.matchesFound === 1 ? 'partner' : 'partners'} broadcasting nearby!`);
+      } else {
+        toast('No one else is broadcasting nearby right now — you\'re live for the next hour, check back soon.');
+      }
+      setCurrentStep('matching');
+    } catch (error) {
+      console.error('Failed to broadcast:', error);
+      toast.error('Could not start broadcasting');
+    } finally {
+      setIsBroadcasting(false);
+    }
   };
 
-  const handleUserClick = (clickedUser) => {
+  const handleUserClick = async (clickedUser) => {
     setSelectedUser(clickedUser);
     setCurrentStep('chat');
+    setChatMessages([]);
+    try {
+      const res = await fetchWithAuth(`/api/messages/${clickedUser.id}`);
+      const data = await res.json();
+      if (data.messages) {
+        setChatMessages(data.messages.map(m => ({
+          id: m.id,
+          sender: m.senderId === user?.id ? 'me' : 'them',
+          text: m.text,
+          time: new Date(m.createdAt)
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to load conversation:', error);
+    }
   };
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    
-    setChatMessages(prev => [...prev, {
-      id: Date.now(),
-      sender: 'me',
-      text: newMessage,
-      time: new Date()
-    }]);
-    setNewMessage('');
+  const handleSendMessage = async () => {
+    const text = newMessage.trim();
+    if (!text || !selectedUser) return;
 
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        sender: 'them',
-        text: ['Sounds great!', 'What time works?', 'Where should we meet?', 'I\'m flexible!'][Math.floor(Math.random() * 4)],
-        time: new Date()
-      }]);
-    }, 1500);
+    setNewMessage('');
+    const optimisticMessage = { id: `pending-${Date.now()}`, sender: 'me', text, time: new Date() };
+    setChatMessages(prev => [...prev, optimisticMessage]);
+
+    try {
+      const res = await fetchWithAuth('/api/messages', {
+        method: 'POST',
+        body: JSON.stringify({ recipientId: selectedUser.id, text })
+      });
+      if (!res.ok) {
+        throw new Error('Send failed');
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      toast.error('Message failed to send');
+      setChatMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+      setNewMessage(text);
+    }
   };
 
   const handleConfirmMeeting = () => {

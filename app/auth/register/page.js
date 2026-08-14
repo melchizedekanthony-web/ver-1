@@ -157,13 +157,20 @@ export default function Register() {
               />
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full py-6 mt-4 bg-primary hover:bg-primary/90 text-white text-lg font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(120,0,255,0.6)] transition-all"
               disabled={loading}
             >
               {loading ? 'Creating account...' : 'JOIN UP'}
             </Button>
+
+            <p className="text-center text-xs text-white/40 mt-3">
+              By joining, you agree to our{' '}
+              <Link href="/terms" className="text-white/70 hover:text-white underline underline-offset-2">Terms of Service</Link>
+              {' '}and{' '}
+              <Link href="/privacy" className="text-white/70 hover:text-white underline underline-offset-2">Privacy Policy</Link>.
+            </p>
           </form>
 
           <div className="mt-8 text-center">

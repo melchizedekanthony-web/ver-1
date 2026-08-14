@@ -212,17 +212,46 @@ async function getProfile(request) {
 
     const db = await getDb();
     const usersCollection = db.collection('users');
-    
+
     const profile = await usersCollection.findOne(
       { email: user.email },
       { projection: { password: 0 } }
     );
-    
+
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ profile });
+    // Real stats — no more hardcoded "34 Activities / 28 Connections / 5.0
+    // (42 Meetups)" shown to every user regardless of actual history.
+    const activitiesCollection = db.collection('activities');
+    const messagesCollection = db.collection('messages');
+    const reviewsCollection = db.collection('reviews');
+
+    const [activitiesCount, myMessages, ratingAgg] = await Promise.all([
+      activitiesCollection.countDocuments({ userId: profile.id }),
+      messagesCollection.find(
+        { $or: [{ senderId: profile.id }, { recipientId: profile.id }] },
+        { projection: { senderId: 1, recipientId: 1 } }
+      ).toArray(),
+      reviewsCollection.aggregate([
+        { $match: { targetId: profile.id, targetType: 'user' } },
+        { $group: { _id: '$targetId', avgRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } }
+      ]).toArray()
+    ]);
+
+    const connectionIds = new Set(
+      myMessages.map(m => (m.senderId === profile.id ? m.recipientId : m.senderId))
+    );
+
+    const stats = {
+      activitiesCount,
+      connectionsCount: connectionIds.size,
+      avgRating: ratingAgg.length ? Math.round(ratingAgg[0].avgRating * 10) / 10 : null,
+      reviewCount: ratingAgg.length ? ratingAgg[0].reviewCount : 0
+    };
+
+    return NextResponse.json({ profile, stats });
   } catch (error) {
     console.error('Get profile error:', error);
     return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
@@ -1616,6 +1645,100 @@ async function deleteActivity(request, activityId) {
 // ========== BROADCAST ENDPOINTS ==========
 
 // POST /api/broadcast - Create a broadcast to find companions
+// ========== GEO HELPERS ==========
+// Real distance in miles between two lat/lng points — replaces the
+// Math.random() jitter that used to fake every "X mi away" label.
+function haversineDistanceMiles(lat1, lng1, lat2, lng2) {
+  if ([lat1, lng1, lat2, lng2].some(v => typeof v !== 'number' || Number.isNaN(v))) {
+    return null;
+  }
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const R = 3958.8; // Earth radius in miles
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Finds OTHER users who currently have an active, unexpired broadcast within
+// radiusMiles of (lat, lng) — real geolocation-based matching. If nobody is
+// actually broadcasting nearby, this returns an empty list; the UI shows an
+// honest "no one nearby right now" state rather than inventing people.
+async function findNearbyBroadcasters(db, excludeUserId, lat, lng, radiusMiles, activity) {
+  if (typeof lat !== 'number' || typeof lng !== 'number' || Number.isNaN(lat) || Number.isNaN(lng)) {
+    return [];
+  }
+
+  const broadcastsCollection = db.collection('broadcasts');
+  const usersCollection = db.collection('users');
+  const reviewsCollection = db.collection('reviews');
+
+  const query = {
+    userId: { $ne: excludeUserId },
+    status: 'active',
+    expiresAt: { $gt: new Date() },
+    'location.lat': { $type: 'number' },
+    'location.lng': { $type: 'number' }
+  };
+  if (activity) query.activity = activity;
+
+  const broadcasts = await broadcastsCollection
+    .find(query)
+    .sort({ createdAt: -1 })
+    .limit(200)
+    .toArray();
+
+  // Only the most recent active broadcast per user counts.
+  const latestByUser = new Map();
+  for (const b of broadcasts) {
+    if (!latestByUser.has(b.userId)) latestByUser.set(b.userId, b);
+  }
+
+  const radius = typeof radiusMiles === 'number' && !Number.isNaN(radiusMiles) ? radiusMiles : 5;
+  const withDistance = [...latestByUser.values()]
+    .map(b => ({ broadcast: b, distance: haversineDistanceMiles(lat, lng, b.location.lat, b.location.lng) }))
+    .filter(x => x.distance !== null && x.distance <= radius)
+    .sort((a, b) => a.distance - b.distance);
+
+  if (withDistance.length === 0) return [];
+
+  const userIds = withDistance.map(x => x.broadcast.userId);
+  const users = await usersCollection
+    .find({ id: { $in: userIds } }, { projection: { password: 0 } })
+    .toArray();
+  const usersById = new Map(users.map(u => [u.id, u]));
+
+  const ratingAggregates = userIds.length
+    ? await reviewsCollection.aggregate([
+        { $match: { targetId: { $in: userIds }, targetType: 'user' } },
+        { $group: { _id: '$targetId', avgRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } }
+      ]).toArray()
+    : [];
+  const ratingsById = new Map(ratingAggregates.map(r => [r._id, r]));
+
+  return withDistance
+    .map(({ broadcast, distance }) => {
+      const u = usersById.get(broadcast.userId);
+      if (!u) return null;
+      const rating = ratingsById.get(u.id);
+      return {
+        id: u.id,
+        name: u.name,
+        profilePhoto: u.profilePhoto,
+        activities: u.activities,
+        location: broadcast.location, // real coordinates the broadcaster shared, for the map marker
+        activity: broadcast.activity,
+        distance: Math.round(distance * 10) / 10,
+        connectionType: broadcast.connectionType || null,
+        avgRating: rating ? Math.round(rating.avgRating * 10) / 10 : null,
+        reviewCount: rating ? rating.reviewCount : 0
+      };
+    })
+    .filter(Boolean);
+}
+
 async function createBroadcast(request) {
   try {
     const user = await getCurrentUser(request);
@@ -1624,15 +1747,19 @@ async function createBroadcast(request) {
     }
 
     const body = await request.json();
-    const { 
+    const {
       category, // 'athletic' or 'non-athletic'
       activity,
       connectionType, // 'buddy', 'trainer', 'competitor', 'group', 'accessible'
       radius,
-      location,
+      location, // { lat, lng } — the broadcaster's real current position
       filters = {},
       message = ''
     } = body;
+
+    if (!location || typeof location.lat !== 'number' || typeof location.lng !== 'number') {
+      return NextResponse.json({ error: 'A real device location is required to broadcast' }, { status: 400 });
+    }
 
     const db = await getDb();
     const broadcastsCollection = db.collection('broadcasts');
@@ -1651,43 +1778,53 @@ async function createBroadcast(request) {
       status: 'active',
       responses: [],
       createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000) // 1 hour — matches how long someone is realistically "out and available"
     };
 
     await broadcastsCollection.insertOne(broadcast);
 
-    // Find matching users based on criteria
-    const usersCollection = db.collection('users');
-    const matchQuery = {
-      id: { $ne: user.id },
-      onboardingComplete: true
-    };
+    // Real nearby matching: only people who are ALSO currently broadcasting,
+    // within actual distance of the caller's real coordinates. No fabricated
+    // "matches" — an empty result here is an honest empty result.
+    const matches = await findNearbyBroadcasters(db, user.id, location.lat, location.lng, radius, activity);
 
-    if (activity) {
-      matchQuery.activities = { $in: [activity.toLowerCase()] };
-    }
-
-    const potentialMatches = await usersCollection
-      .find(matchQuery)
-      .limit(20)
-      .toArray();
-
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Broadcast created',
       broadcast,
-      matchesFound: potentialMatches.length,
-      matches: potentialMatches.map(u => ({
-        id: u.id,
-        name: u.name,
-        profilePhoto: u.profilePhoto,
-        fitnessLevel: u.fitnessLevel,
-        activities: u.activities,
-        location: u.location
-      }))
+      matchesFound: matches.length,
+      matches
     });
   } catch (error) {
     console.error('Create broadcast error:', error);
     return NextResponse.json({ error: 'Failed to create broadcast' }, { status: 500 });
+  }
+}
+
+// GET /api/broadcasts/nearby - live preview count/list used while the user is
+// still adjusting radius/activity, before they've committed to broadcasting.
+async function getNearbyPreview(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const lat = parseFloat(searchParams.get('lat'));
+    const lng = parseFloat(searchParams.get('lng'));
+    const radius = parseFloat(searchParams.get('radius')) || 5;
+    const activity = searchParams.get('activity') || undefined;
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      return NextResponse.json({ matches: [] });
+    }
+
+    const db = await getDb();
+    const matches = await findNearbyBroadcasters(db, user.id, lat, lng, radius, activity);
+    return NextResponse.json({ matches });
+  } catch (error) {
+    console.error('Get nearby preview error:', error);
+    return NextResponse.json({ error: 'Failed to load nearby users' }, { status: 500 });
   }
 }
 
@@ -2091,6 +2228,8 @@ export async function GET(request, { params }) {
     return getAvailability(request);
   } else if (path === 'activities') {
     return getActivities(request);
+  } else if (path === 'broadcasts/nearby') {
+    return getNearbyPreview(request);
   } else if (path === 'broadcasts') {
     return getBroadcasts(request);
   } else if (path === 'conversations') {

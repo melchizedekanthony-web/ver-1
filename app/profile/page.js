@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   User, Calendar, Bell, Users, Settings, LogOut, ChevronRight,
   Edit, Shield, Star, Camera, Video, Plus, X, Globe, Lock,
-  Instagram, Facebook, Twitter, Share2, Activity, MapPin, Award, Flame, Zap, Compass
+  Instagram, Facebook, Twitter, Share2, Activity, MapPin, Compass
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
@@ -26,6 +26,7 @@ export default function ProfilePage() {
   
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [stats, setStats] = useState({ activitiesCount: 0, connectionsCount: 0, avgRating: null, reviewCount: 0 });
   const [loading, setLoading] = useState(true);
   
   // Status & Activity
@@ -60,12 +61,6 @@ export default function ProfilePage() {
     'Weekend Outdoor Explorer'
   ];
 
-  const achievements = [
-    { label: "Trail Runner", icon: Flame, color: "text-[#DC2626]" },
-    { label: "Top Partner", icon: Award, color: "text-[#FBBF24]" },
-    { label: "50+ Meetups", icon: Zap, color: "text-[#DC2626]" },
-  ];
-
   useEffect(() => {
     const storedUser = getUser();
     if (!storedUser) {
@@ -84,6 +79,9 @@ export default function ProfilePage() {
       const data = await res.json();
       if (data.profile) {
         setProfile(data.profile);
+      }
+      if (data.stats) {
+        setStats(data.stats);
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error);
@@ -205,6 +203,8 @@ export default function ProfilePage() {
     { icon: Calendar, label: 'Activity Calendar & RSVP History', path: '/calendar' },
     { icon: Bell, label: 'Radar Alerts & Meetup Requests', path: '/alerts' },
     { icon: Users, label: 'My Activity Network', path: '/connections' },
+    { icon: Shield, label: 'Privacy Policy', path: '/privacy' },
+    { icon: Shield, label: 'Terms of Service', path: '/terms' },
   ];
 
   if (loading) {
@@ -249,38 +249,33 @@ export default function ProfilePage() {
             </span>
           </div>
           
-          {/* Ratings & Achievements */}
+          {/* Real Rating — no reviews yet shows honestly instead of a fake 5.0 */}
           <div className="flex items-center justify-center gap-1.5 mt-4">
-            {[1,2,3,4,5].map((star) => (
-              <Star 
-                key={star} 
-                className={`w-4 h-4 ${star <= 5 ? 'text-[#FBBF24] fill-[#FBBF24]' : 'text-white/20'}`} 
-              />
-            ))}
-            <span className="text-xs font-bold text-white ml-1">5.0 (42 Meetups)</span>
-          </div>
-
-          {/* Achievement Badges */}
-          <div className="flex justify-center gap-2 mt-4 pt-3 border-t border-white/5">
-            {achievements.map((ach, idx) => {
-              const Icon = ach.icon;
-              return (
-                <div key={idx} className="flex items-center gap-1 bg-[#1A1E2B] border border-white/10 px-2.5 py-1 rounded-full">
-                  <Icon className={`w-3.5 h-3.5 ${ach.color}`} />
-                  <span className="text-[10px] font-bold text-white">{ach.label}</span>
-                </div>
-              );
-            })}
+            {stats.avgRating ? (
+              <>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`w-4 h-4 ${star <= Math.round(stats.avgRating) ? 'text-[#FBBF24] fill-[#FBBF24]' : 'text-white/20'}`}
+                  />
+                ))}
+                <span className="text-xs font-bold text-white ml-1">
+                  {stats.avgRating} ({stats.reviewCount} meetup{stats.reviewCount === 1 ? '' : 's'})
+                </span>
+              </>
+            ) : (
+              <span className="text-xs font-semibold text-[#94A3B8]">No reviews yet — new here</span>
+            )}
           </div>
 
           {/* Stats Dashboard Grid */}
           <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-white/10">
             <div className="bg-[#1A1E2B]/80 p-3 rounded-xl border border-white/5">
-              <p className="text-xl font-black text-[#DC2626]">34</p>
+              <p className="text-xl font-black text-[#DC2626]">{stats.activitiesCount}</p>
               <p className="text-[11px] text-[#94A3B8] font-semibold">Activities</p>
             </div>
             <div className="bg-[#1A1E2B]/80 p-3 rounded-xl border border-white/5">
-              <p className="text-xl font-black text-[#FBBF24]">28</p>
+              <p className="text-xl font-black text-[#FBBF24]">{stats.connectionsCount}</p>
               <p className="text-[11px] text-[#94A3B8] font-semibold">Connections</p>
             </div>
             <div className="bg-[#1A1E2B]/80 p-3 rounded-xl border border-white/5">
