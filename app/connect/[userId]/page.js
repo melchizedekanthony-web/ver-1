@@ -15,7 +15,7 @@ const MapComponent = dynamic(
   () => import('@/components/MapComponent').then(mod => mod.default),
   { 
     ssr: false,
-    loading: () => <div className="h-full bg-gray-100 flex items-center justify-center">Loading map...</div>
+    loading: () => <div className="h-full bg-[#0A0C10] flex items-center justify-center">Loading map...</div>
   }
 );
 
@@ -168,9 +168,9 @@ export default function ConnectPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-24">
+    <div className="min-h-screen bg-[#0A0C10] pb-24">
       {/* Header */}
-      <header className="bg-[#2B2D9E] px-4 py-3 flex items-center justify-between">
+      <header className="bg-[#DC2626] px-4 py-3 flex items-center justify-between">
         <button onClick={() => router.back()} className="text-white text-2xl">←</button>
         <h1 className="text-xl font-bold text-white">LOCATION CONNECT</h1>
         <div className="w-8"></div>
@@ -189,47 +189,57 @@ export default function ConnectPage() {
         />
 
         {/* Location markers legend */}
-        <div className="absolute top-4 left-4 bg-white rounded-lg px-3 py-2 shadow-lg">
+        <div className="absolute top-4 left-4 bg-[#12151E]/95 border border-white/10 rounded-lg px-3 py-2 shadow-lg backdrop-blur-md">
           <div className="flex items-center gap-2 text-sm">
             <div className="w-3 h-3 rounded-full bg-green-500"></div>
             <span>You (A)</span>
           </div>
           <div className="flex items-center gap-2 text-sm mt-1">
-            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+            <div className="w-3 h-3 rounded-full bg-white/50"></div>
             <span>{targetUser?.name || 'Companion'} (B)</span>
           </div>
         </div>
       </div>
 
       {/* Connection Panel */}
-      <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-4 py-6">
-        <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6"></div>
+      <div className="bg-[#12151E] rounded-t-3xl -mt-6 relative z-10 px-4 py-6">
+        <div className="w-12 h-1 bg-[#2A2F3D] rounded-full mx-auto mb-6"></div>
 
         {targetUser && (
           <>
             {/* User Info */}
             <div className="flex items-center gap-4 mb-6">
-              <Avatar className="w-16 h-16 border-2 border-[#2B2D9E]">
+              <Avatar className="w-16 h-16 border-2 border-[#DC2626]">
                 <AvatarImage src={targetUser.profilePhoto} />
-                <AvatarFallback className="bg-[#4a3aff] text-white text-xl">
+                <AvatarFallback className="bg-[#DC2626] text-white text-xl">
                   {targetUser.name?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="text-xl font-bold text-gray-800">{targetUser.name}</h3>
-                <p className="text-gray-500 capitalize">{activity || 'Activity'} Partner</p>
+                <h3 className="text-xl font-bold text-white">{targetUser.name}</h3>
+                <p className="text-[#94A3B8] capitalize">{activity || 'Activity'} Partner</p>
+                {targetUser.avgRating ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold bg-[#FBBF24]/15 text-[#FBBF24] px-2 py-0.5 rounded-full border border-[#FBBF24]/30 mt-1">
+                    <Star className="w-3 h-3 fill-[#FBBF24]" />
+                    {targetUser.avgRating} · {targetUser.reviewCount} review{targetUser.reviewCount === 1 ? '' : 's'}
+                  </span>
+                ) : (
+                  <span className="inline-block text-xs font-bold bg-white/5 text-[#94A3B8] px-2 py-0.5 rounded-full border border-white/10 mt-1">
+                    New here — no reviews yet
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Status Messages */}
             {connectionStatus === 'pending' && (
-              <Card className="bg-blue-50 border-blue-200 p-4 mb-6">
-                <p className="text-blue-800">Waiting for {targetUser.name} to accept your connection request...</p>
+              <Card className="bg-[#DC2626]/10 border-[#DC2626]/30 p-4 mb-6">
+                <p className="text-white">Waiting for {targetUser.name} to accept your connection request...</p>
                 <div className="mt-3 flex justify-center">
                   <div className="animate-pulse flex gap-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animation-delay-200"></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animation-delay-400"></div>
+                    <div className="w-2 h-2 bg-[#DC2626] rounded-full"></div>
+                    <div className="w-2 h-2 bg-[#DC2626] rounded-full animation-delay-200"></div>
+                    <div className="w-2 h-2 bg-[#DC2626] rounded-full animation-delay-400"></div>
                   </div>
                 </div>
               </Card>
@@ -270,14 +280,14 @@ export default function ConnectPage() {
             {connectionStatus === 'pending' && (
               <div className="space-y-3">
                 <Button 
-                  className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-semibold"
+                  className="w-full py-6 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-lg font-semibold"
                   onClick={handleAcceptConnection}
                 >
                   Accept Connection
                 </Button>
                 <Button 
                   variant="outline"
-                  className="w-full py-4 border-gray-300 text-gray-600 hover:bg-gray-50"
+                  className="w-full py-4 border-white/15 text-[#94A3B8] hover:bg-[#1A1E2B]"
                   onClick={handleCancelMeetup}
                 >
                   Cancel Meetup
@@ -288,14 +298,14 @@ export default function ConnectPage() {
             {connectionStatus === 'accepted' && (
               <div className="space-y-3">
                 <Button 
-                  className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-semibold"
+                  className="w-full py-6 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-lg font-semibold"
                   onClick={handleShareLocation}
                 >
                   SHARE LOCATION
                 </Button>
                 <Button 
                   variant="outline"
-                  className="w-full py-4 border-gray-300 text-gray-600 hover:bg-gray-50"
+                  className="w-full py-4 border-white/15 text-[#94A3B8] hover:bg-[#1A1E2B]"
                   onClick={handleCancelMeetup}
                 >
                   Cancel Meetup
@@ -318,7 +328,7 @@ export default function ConnectPage() {
       </div>
 
       {/* PROMINENT EMERGENCY EXIT BUTTON - Fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#12151E]/95 backdrop-blur-xl border-t border-white/10 px-4 py-3 z-50 shadow-lg">
         <button
           onClick={handleEmergencyCancel}
           className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-md"
@@ -327,7 +337,7 @@ export default function ConnectPage() {
           EMERGENCY EXIT
           <XCircle className="w-6 h-6" />
         </button>
-        <p className="text-center text-xs text-gray-500 mt-2">
+        <p className="text-center text-xs text-[#94A3B8] mt-2">
           Tap anytime if you feel unsafe or need to leave immediately
         </p>
       </div>
@@ -337,11 +347,11 @@ export default function ConnectPage() {
         <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
           <Card className={`w-full max-w-md p-6 max-h-[90vh] overflow-y-auto ${isEmergency ? 'border-2 border-red-500' : ''}`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className={`text-xl font-bold ${isEmergency ? 'text-red-600' : 'text-gray-800'}`}>
+              <h3 className={`text-xl font-bold ${isEmergency ? 'text-red-600' : 'text-white'}`}>
                 {isEmergency ? '⚠️ Emergency Exit' : 'Cancel Meetup'}
               </h3>
-              <button onClick={() => setShowCancelModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
-                <X className="w-6 h-6 text-gray-400" />
+              <button onClick={() => setShowCancelModal(false)} className="p-1 hover:bg-white/10 rounded-full">
+                <X className="w-6 h-6 text-[#94A3B8]" />
               </button>
             </div>
 
@@ -355,7 +365,7 @@ export default function ConnectPage() {
 
             {/* Reason Selection */}
             <div className="mb-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">
+              <p className="text-sm font-medium text-[#E2E8F0] mb-2">
                 {isEmergency ? 'What happened?' : 'Reason for cancelling (optional)'}
               </p>
               <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -367,8 +377,8 @@ export default function ConnectPage() {
                       cancelReason === reason
                         ? isEmergency 
                           ? 'border-red-500 bg-red-50 text-red-800'
-                          : 'border-[#2B2D9E] bg-blue-50 text-[#2B2D9E]'
-                        : 'border-gray-200 hover:border-gray-300'
+                          : 'border-[#DC2626] bg-[#DC2626]/15 text-[#DC2626]'
+                        : 'border-white/10 hover:border-white/15'
                     }`}
                   >
                     {reason}
@@ -380,7 +390,7 @@ export default function ConnectPage() {
             {/* Rating (optional) - only for non-emergency */}
             {!isEmergency && (
               <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Rate your experience (optional)</p>
+                <p className="text-sm font-medium text-[#E2E8F0] mb-2">Rate your experience (optional)</p>
                 <div className="flex gap-1 justify-center">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -392,7 +402,7 @@ export default function ConnectPage() {
                         className={`w-8 h-8 transition-colors ${
                           star <= cancelRating 
                             ? 'text-yellow-400 fill-yellow-400' 
-                            : 'text-gray-300'
+                            : 'text-[#3A4052]'
                         }`} 
                       />
                     </button>
@@ -403,7 +413,7 @@ export default function ConnectPage() {
 
             {/* Additional Notes */}
             <div className="mb-6">
-              <p className="text-sm font-medium text-gray-700 mb-2">Additional details (optional)</p>
+              <p className="text-sm font-medium text-[#E2E8F0] mb-2">Additional details (optional)</p>
               <Textarea 
                 placeholder={isEmergency ? "Please describe what happened..." : "Any additional notes..."}
                 value={additionalDetails}
@@ -416,7 +426,7 @@ export default function ConnectPage() {
             {/* Submit */}
             <div className="space-y-3">
               <Button 
-                className={`w-full py-4 ${isEmergency ? 'bg-red-600 hover:bg-red-700' : 'bg-[#2B2D9E] hover:bg-[#1f2175]'}`}
+                className={`w-full py-4 ${isEmergency ? 'bg-red-600 hover:bg-red-700' : 'bg-[#DC2626] hover:bg-[#B91C1C]'}`}
                 onClick={submitCancellation}
               >
                 {isEmergency ? 'Exit & Report' : 'Cancel Meetup'}
@@ -434,7 +444,7 @@ export default function ConnectPage() {
               
               <Button 
                 variant="ghost"
-                className="w-full py-3 text-gray-500"
+                className="w-full py-3 text-[#94A3B8]"
                 onClick={() => setShowCancelModal(false)}
               >
                 Go Back

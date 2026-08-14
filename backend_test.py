@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 import os
 
 # Configuration
-BASE_URL = "https://wannago-app.preview.emergentagent.com/api"
+BASE_URL = "http://localhost:3002/api"
 TEST_USER_EMAIL = "john@example.com"
 TEST_USER_PASSWORD = "password123"
 
@@ -61,61 +61,28 @@ class FittrAPITester:
             return False
     
     def test_user_authentication(self):
-        """Test NextAuth signin flow - Note: Complex due to NextAuth v5 session handling"""
+        """Test API signin flow using the simple signin endpoint"""
         try:
-            # Check if there's already a session
-            session_response = self.session.get(f"https://wannago-app.preview.emergentagent.com/api/auth/session")
-            if session_response.status_code == 200:
-                session_data = session_response.json()
-                if session_data and session_data.get('user'):
-                    self.log_test("User Authentication", True, f"Existing session found for: {session_data['user'].get('email')}")
-                    return True
-            
-            # Try to get CSRF token
-            csrf_response = self.session.get(f"https://wannago-app.preview.emergentagent.com/api/auth/csrf")
-            csrf_token = None
-            if csrf_response.status_code == 200:
-                csrf_data = csrf_response.json()
-                csrf_token = csrf_data.get('csrfToken')
-            
-            if not csrf_token:
-                self.log_test("User Authentication", False, "Could not get CSRF token")
-                return False
-            
-            # Prepare form data for NextAuth
-            form_data = {
-                'email': TEST_USER_EMAIL,
-                'password': TEST_USER_PASSWORD,
-                'csrfToken': csrf_token,
-                'callbackUrl': 'https://wannago-app.preview.emergentagent.com/dashboard',
-                'json': 'true'
-            }
-            
-            # Try signin with proper form encoding
+            # Try signin with custom signin endpoint
             signin_response = self.session.post(
-                f"https://wannago-app.preview.emergentagent.com/api/auth/callback/credentials",
-                data=form_data,
-                headers={
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Accept': 'application/json'
-                },
-                allow_redirects=False
+                f"{BASE_URL}/signin",
+                json={
+                    'email': TEST_USER_DATA['email'],
+                    'password': TEST_USER_DATA['password']
+                }
             )
             
-            # Check response and cookies
-            has_session_cookie = any('next-auth' in cookie.name.lower() for cookie in self.session.cookies)
+            if signin_response.status_code == 200:
+                data = signin_response.json()
+                token = data.get('token')
+                if token:
+                    self.session.headers.update({
+                        'Authorization': f'Bearer {token}'
+                    })
+                    self.log_test("User Authentication", True, f"Authentication successful (custom JWT token set)")
+                    return True
             
-            if signin_response.status_code == 200 or has_session_cookie:
-                # Verify session is working
-                verify_response = self.session.get(f"https://wannago-app.preview.emergentagent.com/api/auth/session")
-                if verify_response.status_code == 200:
-                    verify_data = verify_response.json()
-                    if verify_data and verify_data.get('user'):
-                        self.log_test("User Authentication", True, f"Authentication successful for: {verify_data['user'].get('email')}")
-                        return True
-            
-            # If all else fails, note the limitation
-            self.log_test("User Authentication", False, "NextAuth v5 session establishment complex - requires browser-based testing")
+            self.log_test("User Authentication", False, f"Status: {signin_response.status_code}, Response: {signin_response.text}")
             return False
                     
         except Exception as e:

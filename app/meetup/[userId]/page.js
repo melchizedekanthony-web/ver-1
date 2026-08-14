@@ -16,8 +16,8 @@ const MapComponent = dynamic(
   { 
     ssr: false,
     loading: () => (
-      <div className="h-full bg-gray-100 flex items-center justify-center">
-        <div className="text-gray-500">Loading map...</div>
+      <div className="h-full bg-[#0A0C10] flex items-center justify-center">
+        <div className="text-[#94A3B8]">Loading map...</div>
       </div>
     )
   }
@@ -130,9 +130,9 @@ export default function MeetupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-24">
+    <div className="min-h-screen bg-[#0A0C10] pb-24">
       {/* Header */}
-      <header className="bg-[#2B2D9E] px-4 py-3 flex items-center justify-between">
+      <header className="bg-[#DC2626] px-4 py-3 flex items-center justify-between">
         <button onClick={() => router.back()} className="text-white text-2xl">←</button>
         <h1 className="text-xl font-bold text-white">MEET UP!</h1>
         <div className="w-8"></div>
@@ -155,22 +155,22 @@ export default function MeetupPage() {
       </div>
 
       {/* Meetup Panel */}
-      <div className="bg-white rounded-t-3xl -mt-6 relative z-10 px-4 py-6">
-        <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+      <div className="bg-[#12151E] rounded-t-3xl -mt-6 relative z-10 px-4 py-6">
+        <div className="w-12 h-1 bg-[#2A2F3D] rounded-full mx-auto mb-4"></div>
 
         {/* Success Message */}
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">You've Met Up!</h2>
-          <p className="text-gray-600">Enjoy your {activity || 'activity'} together!</p>
+          <h2 className="text-2xl font-bold text-white mb-2">You've Met Up!</h2>
+          <p className="text-[#94A3B8]">Enjoy your {activity || 'activity'} together!</p>
         </div>
 
         {/* Participants */}
-        <div className="bg-gray-50 rounded-xl p-4 mb-6">
-          <h3 className="font-semibold text-gray-700 mb-3">Meetup Point</h3>
+        <div className="bg-[#1A1E2B] rounded-xl p-4 mb-6">
+          <h3 className="font-semibold text-[#E2E8F0] mb-3">Meetup Point</h3>
           <div className="flex justify-center gap-4">
             <div className="text-center">
               <Avatar className="w-16 h-16 mx-auto border-2 border-green-500">
-                <AvatarFallback className="bg-[#4a3aff] text-white">
+                <AvatarFallback className="bg-[#DC2626] text-white">
                   {user?.name?.charAt(0) || 'Y'}
                 </AvatarFallback>
               </Avatar>
@@ -184,7 +184,7 @@ export default function MeetupPage() {
             <div className="text-center">
               <Avatar className="w-16 h-16 mx-auto border-2 border-green-500">
                 <AvatarImage src={targetUser?.profilePhoto} />
-                <AvatarFallback className="bg-[#4a3aff] text-white">
+                <AvatarFallback className="bg-[#DC2626] text-white">
                   {targetUser?.name?.charAt(0) || 'P'}
                 </AvatarFallback>
               </Avatar>
@@ -194,15 +194,15 @@ export default function MeetupPage() {
         </div>
 
         {/* Location info */}
-        <div className="bg-gray-50 rounded-xl p-4 mb-6">
-          <h3 className="font-semibold text-gray-700 mb-2">Meetup Location</h3>
-          <p className="text-gray-600 capitalize">{activity || 'Activity'} spot</p>
-          <p className="text-sm text-gray-500">Current meetup location</p>
+        <div className="bg-[#1A1E2B] rounded-xl p-4 mb-6">
+          <h3 className="font-semibold text-[#E2E8F0] mb-2">Meetup Location</h3>
+          <p className="text-[#94A3B8] capitalize">{activity || 'Activity'} spot</p>
+          <p className="text-sm text-[#94A3B8]">Current meetup location</p>
         </div>
 
         {/* Action Buttons */}
         <Button 
-          className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-lg font-semibold mb-3"
+          className="w-full py-6 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-lg font-semibold mb-3"
           onClick={handleMessageGroup}
         >
           <MessageSquare className="w-5 h-5 mr-2" />
@@ -211,7 +211,7 @@ export default function MeetupPage() {
 
         <Button 
           variant="outline"
-          className="w-full py-6 border-[#2B2D9E] text-[#2B2D9E] text-lg font-semibold"
+          className="w-full py-6 border-[#DC2626] text-[#DC2626] text-lg font-semibold"
           onClick={handleComplete}
         >
           <Star className="w-5 h-5 mr-2" />
@@ -220,7 +220,7 @@ export default function MeetupPage() {
       </div>
 
       {/* PROMINENT EMERGENCY EXIT BUTTON - Fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-50 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#12151E]/95 backdrop-blur-xl border-t border-white/10 px-4 py-3 z-50 shadow-lg">
         <button
           onClick={handleEmergencyExit}
           className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-md"
@@ -229,7 +229,7 @@ export default function MeetupPage() {
           EMERGENCY EXIT
           <XCircle className="w-6 h-6" />
         </button>
-        <p className="text-center text-xs text-gray-500 mt-2">
+        <p className="text-center text-xs text-[#94A3B8] mt-2">
           Tap anytime if you feel unsafe or need to leave immediately
         </p>
       </div>
@@ -240,8 +240,8 @@ export default function MeetupPage() {
           <Card className="w-full max-w-md p-6 border-2 border-red-500 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-red-600">⚠️ Emergency Exit</h3>
-              <button onClick={() => setShowEmergencyModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
-                <X className="w-6 h-6 text-gray-400" />
+              <button onClick={() => setShowEmergencyModal(false)} className="p-1 hover:bg-white/10 rounded-full">
+                <X className="w-6 h-6 text-[#94A3B8]" />
               </button>
             </div>
 
@@ -253,7 +253,7 @@ export default function MeetupPage() {
 
             {/* Reason Selection */}
             <div className="mb-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">What happened?</p>
+              <p className="text-sm font-medium text-[#E2E8F0] mb-2">What happened?</p>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {emergencyReasons.map((reason) => (
                   <button
@@ -262,7 +262,7 @@ export default function MeetupPage() {
                     className={`w-full p-3 rounded-lg border text-left text-sm transition-all ${
                       emergencyReason === reason
                         ? 'border-red-500 bg-red-50 text-red-800'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-white/10 hover:border-white/15'
                     }`}
                   >
                     {reason}
@@ -273,7 +273,7 @@ export default function MeetupPage() {
 
             {/* Additional Notes */}
             <div className="mb-6">
-              <p className="text-sm font-medium text-gray-700 mb-2">Additional details (optional)</p>
+              <p className="text-sm font-medium text-[#E2E8F0] mb-2">Additional details (optional)</p>
               <Textarea 
                 placeholder="Please describe what happened..."
                 value={additionalDetails}
@@ -302,7 +302,7 @@ export default function MeetupPage() {
               
               <Button 
                 variant="ghost"
-                className="w-full py-3 text-gray-500"
+                className="w-full py-3 text-[#94A3B8]"
                 onClick={() => setShowEmergencyModal(false)}
               >
                 Go Back

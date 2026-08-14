@@ -196,14 +196,14 @@ export default function RatePage() {
 
   const socialPlatforms = [
     { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
-    { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'bg-blue-600' },
+    { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'bg-[#DC2626]' },
     { id: 'twitter', name: 'X/Twitter', icon: Twitter, color: 'bg-black' },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-8">
+    <div className="min-h-screen bg-[#0A0C10] pb-8">
       {/* Header */}
-      <header className="bg-[#2B2D9E] px-4 py-3 flex items-center gap-3 shadow-sm">
+      <header className="bg-[#DC2626] px-4 py-3 flex items-center gap-3 shadow-sm">
         <button onClick={() => router.back()} className="text-white">
           <ArrowLeft className="w-6 h-6" />
         </button>
@@ -214,14 +214,14 @@ export default function RatePage() {
         {/* User Card */}
         {targetUser && (
           <Card className="p-6 text-center">
-            <Avatar className="w-20 h-20 mx-auto border-4 border-[#2B2D9E]">
+            <Avatar className="w-20 h-20 mx-auto border-4 border-[#DC2626]">
               <AvatarImage src={targetUser.profilePhoto} />
-              <AvatarFallback className="bg-[#4a3aff] text-white text-xl">
+              <AvatarFallback className="bg-[#DC2626] text-white text-xl">
                 {targetUser.name?.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <h2 className="text-xl font-bold mt-4">{targetUser.name}</h2>
-            <p className="text-gray-500">How was your experience?</p>
+            <p className="text-[#94A3B8]">How was your experience?</p>
           </Card>
         )}
 
@@ -241,13 +241,13 @@ export default function RatePage() {
                   className={`w-10 h-10 transition-colors ${
                     star <= (hoveredRating || rating) 
                       ? 'text-yellow-400 fill-yellow-400' 
-                      : 'text-gray-300'
+                      : 'text-[#3A4052]'
                   }`} 
                 />
               </button>
             ))}
           </div>
-          <p className="text-center text-gray-500 mt-2">
+          <p className="text-center text-[#94A3B8] mt-2">
             {rating === 0 ? 'Tap to rate' : `${rating} star${rating > 1 ? 's' : ''}`}
           </p>
         </Card>
@@ -262,8 +262,8 @@ export default function RatePage() {
                 onClick={() => setCategories(prev => ({ ...prev, [category]: !prev[category] }))}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   categories[category]
-                    ? 'bg-[#2B2D9E] text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-[#DC2626] text-white'
+                    : 'bg-white/5 text-[#E2E8F0] hover:bg-white/15'
                 }`}
               >
                 {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -291,8 +291,8 @@ export default function RatePage() {
           {/* Photo Upload */}
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">
-              <Camera className="w-5 h-5 text-gray-500" />
-              <span className="text-sm text-gray-600">Photos (max 5)</span>
+              <Camera className="w-5 h-5 text-[#94A3B8]" />
+              <span className="text-sm text-[#94A3B8]">Photos (max 5)</span>
             </div>
             <div className="flex gap-2 flex-wrap">
               {photos.map((photo) => (
@@ -313,9 +313,9 @@ export default function RatePage() {
               {photos.length < 5 && (
                 <button 
                   onClick={() => photoInputRef.current?.click()}
-                  className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-[#2B2D9E] transition-colors"
+                  className="w-20 h-20 border-2 border-dashed border-white/15 rounded-lg flex items-center justify-center hover:border-[#DC2626] transition-colors"
                 >
-                  <Camera className="w-6 h-6 text-gray-400" />
+                  <Camera className="w-6 h-6 text-[#94A3B8]" />
                 </button>
               )}
             </div>
@@ -332,8 +332,8 @@ export default function RatePage() {
           {/* Video Upload */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Video className="w-5 h-5 text-gray-500" />
-              <span className="text-sm text-gray-600">Video (max 30 seconds)</span>
+              <Video className="w-5 h-5 text-[#94A3B8]" />
+              <span className="text-sm text-[#94A3B8]">Video (max 30 seconds)</span>
             </div>
             {videoPreview ? (
               <div className="relative">
@@ -352,11 +352,11 @@ export default function RatePage() {
             ) : (
               <button 
                 onClick={() => videoInputRef.current?.click()}
-                className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-[#2B2D9E] transition-colors"
+                className="w-full h-24 border-2 border-dashed border-white/15 rounded-lg flex items-center justify-center hover:border-[#DC2626] transition-colors"
               >
                 <div className="text-center">
-                  <Video className="w-8 h-8 text-gray-400 mx-auto mb-1" />
-                  <span className="text-sm text-gray-500">Add video clip</span>
+                  <Video className="w-8 h-8 text-[#94A3B8] mx-auto mb-1" />
+                  <span className="text-sm text-[#94A3B8]">Add video clip</span>
                 </div>
               </button>
             )}
@@ -381,12 +381,12 @@ export default function RatePage() {
             {/* Profile Share */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <User className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                  <User className="w-5 h-5 text-[#DC2626]" />
                 </div>
                 <div>
                   <p className="font-medium text-sm">Save to Profile</p>
-                  <p className="text-xs text-gray-500">Add to your activity gallery</p>
+                  <p className="text-xs text-[#94A3B8]">Add to your activity gallery</p>
                 </div>
               </div>
               <Switch checked={shareToProfile} onCheckedChange={setShareToProfile} />
@@ -395,12 +395,12 @@ export default function RatePage() {
             {/* App Feed Share */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <Globe className="w-5 h-5 text-green-600" />
+                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div>
                   <p className="font-medium text-sm">Post to WannaGo Feed</p>
-                  <p className="text-xs text-gray-500">Share with the community</p>
+                  <p className="text-xs text-[#94A3B8]">Share with the community</p>
                 </div>
               </div>
               <Switch checked={shareToFeed} onCheckedChange={setShareToFeed} />
@@ -414,7 +414,7 @@ export default function RatePage() {
                 </div>
                 <div>
                   <p className="font-medium text-sm">Share to Social Media</p>
-                  <p className="text-xs text-gray-500">Post to your social accounts</p>
+                  <p className="text-xs text-[#94A3B8]">Post to your social accounts</p>
                 </div>
               </div>
               <Switch checked={shareToSocial} onCheckedChange={setShareToSocial} />
@@ -422,8 +422,8 @@ export default function RatePage() {
 
             {/* Social Platform Selection */}
             {shareToSocial && (
-              <div className="ml-13 pl-4 border-l-2 border-gray-200">
-                <p className="text-sm text-gray-600 mb-3">Select platforms:</p>
+              <div className="ml-13 pl-4 border-l-2 border-white/10">
+                <p className="text-sm text-[#94A3B8] mb-3">Select platforms:</p>
                 <div className="flex gap-3">
                   {socialPlatforms.map((platform) => {
                     const Icon = platform.icon;
@@ -435,7 +435,7 @@ export default function RatePage() {
                         className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                           isSelected 
                             ? `${platform.color} text-white scale-110` 
-                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                            : 'bg-white/5 text-[#94A3B8] hover:bg-white/15'
                         }`}
                       >
                         <Icon className="w-6 h-6" />
@@ -450,7 +450,7 @@ export default function RatePage() {
 
         {/* Submit */}
         <Button 
-          className="w-full py-6 bg-[#2B2D9E] hover:bg-[#1f2175] text-lg font-semibold"
+          className="w-full py-6 bg-[#DC2626] hover:bg-[#B91C1C] text-lg font-semibold"
           onClick={handleSubmit}
           disabled={isSubmitting}
         >

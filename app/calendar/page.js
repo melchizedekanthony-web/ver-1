@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { 
+import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check, Clock,
   MapPin, Users, MessageSquare, CheckSquare, Square, Plus, X, Edit2,
   Mountain, Coffee, Dumbbell, Music, Bike, Save, Globe, Lock, Trash2
@@ -36,7 +36,7 @@ export default function CalendarPage() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [editingActivity, setEditingActivity] = useState(null);
-  
+
   // Availability State
   const [availabilitySlots, setAvailabilitySlots] = useState([]);
   const [availabilityPublic, setAvailabilityPublic] = useState(true);
@@ -125,12 +125,12 @@ export default function CalendarPage() {
         endTime: s.endTime,
         activity: s.activity || ''
       }));
-      
+
       await fetchWithAuth('/api/calendar/availability', {
         method: 'POST',
         body: JSON.stringify({ slots, isPublic: availabilityPublic })
       });
-      
+
       toast.success('Availability saved!');
     } catch (error) {
       console.error('Failed to save availability:', error);
@@ -175,7 +175,7 @@ export default function CalendarPage() {
         const data = await res.json();
         toast.success('Activity created!');
       }
-      
+
       fetchActivities();
       setShowActivityModal(false);
       setEditingActivity(null);
@@ -204,7 +204,7 @@ export default function CalendarPage() {
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
+
     const days = [];
     for (let i = 0; i < firstDay; i++) {
       days.push(null);
@@ -217,9 +217,9 @@ export default function CalendarPage() {
 
   const isSameDay = (d1, d2) => {
     if (!d1 || !d2) return false;
-    return d1.getDate() === d2.getDate() && 
-           d1.getMonth() === d2.getMonth() && 
-           d1.getFullYear() === d2.getFullYear();
+    return d1.getDate() === d2.getDate() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getFullYear() === d2.getFullYear();
   };
 
   const hasActivity = (date) => {
@@ -263,10 +263,10 @@ export default function CalendarPage() {
     if (!activityForm.newChecklistItem.trim()) return;
     setActivityForm(prev => ({
       ...prev,
-      checklist: [...prev.checklist, { 
-        id: Date.now(), 
-        text: prev.newChecklistItem, 
-        checked: false 
+      checklist: [...prev.checklist, {
+        id: Date.now(),
+        text: prev.newChecklistItem,
+        checked: false
       }],
       newChecklistItem: ''
     }));
@@ -275,7 +275,7 @@ export default function CalendarPage() {
   const toggleChecklistItem = (itemId) => {
     setActivityForm(prev => ({
       ...prev,
-      checklist: prev.checklist.map(item => 
+      checklist: prev.checklist.map(item =>
         item.id === itemId ? { ...item, checked: !item.checked } : item
       )
     }));
@@ -286,17 +286,6 @@ export default function CalendarPage() {
       ...prev,
       checklist: prev.checklist.filter(item => item.id !== itemId)
     }));
-  };
-
-  const saveActivity = () => {
-    // Update the activity
-    setActivities(prev => prev.map(a => 
-      a.id === selectedActivity.id 
-        ? { ...a, ...activityForm }
-        : a
-    ));
-    toast.success('Activity updated!');
-    setShowActivityModal(false);
   };
 
   const broadcastActivity = () => {
@@ -311,26 +300,26 @@ export default function CalendarPage() {
   const selectedActivities = getActivitiesForDate(selectedDate);
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20">
+    <div className="min-h-screen bg-[#0A0C10] pb-20">
       <Header user={user} title="ACTIVITY LOG" />
 
       {/* Calendar */}
       <Card className="mx-4 mt-4 p-4">
         <div className="flex items-center justify-between mb-4">
           <button onClick={() => navigateMonth(-1)} className="p-2">
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
+            <ChevronLeft className="w-5 h-5 text-[#94A3B8]" />
           </button>
-          <h2 className="font-bold text-gray-800">
+          <h2 className="font-bold text-white">
             {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </h2>
           <button onClick={() => navigateMonth(1)} className="p-2">
-            <ChevronRight className="w-5 h-5 text-gray-600" />
+            <ChevronRight className="w-5 h-5 text-[#94A3B8]" />
           </button>
         </div>
 
         <div className="grid grid-cols-7 gap-1 mb-2">
           {weekDays.map((day, i) => (
-            <div key={i} className="text-center text-sm font-medium text-gray-500 py-2">
+            <div key={i} className="text-center text-sm font-medium text-[#94A3B8] py-2">
               {day}
             </div>
           ))}
@@ -342,20 +331,18 @@ export default function CalendarPage() {
               key={i}
               onClick={() => day && setSelectedDate(day)}
               disabled={!day}
-              className={`aspect-square flex flex-col items-center justify-center rounded-lg text-sm relative ${
-                !day ? '' :
-                isSameDay(day, selectedDate) ? 'bg-[#2B2D9E] text-white' :
-                isSameDay(day, new Date()) ? 'bg-blue-100 text-[#2B2D9E]' :
-                'hover:bg-gray-100'
-              }`}
+              className={`aspect-square flex flex-col items-center justify-center rounded-lg text-sm relative ${!day ? '' :
+                  isSameDay(day, selectedDate) ? 'bg-[#DC2626] text-white' :
+                    isSameDay(day, new Date()) ? 'bg-[#DC2626]/15 text-[#DC2626]' :
+                      'hover:bg-white/10'
+                }`}
             >
               {day && (
                 <>
                   <span>{day.getDate()}</span>
                   {hasActivity(day) && (
-                    <div className={`w-1.5 h-1.5 rounded-full mt-1 ${
-                      isSameDay(day, selectedDate) ? 'bg-white' : 'bg-[#2B2D9E]'
-                    }`}></div>
+                    <div className={`w-1.5 h-1.5 rounded-full mt-1 ${isSameDay(day, selectedDate) ? 'bg-white' : 'bg-[#DC2626]'
+                      }`}></div>
                   )}
                 </>
               )}
@@ -367,13 +354,13 @@ export default function CalendarPage() {
       {/* Activities for Selected Date */}
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-gray-800">
-            {isSameDay(selectedDate, new Date()) ? 'Today\'s Activities' : 
-             selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          <h3 className="font-bold text-white">
+            {isSameDay(selectedDate, new Date()) ? 'Today\'s Activities' :
+              selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
           </h3>
-          <Button 
-            size="sm" 
-            className="bg-[#2B2D9E]"
+          <Button
+            size="sm"
+            className="bg-[#DC2626]"
             onClick={() => {
               setSelectedActivity(null);
               setActivityForm({
@@ -405,26 +392,25 @@ export default function CalendarPage() {
           {selectedActivities.map((activity) => {
             const Icon = activityIcons[activity.type] || Mountain;
             return (
-              <Card 
-                key={activity.id} 
+              <Card
+                key={activity.id}
                 className="p-4 cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => openActivityDetail(activity)}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                    activity.completed ? 'bg-green-100' : 'bg-blue-100'
-                  }`}>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${activity.completed ? 'bg-emerald-500/20' : 'bg-white/5'
+                    }`}>
                     {activity.completed ? (
-                      <Check className="w-6 h-6 text-green-600" />
+                      <Check className="w-6 h-6 text-emerald-400" />
                     ) : (
-                      <Icon className="w-6 h-6 text-blue-600" />
+                      <Icon className="w-6 h-6 text-[#DC2626]" />
                     )}
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-800">{activity.name}</h4>
-                    <p className="text-sm text-gray-500">{activity.time}</p>
+                    <h4 className="font-semibold text-white">{activity.name}</h4>
+                    <p className="text-sm text-[#94A3B8]">{activity.time}</p>
                     {activity.location && (
-                      <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                      <p className="text-xs text-[#94A3B8] flex items-center gap-1 mt-1">
                         <MapPin className="w-3 h-3" />
                         {activity.location}
                       </p>
@@ -432,25 +418,25 @@ export default function CalendarPage() {
                   </div>
                   <div className="text-right">
                     <Avatar className="w-8 h-8">
-                      <AvatarFallback className="bg-[#4a3aff] text-white text-xs">
+                      <AvatarFallback className="bg-[#DC2626] text-white text-xs">
                         {activity.partner?.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
-                    <Edit2 className="w-4 h-4 text-gray-400 mt-2" />
+                    <Edit2 className="w-4 h-4 text-[#94A3B8] mt-2" />
                   </div>
                 </div>
-                
+
                 {/* Checklist preview */}
                 {activity.checklist && activity.checklist.length > 0 && (
                   <div className="mt-3 pt-3 border-t">
-                    <p className="text-xs text-gray-500 mb-1">
+                    <p className="text-xs text-[#94A3B8] mb-1">
                       Checklist: {activity.checklist.filter(c => c.checked).length}/{activity.checklist.length}
                     </p>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
-                      <div 
+                    <div className="w-full bg-white/10 rounded-full h-1.5">
+                      <div
                         className="bg-green-500 h-1.5 rounded-full"
-                        style={{ 
-                          width: `${(activity.checklist.filter(c => c.checked).length / activity.checklist.length) * 100}%` 
+                        style={{
+                          width: `${(activity.checklist.filter(c => c.checked).length / activity.checklist.length) * 100}%`
                         }}
                       ></div>
                     </div>
@@ -461,11 +447,11 @@ export default function CalendarPage() {
           })}
 
           {selectedActivities.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <CalendarIcon className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-8 text-[#94A3B8]">
+              <CalendarIcon className="w-12 h-12 mx-auto mb-3 text-[#3A4052]" />
               <p>No activities scheduled</p>
-              <Button 
-                className="mt-4 bg-[#2B2D9E]"
+              <Button
+                className="mt-4 bg-[#DC2626]"
                 onClick={() => router.push('/dashboard')}
               >
                 Plan Activity
@@ -478,13 +464,13 @@ export default function CalendarPage() {
       {/* Activity Detail/Edit Modal */}
       {showActivityModal && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center">
-          <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white p-4 border-b flex items-center justify-between">
+          <div className="bg-[#12151E] w-full max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-[#12151E] p-4 border-b border-white/10 flex items-center justify-between">
               <h2 className="text-xl font-bold">
                 {selectedActivity ? 'Edit Activity' : 'New Activity'}
               </h2>
               <button onClick={() => setShowActivityModal(false)}>
-                <X className="w-6 h-6 text-gray-400" />
+                <X className="w-6 h-6 text-[#94A3B8]" />
               </button>
             </div>
 
@@ -493,17 +479,17 @@ export default function CalendarPage() {
               <div className="space-y-3">
                 <div>
                   <Label>Activity Name</Label>
-                  <Input 
+                  <Input
                     value={activityForm.name}
                     onChange={(e) => setActivityForm(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="e.g., Morning Hike"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Time</Label>
-                    <Input 
+                    <Input
                       value={activityForm.time}
                       onChange={(e) => setActivityForm(prev => ({ ...prev, time: e.target.value }))}
                       placeholder="e.g., 9:00 AM"
@@ -511,7 +497,7 @@ export default function CalendarPage() {
                   </div>
                   <div>
                     <Label>Type</Label>
-                    <select 
+                    <select
                       className="w-full p-2 border rounded-md"
                       value={activityForm.type}
                       onChange={(e) => setActivityForm(prev => ({ ...prev, type: e.target.value }))}
@@ -532,12 +518,12 @@ export default function CalendarPage() {
                 <h3 className="font-semibold flex items-center gap-2">
                   <MapPin className="w-4 h-4" /> Location
                 </h3>
-                <Input 
+                <Input
                   value={activityForm.location}
                   onChange={(e) => setActivityForm(prev => ({ ...prev, location: e.target.value }))}
                   placeholder="Location name"
                 />
-                <Input 
+                <Input
                   value={activityForm.locationDetails}
                   onChange={(e) => setActivityForm(prev => ({ ...prev, locationDetails: e.target.value }))}
                   placeholder="Meeting point details (e.g., Main entrance)"
@@ -554,15 +540,15 @@ export default function CalendarPage() {
                     <div key={item.id} className="flex items-center gap-2">
                       <button onClick={() => toggleChecklistItem(item.id)}>
                         {item.checked ? (
-                          <CheckSquare className="w-5 h-5 text-green-600" />
+                          <CheckSquare className="w-5 h-5 text-emerald-400" />
                         ) : (
-                          <Square className="w-5 h-5 text-gray-400" />
+                          <Square className="w-5 h-5 text-[#94A3B8]" />
                         )}
                       </button>
-                      <span className={item.checked ? 'line-through text-gray-400' : ''}>
+                      <span className={item.checked ? 'line-through text-[#94A3B8]' : ''}>
                         {item.text}
                       </span>
-                      <button 
+                      <button
                         onClick={() => removeChecklistItem(item.id)}
                         className="ml-auto text-red-400 hover:text-red-600"
                       >
@@ -572,7 +558,7 @@ export default function CalendarPage() {
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <Input 
+                  <Input
                     value={activityForm.newChecklistItem}
                     onChange={(e) => setActivityForm(prev => ({ ...prev, newChecklistItem: e.target.value }))}
                     placeholder="Add item..."
@@ -598,7 +584,7 @@ export default function CalendarPage() {
                   ].map((pref) => (
                     <div key={pref.key} className="flex items-center justify-between">
                       <span className="text-sm">{pref.label}</span>
-                      <Switch 
+                      <Switch
                         checked={activityForm.connectionPreferences[pref.key]}
                         onCheckedChange={(checked) => setActivityForm(prev => ({
                           ...prev,
@@ -615,7 +601,7 @@ export default function CalendarPage() {
                 <h3 className="font-semibold flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" /> Broadcast Message
                 </h3>
-                <Textarea 
+                <Textarea
                   value={activityForm.broadcastMessage}
                   onChange={(e) => setActivityForm(prev => ({ ...prev, broadcastMessage: e.target.value }))}
                   placeholder="Add a message to your broadcast (e.g., 'Looking for experienced hikers for a moderate trail!')"
@@ -626,7 +612,7 @@ export default function CalendarPage() {
               {/* Notes */}
               <div className="space-y-3">
                 <h3 className="font-semibold">Additional Notes</h3>
-                <Textarea 
+                <Textarea
                   value={activityForm.notes}
                   onChange={(e) => setActivityForm(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder="Any other details..."
@@ -636,16 +622,16 @@ export default function CalendarPage() {
 
               {/* Actions */}
               <div className="flex gap-3 pt-4">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1"
-                  onClick={saveActivity}
+                  onClick={() => saveActivity(activityForm)}
                 >
                   <Save className="w-4 h-4 mr-2" />
                   Save
                 </Button>
-                <Button 
-                  className="flex-1 bg-[#2B2D9E]"
+                <Button
+                  className="flex-1 bg-[#DC2626]"
                   onClick={broadcastActivity}
                 >
                   Broadcast
@@ -659,44 +645,43 @@ export default function CalendarPage() {
       {/* My Availability Section */}
       <Card className="mx-4 p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-gray-800">My Availability</h3>
+          <h3 className="font-bold text-white">My Availability</h3>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setAvailabilityPublic(!availabilityPublic)}
-              className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
-                availabilityPublic 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'bg-gray-100 text-gray-600'
-              }`}
+              className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${availabilityPublic
+                  ? 'bg-emerald-500/20 text-emerald-400'
+                  : 'bg-white/5 text-[#94A3B8]'
+                }`}
             >
               {availabilityPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
               {availabilityPublic ? 'Public' : 'Private'}
             </button>
           </div>
         </div>
-        
+
         <div className="space-y-2 mb-4">
           {availabilitySlots.map((slot) => (
-            <div 
-              key={slot.id} 
-              className="flex items-center justify-between bg-gray-50 rounded-xl p-3 group"
+            <div
+              key={slot.id}
+              className="flex items-center justify-between bg-[#1A1E2B] rounded-xl p-3 group"
             >
               <div>
-                <p className="font-medium text-gray-800">{slot.days}</p>
-                <p className="text-sm text-gray-500">{slot.startTime} - {slot.endTime}</p>
+                <p className="font-medium text-white">{slot.days}</p>
+                <p className="text-sm text-[#94A3B8]">{slot.startTime} - {slot.endTime}</p>
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button 
+                <button
                   onClick={() => {
                     setEditingSlot(slot);
                     setSlotForm({ days: slot.days, startTime: slot.startTime, endTime: slot.endTime });
                     setShowAvailabilityModal(true);
                   }}
-                  className="p-2 hover:bg-gray-200 rounded-lg"
+                  className="p-2 hover:bg-white/10 rounded-lg"
                 >
-                  <Edit2 className="w-4 h-4 text-gray-500" />
+                  <Edit2 className="w-4 h-4 text-[#94A3B8]" />
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setAvailabilitySlots(prev => prev.filter(s => s.id !== slot.id));
                     toast.success('Availability slot removed');
@@ -708,15 +693,15 @@ export default function CalendarPage() {
               </div>
             </div>
           ))}
-          
+
           {availabilitySlots.length === 0 && (
-            <p className="text-center text-gray-400 py-4">No availability set</p>
+            <p className="text-center text-[#94A3B8] py-4">No availability set</p>
           )}
         </div>
 
-        <Button 
-          variant="outline" 
-          className="w-full border-[#2B2D9E] text-[#2B2D9E]"
+        <Button
+          variant="outline"
+          className="w-full border-[#DC2626] text-[#DC2626]"
           onClick={() => {
             setEditingSlot(null);
             setSlotForm({ days: '', startTime: '', endTime: '' });
@@ -737,14 +722,14 @@ export default function CalendarPage() {
                 {editingSlot ? 'Edit Availability' : 'Add Availability'}
               </h3>
               <button onClick={() => setShowAvailabilityModal(false)}>
-                <X className="w-6 h-6 text-gray-400" />
+                <X className="w-6 h-6 text-[#94A3B8]" />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
                 <Label>Days</Label>
-                <select 
+                <select
                   className="w-full p-3 border rounded-xl mt-1"
                   value={slotForm.days}
                   onChange={(e) => setSlotForm(prev => ({ ...prev, days: e.target.value }))}
@@ -766,7 +751,7 @@ export default function CalendarPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Start Time</Label>
-                  <Input 
+                  <Input
                     type="time"
                     value={slotForm.startTime.replace(' AM', '').replace(' PM', '')}
                     onChange={(e) => {
@@ -774,9 +759,9 @@ export default function CalendarPage() {
                       const hour = parseInt(time.split(':')[0]);
                       const ampm = hour >= 12 ? 'PM' : 'AM';
                       const hour12 = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-                      setSlotForm(prev => ({ 
-                        ...prev, 
-                        startTime: `${hour12}:${time.split(':')[1]} ${ampm}` 
+                      setSlotForm(prev => ({
+                        ...prev,
+                        startTime: `${hour12}:${time.split(':')[1]} ${ampm}`
                       }));
                     }}
                     className="mt-1"
@@ -784,7 +769,7 @@ export default function CalendarPage() {
                 </div>
                 <div>
                   <Label>End Time</Label>
-                  <Input 
+                  <Input
                     type="time"
                     value={slotForm.endTime.replace(' AM', '').replace(' PM', '')}
                     onChange={(e) => {
@@ -792,9 +777,9 @@ export default function CalendarPage() {
                       const hour = parseInt(time.split(':')[0]);
                       const ampm = hour >= 12 ? 'PM' : 'AM';
                       const hour12 = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-                      setSlotForm(prev => ({ 
-                        ...prev, 
-                        endTime: `${hour12}:${time.split(':')[1]} ${ampm}` 
+                      setSlotForm(prev => ({
+                        ...prev,
+                        endTime: `${hour12}:${time.split(':')[1]} ${ampm}`
                       }));
                     }}
                     className="mt-1"
@@ -802,17 +787,17 @@ export default function CalendarPage() {
                 </div>
               </div>
 
-              <Button 
-                className="w-full bg-[#2B2D9E]"
+              <Button
+                className="w-full bg-[#DC2626]"
                 onClick={() => {
                   if (!slotForm.days || !slotForm.startTime || !slotForm.endTime) {
                     toast.error('Please fill in all fields');
                     return;
                   }
-                  
+
                   if (editingSlot) {
-                    setAvailabilitySlots(prev => prev.map(s => 
-                      s.id === editingSlot.id 
+                    setAvailabilitySlots(prev => prev.map(s =>
+                      s.id === editingSlot.id
                         ? { ...s, ...slotForm }
                         : s
                     ));

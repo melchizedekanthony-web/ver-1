@@ -78,27 +78,30 @@ export default function UserProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-gray-500">Loading profile...</div>
+      <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="w-8 h-8 border-4 border-[#DC2626] border-t-transparent rounded-full animate-spin mb-3"></div>
+          <div className="text-[#94A3B8] text-sm">Loading profile...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-24">
+    <div className="min-h-screen bg-[#0A0C10] pb-24">
       {/* Header */}
-      <header className="bg-[#1a1aff] px-4 py-3 flex items-center">
+      <header className="bg-[#DC2626] px-4 py-3 flex items-center">
         <button onClick={() => router.back()} className="text-white text-2xl">←</button>
         <h1 className="flex-1 text-center text-xl font-bold text-white">Profile</h1>
         <div className="w-8"></div>
       </header>
 
       {/* Profile Header */}
-      <div className="bg-[#1a1aff] pb-16 pt-4 px-4">
+      <div className="bg-[#DC2626] pb-16 pt-4 px-4">
         <div className="text-center">
           <Avatar className="w-24 h-24 mx-auto border-4 border-white">
             <AvatarImage src={user?.profilePhoto} />
-            <AvatarFallback className="bg-[#4a3aff] text-white text-2xl">
+            <AvatarFallback className="bg-[#DC2626] text-white text-2xl">
               {user?.name?.charAt(0)}
             </AvatarFallback>
           </Avatar>
@@ -123,31 +126,31 @@ export default function UserProfilePage() {
       <Card className="mx-4 -mt-8 relative z-10 p-4">
         <div className="grid grid-cols-3 text-center">
           <div>
-            <p className="text-2xl font-bold text-[#1a1aff]">{user?.compatibilityScore || 85}%</p>
-            <p className="text-sm text-gray-500">Match</p>
+            <p className="text-2xl font-bold text-[#DC2626]">{user?.compatibilityScore || 85}%</p>
+            <p className="text-sm text-[#94A3B8]">Match</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-[#1a1aff]">24</p>
-            <p className="text-sm text-gray-500">Activities</p>
+            <p className="text-2xl font-bold text-[#DC2626]">24</p>
+            <p className="text-sm text-[#94A3B8]">Activities</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-[#1a1aff]">18</p>
-            <p className="text-sm text-gray-500">Partners</p>
+            <p className="text-2xl font-bold text-[#DC2626]">18</p>
+            <p className="text-sm text-[#94A3B8]">Partners</p>
           </div>
         </div>
       </Card>
 
       {/* About */}
       <Card className="mx-4 mt-4 p-4">
-        <h3 className="font-bold text-gray-800 mb-2">About</h3>
-        <p className="text-gray-600">
+        <h3 className="font-bold text-white mb-2">About</h3>
+        <p className="text-[#94A3B8]">
           {user?.bio || 'Fitness enthusiast looking for workout partners. Love hiking, gym sessions, and outdoor activities!'}
         </p>
       </Card>
 
       {/* Activities */}
       <Card className="mx-4 mt-4 p-4">
-        <h3 className="font-bold text-gray-800 mb-3">Activities</h3>
+        <h3 className="font-bold text-white mb-3">Activities</h3>
         <div className="flex flex-wrap gap-2">
           {(user?.activities || ['hiking', 'gym', 'coffee']).map((activity) => {
             const Icon = getActivityIcon(activity);
@@ -163,29 +166,29 @@ export default function UserProfilePage() {
 
       {/* Availability */}
       <Card className="mx-4 mt-4 p-4">
-        <h3 className="font-bold text-gray-800 mb-3">Availability</h3>
+        <h3 className="font-bold text-white mb-3">Availability</h3>
         <div className="flex gap-2 flex-wrap">
           {(user?.preferredDays || ['Mon', 'Wed', 'Sat']).slice(0, 3).map((day) => (
-            <div key={day} className="bg-blue-50 text-[#1a1aff] px-3 py-1 rounded-full text-sm">
+            <div key={day} className="bg-[#DC2626]/15 text-[#DC2626] px-3 py-1 rounded-full text-sm">
               {day}
             </div>
           ))}
         </div>
-        <p className="text-sm text-gray-500 mt-2">
+        <p className="text-sm text-[#94A3B8] mt-2">
           {user?.preferredTimes || 'Morning & Evening'}
         </p>
       </Card>
 
       {/* Reviews */}
       <Card className="mx-4 mt-4 p-4">
-        <h3 className="font-bold text-gray-800 mb-3">Recent Reviews</h3>
+        <h3 className="font-bold text-white mb-3">Recent Reviews</h3>
         {reviews.length > 0 ? (
           <div className="space-y-3">
             {reviews.slice(0, 3).map((review) => (
               <div key={review.id} className="border-b pb-3 last:border-0">
                 <div className="flex items-center gap-2">
                   <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-gray-200 text-xs">
+                    <AvatarFallback className="bg-white/10 text-xs">
                       {review.reviewer?.name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
@@ -195,35 +198,35 @@ export default function UserProfilePage() {
                       {[1,2,3,4,5].map((star) => (
                         <Star 
                           key={star} 
-                          className={`w-3 h-3 ${star <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+                          className={`w-3 h-3 ${star <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-[#3A4052]'}`} 
                         />
                       ))}
                     </div>
                   </div>
                 </div>
                 {review.reviewText && (
-                  <p className="text-sm text-gray-600 mt-1">{review.reviewText}</p>
+                  <p className="text-sm text-[#94A3B8] mt-1">{review.reviewText}</p>
                 )}
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 text-sm">No reviews yet</p>
+          <p className="text-[#94A3B8] text-sm">No reviews yet</p>
         )}
       </Card>
 
       {/* Fixed Bottom Actions */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex gap-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#12151E]/95 backdrop-blur-xl border-t border-white/10 p-4 flex gap-3">
         <Button 
           variant="outline"
-          className="flex-1 py-6 border-[#1a1aff] text-[#1a1aff]"
+          className="flex-1 py-6 border-[#DC2626] text-[#DC2626]"
           onClick={() => router.push(`/messages/${userId}`)}
         >
           <MessageSquare className="w-5 h-5 mr-2" />
           Message
         </Button>
         <Button 
-          className="flex-1 py-6 bg-[#1a1aff] hover:bg-[#1515dd]"
+          className="flex-1 py-6 bg-[#DC2626] hover:bg-[#B91C1C]"
           onClick={handleConnect}
         >
           Connect

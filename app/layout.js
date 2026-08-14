@@ -1,9 +1,9 @@
-import { Inter } from 'next/font/google';
+import { Outfit } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { Toaster } from 'sonner';
 
-const inter = Inter({ subsets: ['latin'] });
+const outfit = Outfit({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'WannaGo - Connect & Share Activities',
@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" className="light">
       <head>
         <link
           rel="stylesheet"
@@ -21,10 +21,10 @@ export default function RootLayout({ children }) {
           crossOrigin=""
         />
       </head>
-      <body className={inter.className}>
+      <body className={`${outfit.className} bg-background text-foreground antialiased selection:bg-primary/30 min-h-screen flex flex-col`}>
         <Providers>
           {children}
-          <Toaster position="top-center" richColors />
+          <Toaster position="top-center" richColors theme="dark" />
         </Providers>
       </body>
     </html>

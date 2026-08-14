@@ -68,14 +68,14 @@ export default function AlertsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20">
+    <div className="min-h-screen bg-[#0A0C10] pb-20">
       <Header user={user} title="ALERTS & REQUESTS" showBack />
 
       {/* Meetup Alerts Toggle */}
       <Card className="mx-4 mt-4 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Bell className="w-5 h-5 text-[#1a1aff]" />
+            <Bell className="w-5 h-5 text-[#DC2626]" />
             <span className="font-medium">Meetup Alerts</span>
           </div>
           <Switch 
@@ -87,9 +87,9 @@ export default function AlertsPage() {
 
       {/* Incoming Requests */}
       <div className="mx-4 mt-6">
-        <h2 className="font-bold text-gray-800 mb-3">Incoming Requests</h2>
+        <h2 className="font-bold text-white mb-3">Incoming Requests</h2>
         {incomingRequests.length === 0 ? (
-          <Card className="p-6 text-center text-gray-500">
+          <Card className="p-6 text-center text-[#94A3B8]">
             No incoming requests
           </Card>
         ) : (
@@ -99,13 +99,13 @@ export default function AlertsPage() {
                 <div className="flex items-center gap-3 mb-3">
                   <Avatar className="w-12 h-12">
                     <AvatarImage src={request.profilePhoto} />
-                    <AvatarFallback className="bg-[#4a3aff] text-white">
+                    <AvatarFallback className="bg-[#DC2626] text-white">
                       {request.name?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-semibold">{request.name}: {request.activity}</p>
-                    <p className="text-sm text-green-600">Accept/Decline</p>
+                    <p className="text-sm text-emerald-400">Accept/Decline</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -131,9 +131,9 @@ export default function AlertsPage() {
 
       {/* My Requests */}
       <div className="mx-4 mt-6">
-        <h2 className="font-bold text-gray-800 mb-3">My Requests</h2>
+        <h2 className="font-bold text-white mb-3">My Requests</h2>
         {myRequests.length === 0 ? (
-          <Card className="p-6 text-center text-gray-500">
+          <Card className="p-6 text-center text-[#94A3B8]">
             No outgoing requests
           </Card>
         ) : (
@@ -142,12 +142,12 @@ export default function AlertsPage() {
               <Card key={request.id} className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                      <MapPin className="w-5 h-5 text-[#1a1aff]" />
+                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                      <MapPin className="w-5 h-5 text-[#DC2626]" />
                     </div>
                     <div>
                       <p className="font-semibold">{request.activity}: Seeking</p>
-                      <p className="text-sm text-gray-500">Looking for partners</p>
+                      <p className="text-sm text-[#94A3B8]">Looking for partners</p>
                     </div>
                   </div>
                   <Button 

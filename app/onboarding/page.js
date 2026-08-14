@@ -7,10 +7,10 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { 
+import {
   Mountain, Coffee, Film, Music, Dumbbell, Bike, BookOpen, Heart,
   Utensils, ShoppingBag, ChevronRight, ChevronLeft, UserPlus, GraduationCap,
-  Trophy, UsersRound, Accessibility, Lightbulb, Award, BookMarked
+  UsersRound, Accessibility
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUser, fetchWithAuth } from '@/lib/auth';
@@ -28,73 +28,46 @@ const activities = [
   { id: 'shopping', name: 'Shopping', icon: ShoppingBag },
 ];
 
-// Connection type identities that users can select for their profile
+// Connection type identities that users can select for their profile.
+// Kept intentionally short (4, not the full 8-way taxonomy) so onboarding
+// stays a fast first decision — the fuller Trainer/Competitor/Mentor/
+// Instructor/Expert breakdown still exists per-broadcast on the dashboard,
+// where it matters more than it does before a user's first session.
 const connectionTypeIdentities = [
-  { 
-    id: 'buddy', 
-    name: 'Buddy', 
+  {
+    id: 'buddy',
+    name: 'Buddy',
     description: 'Looking for companions to do activities together',
-    icon: UserPlus, 
-    color: 'bg-blue-500',
+    icon: UserPlus,
+    color: 'bg-[#DC2626]',
     category: 'both'
   },
-  { 
-    id: 'trainer', 
-    name: 'Trainer', 
-    description: 'I can train others in athletic activities',
-    icon: GraduationCap, 
-    color: 'bg-orange-500',
-    category: 'athletic'
+  {
+    id: 'trainer',
+    name: 'Trainer / Guide',
+    description: 'I can train, teach, or share expertise with others',
+    icon: GraduationCap,
+    color: 'bg-[#FBBF24]',
+    category: 'both'
   },
-  { 
-    id: 'competitor', 
-    name: 'Competitor', 
-    description: 'I enjoy competitive athletic challenges',
-    icon: Trophy, 
-    color: 'bg-red-500',
-    category: 'athletic'
-  },
-  { 
-    id: 'mentor', 
-    name: 'Mentor', 
-    description: 'I can guide and advise others',
-    icon: Lightbulb, 
-    color: 'bg-yellow-500',
-    category: 'non-athletic'
-  },
-  { 
-    id: 'instructor', 
-    name: 'Instructor', 
-    description: 'I can teach skills and activities',
-    icon: BookMarked, 
-    color: 'bg-teal-500',
-    category: 'non-athletic'
-  },
-  { 
-    id: 'expert', 
-    name: 'Expert', 
-    description: 'I have specialized knowledge to share',
-    icon: Award, 
-    color: 'bg-emerald-500',
-    category: 'non-athletic'
-  },
-  { 
-    id: 'group_leader', 
-    name: 'Group Leader', 
+  {
+    id: 'group_leader',
+    name: 'Group Leader',
     description: 'I enjoy organizing and leading groups',
-    icon: UsersRound, 
-    color: 'bg-green-500',
+    icon: UsersRound,
+    color: 'bg-[#10B981]',
     category: 'both'
   },
-  { 
-    id: 'accessible', 
-    name: 'Accessibility Advocate', 
+  {
+    id: 'accessible',
+    name: 'Accessibility Advocate',
     description: 'I support inclusive activities for all abilities',
-    icon: Accessibility, 
-    color: 'bg-purple-500',
+    icon: Accessibility,
+    color: 'bg-[#3B82F6]',
     category: 'both'
   },
 ];
+
 
 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const times = ['Morning', 'Afternoon', 'Evening', 'Night'];
@@ -196,11 +169,14 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#2B2D9E] py-8 px-4">
-      <div className="max-w-md mx-auto">
+    <div className="relative min-h-screen bg-[#0A0C10] py-8 px-4 overflow-hidden">
+      {/* Background Lighting Gradients, matching the landing page */}
+      <div className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-gradient-to-b from-[#DC2626]/20 via-[#991B1B]/10 to-transparent rounded-full blur-[140px] pointer-events-none" />
+
+      <div className="max-w-md mx-auto relative z-10">
         {/* Progress */}
         <div className="mb-8">
-          <div className="flex justify-between text-white/80 text-sm mb-2">
+          <div className="flex justify-between text-white/80 text-sm mb-2 font-semibold">
             <span>Step {step} of {totalSteps}</span>
             <span>{Math.round(progress)}%</span>
           </div>
@@ -210,8 +186,8 @@ export default function OnboardingPage() {
         {/* Step 1: Basic Info */}
         {step === 1 && (
           <Card className="p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Tell us about yourself</h2>
-            <p className="text-gray-500 mb-6">Help us personalize your experience</p>
+            <h2 className="text-2xl font-bold text-white mb-2">Tell us about yourself</h2>
+            <p className="text-[#94A3B8] mb-6">Help us personalize your experience</p>
             
             <div className="space-y-4">
               <div>
@@ -223,8 +199,8 @@ export default function OnboardingPage() {
                       onClick={() => setFormData({...formData, gender: g.toLowerCase()})}
                       className={`py-3 rounded-lg font-medium transition-colors ${
                         formData.gender === g.toLowerCase()
-                          ? 'bg-[#2B2D9E] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-[#DC2626] text-white'
+                          : 'bg-white/5 text-[#E2E8F0] hover:bg-white/15'
                       }`}
                     >
                       {g}
@@ -261,8 +237,8 @@ export default function OnboardingPage() {
         {/* Step 2: Connection Type Identity - NEW */}
         {step === 2 && (
           <Card className="p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Profile Identity</h2>
-            <p className="text-gray-500 mb-6">Select how you want to connect with others. Choose all that apply - you can change this anytime.</p>
+            <h2 className="text-2xl font-bold text-white mb-2">Your Profile Identity</h2>
+            <p className="text-[#94A3B8] mb-6">Select how you want to connect with others. Choose all that apply - you can change this anytime.</p>
             
             <div className="space-y-3">
               {connectionTypeIdentities.map((identity) => {
@@ -274,22 +250,22 @@ export default function OnboardingPage() {
                     onClick={() => toggleConnectionIdentity(identity.id)}
                     className={`w-full p-4 rounded-xl flex items-center gap-4 transition-all text-left ${
                       isSelected
-                        ? 'bg-[#2B2D9E] text-white ring-2 ring-[#2B2D9E] ring-offset-2'
-                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                        ? 'bg-[#DC2626] text-white ring-2 ring-[#DC2626] ring-offset-2'
+                        : 'bg-[#1A1E2B] text-[#E2E8F0] hover:bg-white/10 border border-white/10'
                     }`}
                   >
                     <div className={`w-12 h-12 rounded-full ${isSelected ? 'bg-white/20' : identity.color} flex items-center justify-center flex-shrink-0`}>
                       <Icon className={`w-6 h-6 ${isSelected ? 'text-white' : 'text-white'}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-bold ${isSelected ? 'text-white' : 'text-gray-800'}`}>
+                      <p className={`font-bold ${isSelected ? 'text-white' : 'text-white'}`}>
                         {identity.name}
                       </p>
-                      <p className={`text-sm ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
+                      <p className={`text-sm ${isSelected ? 'text-white/80' : 'text-[#94A3B8]'}`}>
                         {identity.description}
                       </p>
                       <span className={`text-xs mt-1 inline-block px-2 py-0.5 rounded-full ${
-                        isSelected ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
+                        isSelected ? 'bg-white/20 text-white' : 'bg-white/10 text-[#94A3B8]'
                       }`}>
                         {identity.category === 'both' ? 'Athletic & Non-Athletic' : identity.category === 'athletic' ? 'Athletic' : 'Non-Athletic'}
                       </span>
@@ -304,8 +280,8 @@ export default function OnboardingPage() {
         {/* Step 3: Activities */}
         {step === 3 && (
           <Card className="p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Choose your activities</h2>
-            <p className="text-gray-500 mb-6">Select activities you enjoy</p>
+            <h2 className="text-2xl font-bold text-white mb-2">Choose your activities</h2>
+            <p className="text-[#94A3B8] mb-6">Select activities you enjoy</p>
             
             <div className="grid grid-cols-3 gap-3">
               {activities.map((activity) => {
@@ -317,8 +293,8 @@ export default function OnboardingPage() {
                     onClick={() => toggleActivity(activity.id)}
                     className={`p-4 rounded-xl flex flex-col items-center transition-all ${
                       isSelected
-                        ? 'bg-[#2B2D9E] text-white scale-105'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-[#DC2626] text-white scale-105'
+                        : 'bg-white/5 text-[#E2E8F0] hover:bg-white/15'
                     }`}
                   >
                     <Icon className="w-8 h-8 mb-2" />
@@ -333,8 +309,8 @@ export default function OnboardingPage() {
         {/* Step 4: Availability */}
         {step === 4 && (
           <Card className="p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">When are you available?</h2>
-            <p className="text-gray-500 mb-6">Let others know your schedule</p>
+            <h2 className="text-2xl font-bold text-white mb-2">When are you available?</h2>
+            <p className="text-[#94A3B8] mb-6">Let others know your schedule</p>
             
             <div className="space-y-6">
               <div>
@@ -346,8 +322,8 @@ export default function OnboardingPage() {
                       onClick={() => toggleDay(day)}
                       className={`px-4 py-2 rounded-full font-medium transition-colors ${
                         formData.preferredDays.includes(day)
-                          ? 'bg-[#2B2D9E] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-[#DC2626] text-white'
+                          : 'bg-white/5 text-[#E2E8F0] hover:bg-white/15'
                       }`}
                     >
                       {day}
@@ -365,8 +341,8 @@ export default function OnboardingPage() {
                       onClick={() => toggleTime(time)}
                       className={`px-4 py-2 rounded-full font-medium transition-colors ${
                         formData.preferredTimes.includes(time)
-                          ? 'bg-[#2B2D9E] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-[#DC2626] text-white'
+                          : 'bg-white/5 text-[#E2E8F0] hover:bg-white/15'
                       }`}
                     >
                       {time}
@@ -388,8 +364,8 @@ export default function OnboardingPage() {
                       onClick={() => setFormData({...formData, lookingFor: option.value})}
                       className={`py-3 rounded-lg font-medium transition-colors ${
                         formData.lookingFor === option.value
-                          ? 'bg-[#2B2D9E] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-[#DC2626] text-white'
+                          : 'bg-white/5 text-[#E2E8F0] hover:bg-white/15'
                       }`}
                     >
                       {option.label}
@@ -404,17 +380,17 @@ export default function OnboardingPage() {
         {/* Navigation Buttons */}
         <div className="flex gap-3 mt-6">
           {step > 1 && (
-            <Button 
+            <Button
               variant="outline"
-              className="flex-1 py-6 bg-white"
+              className="flex-1 py-6 bg-[#1A1E2B] border-white/10 text-white hover:bg-white/10 hover:text-white"
               onClick={() => setStep(step - 1)}
             >
               <ChevronLeft className="w-5 h-5 mr-1" />
               Back
             </Button>
           )}
-          <Button 
-            className="flex-1 py-6 bg-white text-[#2B2D9E] hover:bg-gray-100"
+          <Button
+            className="flex-1 py-6 bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold shadow-[0_0_25px_rgba(220,38,38,0.5)] border border-red-500/30"
             onClick={handleNext}
           >
             {step === totalSteps ? 'Complete' : 'Next'}

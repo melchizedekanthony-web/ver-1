@@ -20,6 +20,9 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import BottomNav from '@/components/BottomNav';
+// Imports
+
+import { motion, AnimatePresence } from 'framer-motion';
 import { getUser, getAuthToken, fetchWithAuth, signOut } from '@/lib/auth';
 
 // Dynamic import for map with error handling
@@ -27,12 +30,12 @@ const MapComponent = dynamic(
   () => import('@/components/MapComponent').catch(err => {
     console.error('Failed to load MapComponent:', err);
     return () => (
-      <div className="h-full bg-gray-100 flex items-center justify-center">
-        <div className="text-center text-gray-500">
-          <p>Map could not be loaded</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-2 text-sm text-blue-500 underline"
+      <div className="h-full bg-[#0A0C10] flex items-center justify-center">
+        <div className="text-center text-[#94A3B8]">
+          <p>Radar map couldn't load.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 text-sm text-[#DC2626] font-semibold underline underline-offset-2 hover:text-[#FF6B6B]"
           >
             Reload page
           </button>
@@ -40,13 +43,13 @@ const MapComponent = dynamic(
       </div>
     );
   }),
-  { 
+  {
     ssr: false,
     loading: () => (
-      <div className="h-full bg-gray-100 flex items-center justify-center">
+      <div className="h-full bg-[#0A0C10] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-[#2B2D9E] border-t-transparent rounded-full mx-auto mb-2"></div>
-          <p className="text-gray-500">Loading map...</p>
+          <div className="animate-spin w-8 h-8 border-4 border-[#DC2626] border-t-transparent rounded-full mx-auto mb-2"></div>
+          <p className="text-[#94A3B8] text-sm">Initializing Radar Map...</p>
         </div>
       </div>
     )
@@ -62,29 +65,30 @@ const activityCategories = [
 // Athletic activities
 const athleticActivities = [
   { id: 'hiking', name: 'Hiking', icon: Mountain, color: 'bg-green-100 text-green-600' },
-  { id: 'running', name: 'Running', icon: Zap, color: 'bg-orange-100 text-orange-600' },
+  { id: 'running', name: 'Running', icon: Zap, color: 'bg-red-100 text-red-600' },
   { id: 'gym', name: 'Gym', icon: Dumbbell, color: 'bg-blue-100 text-blue-600' },
-  { id: 'cycling', name: 'Cycling', icon: Bike, color: 'bg-cyan-100 text-cyan-600' },
-  { id: 'yoga', name: 'Yoga', icon: Heart, color: 'bg-rose-100 text-rose-600' },
-  { id: 'swimming', name: 'Swimming', icon: Zap, color: 'bg-sky-100 text-sky-600' },
-  { id: 'basketball', name: 'Basketball', icon: Zap, color: 'bg-amber-100 text-amber-600' },
-  { id: 'tennis', name: 'Tennis', icon: Zap, color: 'bg-lime-100 text-lime-600' },
+  { id: 'cycling', name: 'Cycling', icon: Bike, color: 'bg-green-100 text-green-600' },
+  { id: 'yoga', name: 'Yoga', icon: Heart, color: 'bg-blue-100 text-blue-600' },
+  { id: 'swimming', name: 'Swimming', icon: Zap, color: 'bg-blue-100 text-blue-600' },
+  { id: 'basketball', name: 'Basketball', icon: Zap, color: 'bg-yellow-100 text-yellow-600' },
+  { id: 'tennis', name: 'Tennis', icon: Zap, color: 'bg-green-100 text-green-600' },
 ];
 
 // Non-athletic activities
 const nonAthleticActivities = [
-  { id: 'coffee', name: 'Coffee', icon: Coffee, color: 'bg-amber-100 text-amber-600' },
-  { id: 'cinema', name: 'Cinema', icon: Film, color: 'bg-purple-100 text-purple-600' },
-  { id: 'concert', name: 'Concert', icon: Music, color: 'bg-pink-100 text-pink-600' },
+  { id: 'coffee', name: 'Coffee', icon: Coffee, color: 'bg-yellow-100 text-yellow-600' },
+  { id: 'cinema', name: 'Cinema', icon: Film, color: 'bg-blue-100 text-blue-600' },
+  { id: 'concert', name: 'Concert', icon: Music, color: 'bg-red-100 text-red-600' },
   { id: 'dining', name: 'Dining', icon: Utensils, color: 'bg-red-100 text-red-600' },
-  { id: 'bookclub', name: 'Book Club', icon: BookOpen, color: 'bg-indigo-100 text-indigo-600' },
-  { id: 'photography', name: 'Photography', icon: Camera, color: 'bg-slate-100 text-slate-600' },
-  { id: 'gaming', name: 'Gaming', icon: Gamepad2, color: 'bg-violet-100 text-violet-600' },
-  { id: 'music', name: 'Music/Jam', icon: Mic, color: 'bg-fuchsia-100 text-fuchsia-600' },
-  { id: 'cars', name: 'Cars/Mechanics', icon: Wrench, color: 'bg-gray-100 text-gray-600' },
-  { id: 'art', name: 'Art/Creative', icon: Brush, color: 'bg-teal-100 text-teal-600' },
+  { id: 'bookclub', name: 'Book Club', icon: BookOpen, color: 'bg-blue-100 text-blue-600' },
+  { id: 'photography', name: 'Photography', icon: Camera, color: 'bg-blue-100 text-blue-600' },
+  { id: 'gaming', name: 'Gaming', icon: Gamepad2, color: 'bg-yellow-100 text-yellow-600' },
+  { id: 'music', name: 'Music/Jam', icon: Mic, color: 'bg-red-100 text-red-600' },
+  { id: 'cars', name: 'Cars/Mechanics', icon: Wrench, color: 'bg-blue-100 text-blue-600' },
+  { id: 'art', name: 'Art/Creative', icon: Brush, color: 'bg-green-100 text-green-600' },
   { id: 'dogwalking', name: 'Dog Walking', icon: Dog, color: 'bg-yellow-100 text-yellow-600' },
 ];
+
 
 // Connection types for ATHLETIC activities
 const athleticConnectionTypes = [
@@ -257,6 +261,11 @@ export default function Dashboard() {
   // Broadcast Parameters
   const [broadcastRadius, setBroadcastRadius] = useState([5]);
   const [targetingOption, setTargetingOption] = useState('anyone');
+
+  // Radar Boost (monetization: spend a credit for wider radius / priority placement)
+  const [boostCredits, setBoostCredits] = useState(0);
+  const [activeBoost, setActiveBoost] = useState(null);
+  const [isActivatingBoost, setIsActivatingBoost] = useState(false);
   
   // Advanced Filters
   const [advancedFilters, setAdvancedFilters] = useState({
@@ -307,8 +316,9 @@ export default function Dashboard() {
     if (user) {
       fetchNearbyUsers();
       fetchRecentActivities();
+      fetchBoostStatus();
     }
-  }, [user, selectedActivity, broadcastRadius]);
+  }, [user, selectedActivity, broadcastRadius, activeBoost]);
 
   const checkAuth = async () => {
     try {
@@ -359,22 +369,62 @@ export default function Dashboard() {
           category: session.category || 'athletic'
         })));
       } else {
-        // Mock data for demo
-        setRecentActivities([
-          { id: '1', activity: 'Running', partner: 'Sarah M.', partnerId: 'user-1', date: new Date(Date.now() - 86400000), location: 'Central Park', rating: 5, connectionType: 'buddy', category: 'athletic' },
-          { id: '2', activity: 'Coffee', partner: 'Mike T.', partnerId: 'user-2', date: new Date(Date.now() - 172800000), location: 'Starbucks Downtown', rating: 4.5, connectionType: 'buddy', category: 'non-athletic' },
-          { id: '3', activity: 'Yoga', partner: 'Luna K.', partnerId: 'user-3', date: new Date(Date.now() - 259200000), location: 'Zen Studio', rating: 5, connectionType: 'group', category: 'athletic' },
-        ]);
+        // No sessions yet — the "Recent Activity Shortcuts" block below only
+        // renders when this array is non-empty, so an honest empty state
+        // here just means that section doesn't show yet. That's correct:
+        // a brand-new user has no history to show, and we'd rather show
+        // nothing than invent activity that never happened.
+        setRecentActivities([]);
       }
     } catch (error) {
       console.error('Failed to fetch recent activities:', error);
-      // Mock data fallback
-      setRecentActivities([
-        { id: '1', activity: 'Running', partner: 'Sarah M.', partnerId: 'user-1', date: new Date(Date.now() - 86400000), location: 'Central Park', rating: 5, connectionType: 'buddy', category: 'athletic' },
-        { id: '2', activity: 'Coffee', partner: 'Mike T.', partnerId: 'user-2', date: new Date(Date.now() - 172800000), location: 'Starbucks Downtown', rating: 4.5, connectionType: 'buddy', category: 'non-athletic' },
-      ]);
+      setRecentActivities([]);
     }
   };
+
+  const fetchBoostStatus = async () => {
+    try {
+      const res = await fetchWithAuth('/api/boosts');
+      const data = await res.json();
+      setBoostCredits(data.credits ?? 0);
+      setActiveBoost(data.activeBoost || null);
+    } catch (error) {
+      console.error('Failed to fetch boost status:', error);
+    }
+  };
+
+  const handleActivateBoost = async (type = 'radius') => {
+    if (boostCredits <= 0 || isActivatingBoost) return;
+    setIsActivatingBoost(true);
+    try {
+      const res = await fetchWithAuth('/api/boosts/activate', {
+        method: 'POST',
+        body: JSON.stringify({ type })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Could not activate Radar Boost');
+        return;
+      }
+      setBoostCredits(data.credits);
+      setActiveBoost(data.activeBoost);
+      toast.success(
+        type === 'radius'
+          ? `Radar Boost active! Your radius is 2x for the next hour.`
+          : `Priority Placement active for the next hour — you'll show first in matches.`
+      );
+    } catch (error) {
+      console.error('Failed to activate boost:', error);
+      toast.error('Could not activate Radar Boost');
+    } finally {
+      setIsActivatingBoost(false);
+    }
+  };
+
+  // Effective radius shown/used once a Radius Boost is active
+  const effectiveBroadcastRadius = activeBoost?.radiusMultiplier
+    ? +(broadcastRadius[0] * activeBoost.radiusMultiplier).toFixed(1)
+    : broadcastRadius[0];
 
   const handleGoAgain = (recentActivity, option) => {
     // option: 'broadcast_all', 'same_user', 'friends_list'
@@ -413,7 +463,7 @@ export default function Dashboard() {
           },
           activity: selectedActivity?.name || 'available',
           connectionType: ['buddy', 'trainer', 'competitor', 'group'][index % 4],
-          distance: (Math.random() * broadcastRadius[0]).toFixed(1)
+          distance: (Math.random() * effectiveBroadcastRadius).toFixed(1)
         }));
         setNearbyUsers(usersWithLocations);
         setUsersInRadius(usersWithLocations.length);
@@ -571,107 +621,120 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#2B2D9E] flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="w-9 h-9 border-4 border-[#DC2626] border-t-transparent rounded-full animate-spin mb-3"></div>
+          <p className="text-[#94A3B8] text-sm font-semibold">Tuning in to the radar...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20 flex flex-col">
-      {/* Map Section - Vertical Rectangle, Half Page */}
-      <div className="flex-1 flex items-center justify-center px-3 py-4 min-h-[45vh]">
-        <div className="w-[92%] max-w-[500px] h-[40vh] min-h-[300px] relative rounded-2xl overflow-hidden shadow-xl border-4 border-white">
-          <MapComponent
-            center={[userLocation.lat, userLocation.lng]}
-            zoom={13}
-            users={nearbyUsers}
-            currentUser={{ location: userLocation }}
-            selectedUser={selectedUser}
-            onUserClick={handleUserClick}
-            showRoute={currentStep === 'chat'}
-            className="h-full w-full"
-          />
-
-          {/* Broadcasting Overlay */}
-          {isBroadcasting && (
-            <div className="absolute inset-0 bg-[#2B2D9E]/80 flex items-center justify-center z-20 rounded-2xl">
-              <div className="text-center text-white">
-                <div className="relative w-14 h-14 mx-auto mb-3">
-                  <div className="absolute inset-0 rounded-full border-4 border-white/30 animate-ping"></div>
-                  <div className="absolute inset-2 rounded-full border-4 border-white/50 animate-ping animation-delay-200"></div>
-                  <div className="absolute inset-4 rounded-full border-4 border-white/70 animate-ping animation-delay-400"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-                <p className="text-base font-bold mb-1">Spreading The Word...</p>
-                <p className="text-white/70 text-xs px-2">Looking for {selectedActivity?.name} {getSelectedConnectionType()?.name}s</p>
-              </div>
-            </div>
-          )}
-
-          {/* Top Controls */}
-          <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
-            {/* Status Badge */}
+    <>
+      <div className="fixed inset-0 z-0">
+        <MapComponent
+          center={[userLocation.lat, userLocation.lng]}
+          zoom={14}
+          users={nearbyUsers}
+          currentUser={{ location: userLocation }}
+          selectedUser={selectedUser}
+          onUserClick={handleUserClick}
+          showRoute={currentStep === 'chat'}
+          className="w-full h-full"
+        />
+        
+        {/* Top Controls Overlay map */}
+        <div className="absolute top-safe pt-4 left-4 right-4 flex justify-between items-start pointer-events-none z-10">
+          <div className="flex gap-2">
             {currentStep !== 'category' && (
-              <div className="bg-white/95 backdrop-blur rounded-lg px-2 py-1 shadow-lg">
-                <p className="text-[10px] font-medium text-gray-600">
+              <div className="bg-[#12151E]/90 border border-white/10 pointer-events-auto rounded-full px-4 py-2 shadow-xl backdrop-blur-md flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#DC2626] animate-pulse shadow-[0_0_8px_#DC2626]"></span>
+                <p className="text-xs font-bold text-white tracking-tight">
                   {selectedCategory?.name} {selectedActivity && `› ${selectedActivity.name}`}
                 </p>
               </div>
             )}
-            
-            {/* Reset Button */}
+          </div>
+          
+          <div className="flex gap-2 pointer-events-auto">
             {currentStep !== 'category' && (
               <button 
                 onClick={resetFlow}
-                className="bg-white/95 backdrop-blur rounded-full p-1.5 shadow-lg hover:bg-white transition-colors"
+                className="bg-[#12151E]/90 border border-white/10 rounded-full p-2.5 shadow-xl text-white hover:bg-white/10 transition-colors backdrop-blur-md"
               >
-                <RotateCcw className="w-4 h-4 text-[#2B2D9E]" />
+                <RotateCcw className="w-4 h-4 text-white" />
               </button>
             )}
+            <button 
+              onClick={getUserLocation}
+              className="bg-[#12151E]/90 border border-white/10 rounded-full p-2.5 shadow-xl text-white hover:bg-white/10 transition-colors backdrop-blur-md"
+            >
+              <MapPin className="w-4 h-4 text-[#DC2626]" />
+            </button>
           </div>
-
-          {/* Center on User Button */}
-          <button 
-            onClick={getUserLocation}
-            className="absolute bottom-2 right-2 bg-white rounded-full p-2 shadow-lg hover:shadow-xl transition-shadow z-10"
-          >
-            <MapPin className="w-4 h-4 text-[#2B2D9E]" />
-          </button>
         </div>
+
+        {/* Broadcasting Overlay Full Screen */}
+        {isBroadcasting && (
+          <div className="absolute inset-0 bg-[#0A0C10]/85 backdrop-blur-md flex items-center justify-center z-30 pointer-events-auto">
+            <div className="text-center text-white p-6">
+              <div className="relative w-20 h-20 mx-auto mb-6">
+                <div className="absolute inset-0 rounded-full border-4 border-[#DC2626]/30 animate-ping"></div>
+                <div className="absolute inset-2 rounded-full border-4 border-[#DC2626]/60 animate-ping animation-delay-200"></div>
+                <div className="absolute inset-4 flex items-center justify-center bg-gradient-to-br from-[#DC2626] to-[#991B1B] rounded-full shadow-[0_0_30px_rgba(220,38,38,0.8)] z-10">
+                  <MapPin className="w-7 h-7 text-white" />
+                </div>
+              </div>
+              <p className="text-xl font-black mb-1 tracking-tight text-white">Broadcasting Radar Intent...</p>
+              <p className="text-[#94A3B8] text-sm">Searching for {selectedActivity?.name} {getSelectedConnectionType()?.name}s nearby</p>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Bottom Panel - Activities section */}
-      <div className="bg-white rounded-t-3xl shadow-2xl relative z-10 mx-2">
-        {/* Panel Handle */}
-        <div className="py-3 flex justify-center">
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
-        </div>
+      <div className="fixed bottom-0 left-0 right-0 z-20 pointer-events-none pb-16">
+        <div className="w-full max-w-md mx-auto">
+          {/* Bottom Panel - Dark Obsidian Sheet */}
+          <motion.div 
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="bg-[#12151E]/95 shadow-[0_-15px_50px_rgba(0,0,0,0.9)] rounded-t-3xl mx-0 pointer-events-auto border-t border-white/10 backdrop-blur-2xl text-white"
+          >
+            {/* Panel Handle */}
+            <div className="pt-3 pb-2 flex justify-center">
+              <div className="w-12 h-1 bg-[#2A2F3D] rounded-full" />
+            </div>
 
-        {/* Panel Content */}
-        <div className="px-4 pb-6 max-h-[45vh] overflow-y-auto">
+            {/* Panel Content */}
+            <div className="px-5 pb-6 max-h-[60vh] overflow-y-auto">
           
           {/* STEP 0: Category Selection */}
           {currentStep === 'category' && (
             <div className="animate-fadeIn flex flex-col">
-              <div className="flex flex-col justify-center items-center py-4">
-                <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">Choose Your Activity</h2>
+              <div className="flex flex-col py-2">
+                <div className="flex justify-between items-center mb-3">
+                  <h2 className="text-xl font-black text-white tracking-tight">What are you up for?</h2>
+                  <span className="text-xs font-bold text-[#FBBF24] bg-[#FBBF24]/10 border border-[#FBBF24]/20 px-2.5 py-0.5 rounded-full">
+                    LIVE RADAR
+                  </span>
+                </div>
                 
-                <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+                <div className="grid grid-cols-2 gap-3 w-full">
                   {activityCategories.map((category) => {
                     const Icon = category.icon;
                     return (
                       <button
                         key={category.id}
                         onClick={() => handleCategorySelect(category)}
-                        className="flex flex-col items-center justify-center p-5 bg-gray-50 rounded-2xl hover:bg-blue-50 hover:border-[#2B2D9E] border-2 border-transparent transition-all shadow-sm hover:shadow-md"
+                        className="flex flex-col items-center justify-center p-5 rounded-2xl bg-[#1A1E2B] border border-white/10 hover:border-[#DC2626]/60 hover:bg-[#232838] transition-all active:scale-[0.98] group shadow-lg"
                       >
-                        <div className="w-14 h-14 rounded-full bg-[#2B2D9E] flex items-center justify-center mb-2">
-                          <Icon className="w-7 h-7 text-white" />
+                        <div className="w-12 h-12 rounded-2xl bg-[#DC2626]/15 border border-[#DC2626]/40 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-[#DC2626] transition-all">
+                          <Icon className="w-6 h-6 text-[#DC2626] group-hover:text-white transition-colors" />
                         </div>
-                        <p className="font-bold text-gray-800 text-center text-sm">{category.name}</p>
+                        <p className="font-bold text-white text-base tracking-tight">{category.name}</p>
+                        <p className="text-[11px] text-[#94A3B8] mt-0.5">{category.description}</p>
                       </button>
                     );
                   })}
@@ -680,47 +743,38 @@ export default function Dashboard() {
 
               {/* Recent Activity Section */}
               {recentActivities.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <h3 className="text-md font-bold text-gray-800 mb-3">Recent Activity</h3>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div className="mt-5 pt-4 border-t border-white/10">
+                  <h3 className="text-xs font-bold text-[#94A3B8] uppercase tracking-wider mb-3">Recent Activity Shortcuts</h3>
+                  <div className="space-y-2">
                     {recentActivities.map((activity) => (
                       <div 
                         key={activity.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                        className="flex items-center justify-between p-3 bg-[#1A1E2B]/80 border border-white/5 rounded-xl hover:border-[#DC2626]/30 transition-colors"
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            activity.category === 'athletic' ? 'bg-blue-100' : 'bg-purple-100'
-                          }`}>
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center bg-[#DC2626]/20 border border-[#DC2626]/40">
                             {activity.category === 'athletic' ? (
-                              <Dumbbell className="w-5 h-5 text-blue-600" />
+                              <Dumbbell className="w-4 h-4 text-[#DC2626]" />
                             ) : (
-                              <Palette className="w-5 h-5 text-purple-600" />
+                              <Palette className="w-4 h-4 text-[#FBBF24]" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-800 text-sm truncate">{activity.activity}</p>
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <p className="font-bold text-white text-sm truncate">{activity.activity}</p>
+                            <div className="flex items-center gap-1 text-xs text-[#94A3B8]">
                               <span>with {activity.partner}</span>
-                              <span>•</span>
-                              <span>{activity.date.toLocaleDateString()}</span>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs">
-                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                            <span className="text-gray-600">{activity.rating}</span>
                           </div>
                         </div>
                         <Button
                           size="sm"
-                          className="ml-2 bg-[#2B2D9E] hover:bg-[#1f2175] text-white text-xs px-3"
+                          className="ml-2 bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold px-3 py-1 rounded-xl shadow-[0_0_15px_rgba(220,38,38,0.4)]"
                           onClick={() => {
                             setSelectedRecentActivity(activity);
                             setShowGoAgainModal(true);
                           }}
                         >
-                          <RefreshCw className="w-3 h-3 mr-1" />
-                          Go Again
+                          Re-Request
                         </Button>
                       </div>
                     ))}
@@ -732,51 +786,44 @@ export default function Dashboard() {
 
           {/* Go Again Modal */}
           {showGoAgainModal && selectedRecentActivity && (
-            <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
-              <Card className="w-full max-w-sm p-5">
-                <h3 className="text-lg font-bold text-gray-800 mb-2">Go Again!</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Redo <span className="font-semibold">{selectedRecentActivity.activity}</span> - How would you like to find a partner?
-                </p>
-                
-                <div className="space-y-2">
-                  <Button
-                    className="w-full bg-[#2B2D9E] hover:bg-[#1f2175] text-white justify-start"
-                    onClick={() => handleGoAgain(selectedRecentActivity, 'broadcast_all')}
-                  >
-                    <Users className="w-4 h-4 mr-3" />
-                    Broadcast to All Available Users
-                  </Button>
+            <div className="fixed inset-0 z-[60] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+              <Card className="w-full max-w-sm overflow-hidden border border-white/10 bg-[#12151E] shadow-2xl rounded-2xl text-white">
+                <div className="p-5">
+                  <h3 className="text-xl font-black text-white tracking-tight mb-1">Request Activity Again</h3>
+                  <p className="text-sm text-[#94A3B8] mb-6">
+                    Looking for a <span className="font-bold text-[#FBBF24] border-b border-[#FBBF24]">{selectedRecentActivity.activity}</span> partner nearby.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <Button
+                      className="w-full bg-[#DC2626] hover:bg-[#B91C1C] text-white justify-start h-12 rounded-xl text-base font-bold shadow-[0_0_20px_rgba(220,38,38,0.4)]"
+                      onClick={() => handleGoAgain(selectedRecentActivity, 'broadcast_all')}
+                    >
+                      <Users className="w-5 h-5 mr-3" />
+                      Find new partners nearby
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      className="w-full border-white/10 bg-[#1A1E2B] text-white hover:bg-white/10 justify-start h-12 rounded-xl text-base font-semibold"
+                      onClick={() => handleGoAgain(selectedRecentActivity, 'same_user')}
+                    >
+                      <UserCheck className="w-5 h-5 mr-3 text-[#FBBF24]" />
+                      Direct Request {selectedRecentActivity.partner}
+                    </Button>
+                  </div>
                   
                   <Button
-                    variant="outline"
-                    className="w-full border-[#2B2D9E] text-[#2B2D9E] justify-start"
-                    onClick={() => handleGoAgain(selectedRecentActivity, 'same_user')}
+                    variant="ghost"
+                    className="w-full mt-4 text-[#94A3B8] hover:text-white hover:bg-white/5 rounded-xl"
+                    onClick={() => {
+                      setShowGoAgainModal(false);
+                      setSelectedRecentActivity(null);
+                    }}
                   >
-                    <UserCheck className="w-4 h-4 mr-3" />
-                    Same Partner ({selectedRecentActivity.partner})
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    className="w-full border-gray-300 text-gray-700 justify-start"
-                    onClick={() => handleGoAgain(selectedRecentActivity, 'friends_list')}
-                  >
-                    <Heart className="w-4 h-4 mr-3" />
-                    Choose from Friends List
+                    Cancel
                   </Button>
                 </div>
-                
-                <Button
-                  variant="ghost"
-                  className="w-full mt-3 text-gray-500"
-                  onClick={() => {
-                    setShowGoAgainModal(false);
-                    setSelectedRecentActivity(null);
-                  }}
-                >
-                  Cancel
-                </Button>
               </Card>
             </div>
           )}
@@ -784,162 +831,117 @@ export default function Dashboard() {
           {/* STEP 1: Activity Selection */}
           {currentStep === 'activity' && (
             <div className="animate-fadeIn">
-              <button 
-                onClick={goBack}
-                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-3 hover:opacity-70 transition-opacity"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back</span>
-              </button>
-
-              <h2 className="text-lg font-bold text-gray-800 mb-3">
-                CHOOSE {selectedCategory?.name?.toUpperCase()} ACTIVITY
-              </h2>
-              
-              {/* Simple Text Dropdown */}
-              <div className="relative mb-4">
-                <button
-                  onClick={() => setShowActivityDropdown(!showActivityDropdown)}
-                  className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border-2 border-gray-200 hover:border-[#2B2D9E] transition-colors"
+              <div className="flex items-center gap-3 mb-4 mt-2">
+                <button 
+                  onClick={goBack}
+                  className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors text-white"
                 >
-                  <span className={selectedActivity ? 'text-[#2B2D9E] font-semibold' : 'text-gray-500'}>
-                    {selectedActivity ? selectedActivity.name : 'Select an activity...'}
-                  </span>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showActivityDropdown ? 'rotate-180' : ''}`} />
+                  <ArrowLeft className="w-5 h-5" />
                 </button>
-
-                {showActivityDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 max-h-48 overflow-y-auto">
-                    {getActivitiesForCategory().map((activity) => (
-                      <button
-                        key={activity.id}
-                        onClick={() => handleActivitySelect(activity)}
-                        className={`w-full text-left px-4 py-3 transition-colors first:rounded-t-2xl last:rounded-b-2xl ${
-                          selectedActivity?.id === activity.id
-                            ? 'bg-[#2B2D9E] text-white font-semibold'
-                            : 'text-gray-700 hover:bg-blue-50 hover:text-[#2B2D9E]'
-                        }`}
-                      >
-                        {activity.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <h2 className="text-xl font-black text-white tracking-tight">
+                  Select {selectedCategory?.name} Activity
+                </h2>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-2.5">
+                {getActivitiesForCategory().map((activity) => {
+                  const Icon = activity.icon;
+                  const isSelected = selectedActivity?.id === activity.id;
+                  return (
+                    <button
+                      key={activity.id}
+                      onClick={() => handleActivitySelect(activity)}
+                      className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border transition-all active:scale-[0.98] ${
+                        isSelected
+                          ? 'border-[#DC2626] bg-[#DC2626]/20 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)]'
+                          : 'border-white/10 bg-[#1A1E2B] hover:border-white/20 text-[#E2E8F0]'
+                      }`}
+                    >
+                      <Icon className={`w-5 h-5 mb-1.5 ${isSelected ? 'text-[#DC2626]' : 'text-[#FBBF24]'}`} />
+                      <span className="font-bold text-xs text-center">{activity.name}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* STEP 2: Connection Type */}
           {currentStep === 'connection' && (
-            <div className="animate-fadeIn">
-              <button 
-                onClick={goBack}
-                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-3 hover:opacity-70 transition-opacity"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back</span>
-              </button>
+            <div className="animate-fadeIn flex flex-col h-full relative">
+              <div>
+                <div className="flex items-center gap-3 mb-4 mt-2">
+                  <button 
+                    onClick={goBack}
+                    className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors text-white"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <h2 className="text-xl font-black text-white tracking-tight">What type of connection?</h2>
+                </div>
 
-              <h2 className="text-lg font-bold text-gray-800 mb-3">CONNECTION TYPE</h2>
-
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                {getConnectionTypes().map((type) => {
-                  const Icon = type.icon;
-                  const isSelected = selectedConnection === type.id;
-                  return (
-                    <button
-                      key={type.id}
-                      onClick={() => handleConnectionSelect(type.id)}
-                      className={`p-3 rounded-xl border-2 transition-all duration-200 text-left ${
-                        isSelected
-                          ? `${type.borderColor} ${type.lightBg}`
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-full ${type.color} flex items-center justify-center mb-1`}>
-                        <Icon className="w-4 h-4 text-white" />
-                      </div>
-                      <p className={`font-bold text-xs ${isSelected ? type.textColor : 'text-gray-800'}`}>
-                        {type.displayName}
-                      </p>
-                      <p className="text-[10px] text-gray-500 leading-tight">{type.description}</p>
-                    </button>
-                  );
-                })}
+                <div className="grid grid-cols-1 gap-2.5 mb-4">
+                  {getConnectionTypes().map((type) => {
+                    const isSelected = selectedConnection === type.id;
+                    const Icon = type.icon;
+                    return (
+                      <button
+                        key={type.id}
+                        onClick={() => handleConnectionSelect(type.id)}
+                        className={`p-4 rounded-2xl border transition-all text-left flex items-center justify-between ${
+                          isSelected
+                            ? 'border-[#DC2626] bg-[#DC2626]/15 shadow-[0_0_20px_rgba(220,38,38,0.3)]'
+                            : 'border-white/10 bg-[#1A1E2B] hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isSelected ? 'bg-[#DC2626] text-white' : 'bg-white/5 text-[#FBBF24]'}`}>
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm text-white">{type.name}</p>
+                            <p className="text-xs text-[#94A3B8] mt-0.5">{type.description}</p>
+                          </div>
+                        </div>
+                        {isSelected && <Check className="w-5 h-5 text-[#DC2626]" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Group Options */}
-              {selectedConnection === 'group' && (
-                <div className="mb-3 p-3 bg-green-50 rounded-xl">
-                  <p className="text-xs font-semibold text-green-800 mb-2">Group Options</p>
-                  <div className="space-y-1">
-                    {groupOptions.map((option) => (
-                      <button
-                        key={option.id}
-                        onClick={() => setSelectedGroupOption(option.id)}
-                        className={`w-full p-2 rounded-lg border text-left transition-all text-sm ${
-                          selectedGroupOption === option.id
-                            ? 'border-green-500 bg-green-100'
-                            : 'border-gray-200 bg-white hover:border-green-300'
-                        }`}
-                      >
-                        <p className="font-medium text-xs">{option.name}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Accessible Options */}
-              {selectedConnection === 'accessible' && (
-                <div className="mb-3 p-3 bg-purple-50 rounded-xl">
-                  <p className="text-xs font-semibold text-purple-800 mb-2">Accessibility Preferences</p>
-                  <div className="space-y-1">
-                    {accessibleOptions.map((option) => (
-                      <button
-                        key={option.id}
-                        onClick={() => setSelectedAccessibleOption(option.id)}
-                        className={`w-full p-2 rounded-lg border text-left transition-all text-sm ${
-                          selectedAccessibleOption === option.id
-                            ? 'border-purple-500 bg-purple-100'
-                            : 'border-gray-200 bg-white hover:border-purple-300'
-                        }`}
-                      >
-                        <p className="font-medium text-xs">{option.name}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <Button 
-                onClick={() => selectedConnection && setCurrentStep('broadcast')}
-                disabled={!selectedConnection || (selectedConnection === 'group' && !selectedGroupOption) || (selectedConnection === 'accessible' && !selectedAccessibleOption)}
-                className="w-full py-5 bg-[#2B2D9E] hover:bg-[#1f2175] text-white font-bold rounded-xl disabled:opacity-50 transition-all"
-              >
-                CONTINUE
-              </Button>
+              <div className="pt-2 sticky bottom-0 bg-[#12151E]">
+                <Button 
+                  onClick={() => selectedConnection && setCurrentStep('broadcast')}
+                  disabled={!selectedConnection}
+                  className="w-full py-6 text-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold rounded-2xl disabled:opacity-50 transition-all h-14 shadow-[0_0_25px_rgba(220,38,38,0.5)] border border-red-500/30"
+                >
+                  Continue to Radar Search
+                </Button>
+              </div>
             </div>
           )}
 
           {/* STEP 3: Broadcast Parameters */}
           {currentStep === 'broadcast' && (
-            <div className="animate-fadeIn">
-              <button 
-                onClick={goBack}
-                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-3 hover:opacity-70 transition-opacity"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back</span>
-              </button>
-
-              <h2 className="text-lg font-bold text-gray-800 mb-3">BROADCAST</h2>
+            <div className="animate-fadeIn flex flex-col h-full relative">
+              <div className="flex items-center gap-3 mb-4 mt-2">
+                <button 
+                  onClick={goBack}
+                  className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors text-white"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h2 className="text-xl font-black text-white tracking-tight">Broadcast Search Radius</h2>
+              </div>
 
               {/* Radius Slider */}
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm font-medium text-gray-700">Search Radius</span>
-                  <span className="text-sm font-bold text-[#2B2D9E]">{broadcastRadius[0]} mi</span>
+              <div className="mb-6 p-4 rounded-2xl bg-[#1A1E2B] border border-white/10">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-bold text-white">Maximum Distance</span>
+                  <span className="text-sm font-bold bg-[#DC2626] text-white px-3 py-1 rounded-full shadow-[0_0_12px_rgba(220,38,38,0.5)]">
+                    {broadcastRadius[0]} miles
+                  </span>
                 </div>
                 <Slider
                   value={broadcastRadius}
@@ -947,323 +949,155 @@ export default function Dashboard() {
                   min={0.5}
                   max={25}
                   step={0.5}
-                  className="w-full"
+                  className="w-full my-4"
                 />
+                <p className="text-xs text-[#94A3B8] text-center">
+                  {activeBoost
+                    ? `Radar Boost active — searching ${effectiveBroadcastRadius} miles (${activeBoost.radiusMultiplier}x) of your location.`
+                    : `Searching active users within ${broadcastRadius[0]} miles of your location.`}
+                </p>
               </div>
 
-              {/* Targeting Options */}
-              <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Broadcast To</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'anyone', label: 'Anyone' },
-                    { id: 'connections', label: 'Connections' },
-                    { id: 'favorites', label: 'Favorites' },
-                    { id: 'specific', label: 'Specific' },
-                  ].map((option) => (
-                    <button
-                      key={option.id}
-                      onClick={() => setTargetingOption(option.id)}
-                      className={`p-2 rounded-lg text-xs font-medium transition-all ${
-                        targetingOption === option.id
-                          ? 'bg-[#2B2D9E] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+              {/* Radar Boost */}
+              <div className={`mb-6 p-4 rounded-2xl border ${activeBoost ? 'bg-[#FBBF24]/10 border-[#FBBF24]/40' : 'bg-[#1A1E2B] border-white/10'}`}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <Zap className={`w-4 h-4 ${activeBoost ? 'text-[#FBBF24]' : 'text-[#94A3B8]'}`} />
+                    <span className="text-sm font-bold text-white">Radar Boost</span>
+                  </div>
+                  <span className="text-xs font-bold text-[#94A3B8]">{boostCredits} credit{boostCredits === 1 ? '' : 's'}</span>
+                </div>
+                {activeBoost ? (
+                  <p className="text-xs text-[#FBBF24] font-semibold">
+                    {activeBoost.label} is live — expires {new Date(activeBoost.expiresAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-xs text-[#94A3B8] mb-3">Double your radius for the next hour so more people see you first.</p>
+                    <Button
+                      onClick={() => handleActivateBoost('radius')}
+                      disabled={boostCredits <= 0 || isActivatingBoost}
+                      variant="outline"
+                      className="w-full border-[#FBBF24]/40 text-[#FBBF24] hover:bg-[#FBBF24]/10 hover:text-[#FBBF24] font-bold disabled:opacity-40"
                     >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+                      {boostCredits <= 0
+                        ? "Out of credits — more coming soon"
+                        : isActivatingBoost
+                          ? "Activating..."
+                          : `Activate 2x Radius Boost (1 credit)`}
+                    </Button>
+                  </>
+                )}
               </div>
 
-              {/* Advanced Filters Toggle */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 text-sm text-[#2B2D9E] font-medium mb-3"
-              >
-                <Filter className="w-4 h-4" />
-                Advanced Filters
-                {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </button>
-
-              {showFilters && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-xl space-y-4 text-sm">
-                  {/* Intensity */}
-                  <div>
-                    <p className="font-medium text-gray-700 mb-2">Intensity Level</p>
-                    <div className="flex gap-2">
-                      {['light', 'moderate', 'intense', 'extreme'].map((level) => (
-                        <button
-                          key={level}
-                          onClick={() => setAdvancedFilters(f => ({ ...f, intensity: level }))}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${
-                            advancedFilters.intensity === level
-                              ? 'bg-[#2B2D9E] text-white'
-                              : 'bg-white text-gray-600 hover:bg-gray-100'
-                          }`}
-                        >
-                          {level}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Skill Level */}
-                  <div>
-                    <p className="font-medium text-gray-700 mb-2">Skill Level</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {['any', 'beginner', 'intermediate', 'advanced', 'pro'].map((level) => (
-                        <button
-                          key={level}
-                          onClick={() => setAdvancedFilters(f => ({ ...f, skillLevel: level }))}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${
-                            advancedFilters.skillLevel === level
-                              ? 'bg-[#2B2D9E] text-white'
-                              : 'bg-white text-gray-600 hover:bg-gray-100'
-                          }`}
-                        >
-                          {level}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Injury Considerations */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-medium text-gray-700">Injury/Limitation?</p>
-                      <Switch 
-                        checked={advancedFilters.hasInjury}
-                        onCheckedChange={(checked) => setAdvancedFilters(f => ({ ...f, hasInjury: checked }))}
-                      />
-                    </div>
-                    {advancedFilters.hasInjury && (
-                      <Input 
-                        placeholder="Describe injury/limitation..."
-                        value={advancedFilters.injuryNotes}
-                        onChange={(e) => setAdvancedFilters(f => ({ ...f, injuryNotes: e.target.value }))}
-                        className="text-sm"
-                      />
-                    )}
-                  </div>
-
-                  {/* Comments/Preferences */}
-                  <div>
-                    <p className="font-medium text-gray-700 mb-2">Comments & Preferences</p>
-                    <Textarea 
-                      placeholder="Any specific preferences or notes..."
-                      value={advancedFilters.comments}
-                      onChange={(e) => setAdvancedFilters(f => ({ ...f, comments: e.target.value }))}
-                      rows={2}
-                      className="text-sm"
-                    />
-                  </div>
-
-                  {/* Trainer Specific Options */}
-                  {selectedConnection === 'trainer' && (
-                    <div className="p-3 bg-orange-50 rounded-lg space-y-3">
-                      <p className="font-semibold text-orange-800 text-xs">Trainer Preferences</p>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-700 text-xs">Certified Only</span>
-                        <Switch 
-                          checked={advancedFilters.trainerCertified}
-                          onCheckedChange={(checked) => setAdvancedFilters(f => ({ ...f, trainerCertified: checked }))}
-                        />
-                      </div>
-                      
-                      <div>
-                        <p className="text-xs text-gray-700 mb-1">Specialty</p>
-                        <select 
-                          className="w-full p-2 border rounded-lg text-xs"
-                          value={advancedFilters.trainerSpecialty}
-                          onChange={(e) => setAdvancedFilters(f => ({ ...f, trainerSpecialty: e.target.value }))}
-                        >
-                          <option value="">Any Specialty</option>
-                          <option value="strength">Strength Training</option>
-                          <option value="cardio">Cardio</option>
-                          <option value="flexibility">Flexibility/Yoga</option>
-                          <option value="sports">Sports Specific</option>
-                          <option value="rehab">Rehabilitation</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-gray-700 mb-1">Experience Level</p>
-                        <div className="flex gap-1">
-                          {['any', '1-3 yrs', '3-5 yrs', '5+ yrs'].map((exp) => (
-                            <button
-                              key={exp}
-                              onClick={() => setAdvancedFilters(f => ({ ...f, trainerExperience: exp }))}
-                              className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
-                                advancedFilters.trainerExperience === exp
-                                  ? 'bg-orange-500 text-white'
-                                  : 'bg-white text-gray-600'
-                              }`}
-                            >
-                              {exp}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Competitor Specific Options */}
-                  {selectedConnection === 'competitor' && (
-                    <div className="p-3 bg-red-50 rounded-lg space-y-3">
-                      <p className="font-semibold text-red-800 text-xs">Competitor Preferences</p>
-                      
-                      <div>
-                        <p className="text-xs text-gray-700 mb-1">Competition Level</p>
-                        <div className="flex gap-1">
-                          {['any', 'casual', 'serious', 'pro'].map((level) => (
-                            <button
-                              key={level}
-                              onClick={() => setAdvancedFilters(f => ({ ...f, competitorLevel: level }))}
-                              className={`px-2 py-1 rounded text-[10px] font-medium capitalize transition-all ${
-                                advancedFilters.competitorLevel === level
-                                  ? 'bg-red-500 text-white'
-                                  : 'bg-white text-gray-600'
-                              }`}
-                            >
-                              {level}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-gray-700 mb-1">Competition Style</p>
-                        <div className="flex gap-1">
-                          {['friendly', 'competitive', 'intense'].map((style) => (
-                            <button
-                              key={style}
-                              onClick={() => setAdvancedFilters(f => ({ ...f, competitorStyle: style }))}
-                              className={`px-2 py-1 rounded text-[10px] font-medium capitalize transition-all ${
-                                advancedFilters.competitorStyle === style
-                                  ? 'bg-red-500 text-white'
-                                  : 'bg-white text-gray-600'
-                              }`}
-                            >
-                              {style}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-700 text-xs">Open to Wagers?</span>
-                        <Switch 
-                          checked={advancedFilters.wagerAllowed}
-                          onCheckedChange={(checked) => setAdvancedFilters(f => ({ ...f, wagerAllowed: checked }))}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <Button 
-                onClick={handleBroadcast}
-                disabled={isBroadcasting}
-                className="w-full py-5 bg-[#2B2D9E] hover:bg-[#1f2175] text-white font-bold rounded-xl disabled:opacity-50 transition-all"
-              >
-                {getBroadcastButtonText()}
-              </Button>
+              <div className="pt-2 sticky bottom-0 bg-[#12151E]">
+                <Button 
+                  onClick={handleBroadcast}
+                  disabled={isBroadcasting}
+                  className="w-full py-6 text-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold rounded-2xl disabled:opacity-50 transition-all h-14 shadow-[0_0_30px_rgba(220,38,38,0.6)] border border-red-500/30"
+                >
+                  {getBroadcastButtonText()}
+                </Button>
+              </div>
             </div>
           )}
 
           {/* STEP 4: Matching / User List */}
           {currentStep === 'matching' && (
             <div className="animate-fadeIn">
-              <button 
-                onClick={goBack}
-                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-3 hover:opacity-70 transition-opacity"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back</span>
-              </button>
+              <div className="flex items-center gap-3 mb-4 mt-2">
+                <button 
+                  onClick={goBack}
+                  className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors text-white"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h2 className="text-xl font-black text-white tracking-tight">{usersInRadius} Nearby Activity Matches</h2>
+              </div>
 
-              <h2 className="text-lg font-bold text-gray-800 mb-3">FIND COMPANION</h2>
-
-              <div className="space-y-2 max-h-[35vh] overflow-y-auto">
+              <div className="space-y-2.5 max-h-[40vh] overflow-y-auto">
                 {nearbyUsers.length === 0 ? (
-                  <div className="text-center py-6">
-                    <p className="text-gray-500">No users found nearby.</p>
-                    <p className="text-sm text-gray-400 mt-1">Try increasing your search radius</p>
+                  <div className="text-center py-8 bg-[#1A1E2B] rounded-2xl border border-white/5">
+                    <p className="text-[#94A3B8]">No active users found within radius.</p>
+                    <p className="text-xs text-[#FBBF24] mt-1 font-semibold">Try increasing search radius</p>
                   </div>
                 ) : (
                   nearbyUsers.map((nearbyUser) => (
                     <button
                       key={nearbyUser.id}
                       onClick={() => handleUserClick(nearbyUser)}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all"
+                      className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl border border-white/10 bg-[#1A1E2B] hover:border-[#DC2626]/50 transition-all text-left group"
                     >
-                      <Avatar className="w-12 h-12 border-2 border-white shadow">
+                      <Avatar className="w-13 h-13 border-2 border-[#DC2626]">
                         <AvatarImage src={nearbyUser.profilePhoto} />
-                        <AvatarFallback className="bg-[#2B2D9E] text-white">
+                        <AvatarFallback className="bg-[#12151E] text-white font-bold">
                           {nearbyUser.name?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 text-left">
-                        <p className="font-semibold text-gray-800">{nearbyUser.name}</p>
-                        <p className="text-xs text-gray-500">{nearbyUser.distance} mi away</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                          <span className="text-xs font-medium">{nearbyUser.averageRating || '4.5'}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-white text-base truncate group-hover:text-[#DC2626] transition-colors">{nearbyUser.name}</p>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          {nearbyUser.avgRating ? (
+                            <span className="flex items-center gap-1 text-xs font-bold bg-[#FBBF24]/15 text-[#FBBF24] px-2 py-0.5 rounded-full border border-[#FBBF24]/30">
+                              <Star className="w-3 h-3 fill-[#FBBF24]" />
+                              {nearbyUser.avgRating} · {nearbyUser.reviewCount} review{nearbyUser.reviewCount === 1 ? '' : 's'}
+                            </span>
+                          ) : (
+                            <span className="text-xs font-bold bg-white/5 text-[#94A3B8] px-2 py-0.5 rounded-full border border-white/10">
+                              New here
+                            </span>
+                          )}
+                          <span className="text-xs text-[#94A3B8]">📍 {nearbyUser.distance} mi away</span>
                         </div>
                       </div>
+                      <Button size="sm" className="bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-[0_0_15px_rgba(220,38,38,0.4)]">
+                        Chat
+                      </Button>
                     </button>
                   ))
                 )}
               </div>
-
-              <Button 
-                className="w-full py-5 mt-3 bg-[#2B2D9E] hover:bg-[#1f2175] text-white font-bold rounded-xl"
-              >
-                CONNECT
-              </Button>
             </div>
           )}
 
           {/* STEP 5: Pre-Match Chat */}
           {currentStep === 'chat' && selectedUser && (
-            <div className="animate-fadeIn">
-              <button 
-                onClick={goBack}
-                className="flex items-center gap-2 text-[#2B2D9E] font-medium mb-3 hover:opacity-70 transition-opacity"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back</span>
-              </button>
-
-              <div className="flex items-center gap-3 mb-3">
-                <Avatar className="w-10 h-10 border-2 border-[#2B2D9E]">
-                  <AvatarImage src={selectedUser.profilePhoto} />
-                  <AvatarFallback className="bg-[#2B2D9E] text-white">
-                    {selectedUser.name?.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-bold text-gray-800 text-sm">{selectedUser.name}</p>
-                  <p className="text-xs text-gray-500">{selectedUser.distance} mi · {selectedActivity?.name}</p>
+            <div className="animate-fadeIn flex flex-col h-full relative">
+              <div className="flex items-center justify-between mb-4 mt-2 border-b border-white/10 pb-3">
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={goBack}
+                    className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors text-white"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <Avatar className="w-10 h-10 border border-[#DC2626]">
+                    <AvatarImage src={selectedUser.profilePhoto} />
+                    <AvatarFallback className="bg-[#1A1E2B] text-white font-bold">
+                      {selectedUser.name?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h2 className="text-base font-bold text-white leading-tight">{selectedUser.name}</h2>
+                    <p className="text-xs text-[#FBBF24]">📍 {selectedUser.distance} mi away</p>
+                  </div>
                 </div>
               </div>
 
               {/* Chat Messages */}
-              <div className="h-24 overflow-y-auto mb-2 space-y-2 bg-gray-50 rounded-xl p-2">
+              <div className="h-[25vh] overflow-y-auto mb-3 space-y-2 bg-[#1A1E2B] rounded-2xl p-4 border border-white/5 flex flex-col">
                 {chatMessages.length === 0 && (
-                  <p className="text-center text-gray-400 text-xs py-4">Start the conversation!</p>
+                  <div className="my-auto text-center">
+                    <MessageSquare className="w-8 h-8 text-[#94A3B8] mx-auto mb-2 opacity-50" />
+                    <p className="text-[#94A3B8] text-sm font-medium">Send a message to propose meeting up with {selectedUser.name}</p>
+                  </div>
                 )}
                 {chatMessages.map((msg) => (
                   <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[75%] px-3 py-1.5 rounded-xl text-sm ${
+                    <div className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm font-semibold shadow-md ${
                       msg.sender === 'me' 
-                        ? 'bg-[#2B2D9E] text-white rounded-br-sm' 
-                        : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'
+                        ? 'bg-[#DC2626] text-white rounded-tr-sm shadow-[0_0_15px_rgba(220,38,38,0.3)]' 
+                        : 'bg-[#232838] text-white border border-white/10 rounded-tl-sm'
                     }`}>
                       <p>{msg.text}</p>
                     </div>
@@ -1272,49 +1106,55 @@ export default function Dashboard() {
               </div>
 
               {/* Quick Replies */}
-              <div className="flex gap-1 overflow-x-auto pb-2 mb-2 scrollbar-hide">
-                {quickMessages.map((msg) => (
-                  <button
-                    key={msg}
-                    onClick={() => setNewMessage(msg)}
-                    className="flex-shrink-0 px-2 py-1 bg-gray-100 rounded-full text-[10px] font-medium text-gray-600 hover:bg-gray-200"
-                  >
-                    {msg}
-                  </button>
-                ))}
-              </div>
+              {chatMessages.length === 0 && (
+                 <div className="flex gap-2 overflow-x-auto pb-2 mb-2 scrollbar-hide">
+                 {quickMessages.map((msg) => (
+                   <button
+                     key={msg}
+                     onClick={() => setNewMessage(msg)}
+                     className="flex-shrink-0 px-3 py-1.5 bg-[#1A1E2B] border border-white/10 rounded-full text-xs font-bold text-[#E2E8F0] hover:border-[#DC2626]/50 transition-colors"
+                   >
+                     {msg}
+                   </button>
+                 ))}
+               </div>
+              )}
 
               {/* Chat Input */}
-              <div className="flex gap-2 mb-3">
+              <div className="flex gap-2 mb-3 bg-[#12151E] sticky bottom-0 pt-1 shrink-0">
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  className="flex-1 rounded-full text-sm"
+                  placeholder="Message..."
+                  className="flex-1 rounded-full bg-[#1A1E2B] border-white/10 text-white focus-visible:ring-[#DC2626] h-12 text-sm px-5"
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 />
                 <Button 
                   onClick={handleSendMessage}
                   size="icon"
-                  className="rounded-full bg-[#2B2D9E] hover:bg-[#1f2175] h-9 w-9"
+                  className="rounded-full bg-[#DC2626] hover:bg-[#B91C1C] h-12 w-12 shrink-0 shadow-[0_0_15px_rgba(220,38,38,0.5)]"
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-5 h-5 text-white" />
                 </Button>
               </div>
 
-              <Button 
-                onClick={handleConfirmMeeting}
-                className="w-full py-5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl"
-              >
-                CONFIRM & START TRACKING
-              </Button>
+              <div className="pt-2 sticky bottom-0 bg-[#12151E]">
+                <Button 
+                  onClick={handleConfirmMeeting}
+                  className="w-full py-6 text-lg bg-gradient-to-r from-[#DC2626] to-[#991B1B] hover:opacity-90 text-white font-bold rounded-2xl shadow-[0_0_30px_rgba(220,38,38,0.6)] h-14 border border-red-500/30"
+                >
+                  Confirm Meetup Location
+                </Button>
+              </div>
             </div>
           )}
         </div>
+      </motion.div>
       </div>
+    </div>
 
-      {/* Bottom Navigation */}
-      <BottomNav />
+    {/* Bottom Navigation */}
+    <BottomNav />
 
       <style jsx>{`
         .scrollbar-hide::-webkit-scrollbar {
@@ -1332,6 +1172,6 @@ export default function Dashboard() {
           animation: fadeIn 0.3s ease-out;
         }
       `}</style>
-    </div>
+    </>
   );
 }

@@ -27,7 +27,7 @@ export default function ChatPage() {
     }
     setUser(storedUser);
     fetchChatUser();
-    generateMockMessages();
+    fetchThread(storedUser.id);
   }, []);
 
   useEffect(() => {
@@ -47,48 +47,50 @@ export default function ChatPage() {
     }
   };
 
-  const generateMockMessages = () => {
-    const mockMessages = [
-      { id: '1', senderId: userId, text: 'Hey! How are you?', time: new Date(Date.now() - 3600000) },
-      { id: '2', senderId: 'me', text: 'I\'m good! Ready for hiking tomorrow?', time: new Date(Date.now() - 3500000) },
-      { id: '3', senderId: userId, text: 'Absolutely! What time works for you?', time: new Date(Date.now() - 3400000) },
-      { id: '4', senderId: 'me', text: 'How about 9am at the trailhead?', time: new Date(Date.now() - 3300000) },
-      { id: '5', senderId: userId, text: 'Perfect! I\'ll bring some snacks', time: new Date(Date.now() - 3200000) },
-      { id: '6', senderId: 'me', text: 'Great! I\'ll bring water. See you there!', time: new Date(Date.now() - 3100000) },
-    ];
-    setMessages(mockMessages);
+  const fetchThread = async (myUserId) => {
+    try {
+      const res = await fetchWithAuth(`/api/messages/${userId}`);
+      const data = await res.json();
+      if (data.messages) {
+        setMessages(data.messages.map(m => ({
+          id: m.id,
+          senderId: m.senderId === myUserId ? 'me' : m.senderId,
+          text: m.text,
+          time: new Date(m.createdAt)
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to load message thread:', error);
+    }
   };
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    
-    const message = {
-      id: Date.now().toString(),
-      senderId: 'me',
-      text: newMessage,
-      time: new Date()
-    };
-    
-    setMessages(prev => [...prev, message]);
+  const handleSendMessage = async () => {
+    const text = newMessage.trim();
+    if (!text) return;
+
+    // Optimistic append so sending feels instant, then reconcile with the
+    // real persisted message once the request resolves.
+    const optimisticId = `pending-${Date.now()}`;
+    setMessages(prev => [...prev, { id: optimisticId, senderId: 'me', text, time: new Date() }]);
     setNewMessage('');
 
-    // Simulate reply
-    setTimeout(() => {
-      const replies = [
-        'Sounds great!',
-        'Perfect, see you there!',
-        'Can\'t wait!',
-        '👍',
-        'Awesome!'
-      ];
-      const reply = {
-        id: (Date.now() + 1).toString(),
-        senderId: userId,
-        text: replies[Math.floor(Math.random() * replies.length)],
-        time: new Date()
-      };
-      setMessages(prev => [...prev, reply]);
-    }, 1500);
+    try {
+      const res = await fetchWithAuth('/api/messages', {
+        method: 'POST',
+        body: JSON.stringify({ recipientId: userId, text })
+      });
+      if (!res.ok) throw new Error('Send failed');
+      const data = await res.json();
+      setMessages(prev => prev.map(m => (
+        m.id === optimisticId
+          ? { id: data.message.id, senderId: 'me', text: data.message.text, time: new Date(data.message.createdAt) }
+          : m
+      )));
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      setMessages(prev => prev.filter(m => m.id !== optimisticId));
+      setNewMessage(text);
+    }
   };
 
   const formatTime = (date) => {
@@ -96,38 +98,50 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-[#0A0C10] flex flex-col">
       {/* Header */}
-      <header className="bg-white px-4 py-3 flex items-center gap-3 shadow-sm">
+      <header className="bg-[#12151E]/95 backdrop-blur-xl px-4 py-3 flex items-center gap-3 border-b border-white/10">
         <button onClick={() => router.back()} className="p-2 -ml-2">
-          <ArrowLeft className="w-6 h-6 text-gray-600" />
+          <ArrowLeft className="w-6 h-6 text-[#94A3B8]" />
         </button>
         
         <Avatar className="w-10 h-10">
           <AvatarImage src={chatUser?.profilePhoto} />
-          <AvatarFallback className="bg-[#4a3aff] text-white">
+          <AvatarFallback className="bg-[#DC2626] text-white">
             {chatUser?.name?.charAt(0) || 'U'}
           </AvatarFallback>
         </Avatar>
         
         <div className="flex-1">
-          <h2 className="font-semibold text-gray-800">{chatUser?.name || 'User'}</h2>
-          <p className="text-xs text-green-500">Online</p>
+          <h2 className="font-semibold text-white">{chatUser?.name || 'User'}</h2>
+          <p className="text-xs text-[#94A3B8]">{chatUser?.activity || 'Radar match'}</p>
         </div>
         
         <button className="p-2">
-          <Phone className="w-5 h-5 text-gray-600" />
+          <Phone className="w-5 h-5 text-[#94A3B8]" />
         </button>
         <button className="p-2">
-          <Video className="w-5 h-5 text-gray-600" />
+          <Video className="w-5 h-5 text-[#94A3B8]" />
         </button>
         <button className="p-2">
-          <MoreVertical className="w-5 h-5 text-gray-600" />
+          <MoreVertical className="w-5 h-5 text-[#94A3B8]" />
         </button>
       </header>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.length === 0 && (
+          <div className="h-full flex flex-col items-center justify-center text-center px-6">
+            <Avatar className="w-14 h-14 mb-3 border-2 border-[#DC2626]">
+              <AvatarImage src={chatUser?.profilePhoto} />
+              <AvatarFallback className="bg-[#DC2626] text-white text-lg">
+                {chatUser?.name?.charAt(0) || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <p className="text-white font-bold">Say hi to {chatUser?.name || 'your match'}</p>
+            <p className="text-xs text-[#94A3B8] mt-1">No messages yet — break the ice and set up your meetup.</p>
+          </div>
+        )}
         {messages.map((message) => (
           <div
             key={message.id}
@@ -137,7 +151,7 @@ export default function ChatPage() {
               {message.senderId !== 'me' && (
                 <Avatar className="w-8 h-8 mb-1">
                   <AvatarImage src={chatUser?.profilePhoto} />
-                  <AvatarFallback className="bg-[#4a3aff] text-white text-xs">
+                  <AvatarFallback className="bg-[#DC2626] text-white text-xs">
                     {chatUser?.name?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
@@ -145,13 +159,13 @@ export default function ChatPage() {
               <div
                 className={`rounded-2xl px-4 py-2 ${
                   message.senderId === 'me'
-                    ? 'bg-[#1a1aff] text-white rounded-br-sm'
-                    : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'
+                    ? 'bg-[#DC2626] text-white rounded-br-sm shadow-[0_0_15px_rgba(220,38,38,0.3)]'
+                    : 'bg-[#1A1E2B] text-white rounded-bl-sm border border-white/5'
                 }`}
               >
                 <p>{message.text}</p>
               </div>
-              <p className={`text-xs text-gray-500 mt-1 ${message.senderId === 'me' ? 'text-right' : ''}`}>
+              <p className={`text-xs text-[#94A3B8] mt-1 ${message.senderId === 'me' ? 'text-right' : ''}`}>
                 {formatTime(message.time)}
               </p>
             </div>
@@ -161,7 +175,7 @@ export default function ChatPage() {
       </div>
 
       {/* Input */}
-      <div className="bg-white px-4 py-3 shadow-lg border-t">
+      <div className="bg-[#12151E]/95 backdrop-blur-xl px-4 py-3 shadow-lg border-t border-white/10">
         <div className="flex items-center gap-2">
           <Input
             value={newMessage}
@@ -170,9 +184,9 @@ export default function ChatPage() {
             className="flex-1"
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
           />
-          <Button 
+          <Button
             onClick={handleSendMessage}
-            className="bg-[#1a1aff] hover:bg-[#1515dd] rounded-full w-10 h-10 p-0"
+            className="bg-[#DC2626] hover:bg-[#B91C1C] rounded-full w-10 h-10 p-0 shadow-[0_0_15px_rgba(220,38,38,0.4)]"
           >
             <Send className="w-5 h-5" />
           </Button>

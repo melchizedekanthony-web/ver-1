@@ -27,6 +27,34 @@ module.exports = {
                                 DEFAULT: 'hsl(var(--primary))',
                                 foreground: 'hsl(var(--primary-foreground))'
                         },
+                        accentRed: {
+                                DEFAULT: '#DC2626',
+                                hover: '#B91C1C',
+                                light: '#EF4444',
+                                glow: 'rgba(220, 38, 38, 0.4)'
+                        },
+                        accentYellow: {
+                                DEFAULT: '#F59E0B',
+                                bright: '#FBBF24',
+                                light: '#FDE047',
+                                glow: 'rgba(245, 158, 11, 0.4)'
+                        },
+                        accentBlue: 'hsl(var(--accent-blue))',
+                        accentGreen: 'hsl(var(--accent-green))',
+
+                        dark: {
+                                bg: '#0A0C10',
+                                card: '#12151E',
+                                surface: '#1A1E2B',
+                                border: '#2A2F3D',
+                                hover: '#232838'
+                        },
+                        silver: {
+                                text: '#E2E8F0',
+                                muted: '#94A3B8',
+                                border: '#333A48'
+                        },
+
                         secondary: {
                                 DEFAULT: 'hsl(var(--secondary))',
                                 foreground: 'hsl(var(--secondary-foreground))'
@@ -69,9 +97,10 @@ module.exports = {
                                 ring: 'hsl(var(--sidebar-ring))'
                         },
                         gowithme: {
-                                blue: '#1a1aff',
-                                purple: '#4a3aff',
-                                lightgray: '#e8e8e8'
+                                red: '#DC2626',
+                                yellow: '#FBBF24',
+                                dark: '#0A0C10',
+                                lightgray: '#E2E8F0'
                         }
                 },
                 borderRadius: {
@@ -81,25 +110,27 @@ module.exports = {
                 },
                 keyframes: {
                         'accordion-down': {
-                                from: {
-                                        height: '0'
-                                },
-                                to: {
-                                        height: 'var(--radix-accordion-content-height)'
-                                }
+                                from: { height: '0' },
+                                to: { height: 'var(--radix-accordion-content-height)' }
                         },
                         'accordion-up': {
-                                from: {
-                                        height: 'var(--radix-accordion-content-height)'
-                                },
-                                to: {
-                                        height: '0'
-                                }
+                                from: { height: 'var(--radix-accordion-content-height)' },
+                                to: { height: '0' }
+                        },
+                        'pulse-glow': {
+                                '0%, 100%': { boxShadow: '0 0 15px rgba(220, 38, 38, 0.4)' },
+                                '50%': { boxShadow: '0 0 30px rgba(220, 38, 38, 0.8)' }
+                        },
+                        'radar-ping': {
+                                '0%': { transform: 'scale(0.8)', opacity: '1' },
+                                '100%': { transform: 'scale(2.4)', opacity: '0' }
                         }
                 },
                 animation: {
                         'accordion-down': 'accordion-down 0.2s ease-out',
-                        'accordion-up': 'accordion-up 0.2s ease-out'
+                        'accordion-up': 'accordion-up 0.2s ease-out',
+                        'pulse-glow': 'pulse-glow 2s infinite ease-in-out',
+                        'radar-ping': 'radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite'
                 }
         }
     },

@@ -5,7 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 import openai from '@/lib/openai';
 import { createSession as createAuthSession, verifySession } from '@/lib/auth-simple';
 
-// Helper function to get user from session
+// Helper function to get the real signed-in user from the request.
+// Returns null when there is no valid session — callers already check
+// `if (!user) return 401` everywhere, so null is the correct "not signed in"
+// signal rather than silently substituting a shared demo account.
 async function getCurrentUser(request) {
   try {
     // First check for Authorization header (from localStorage token)
@@ -15,27 +18,29 @@ async function getCurrentUser(request) {
       const session = await verifySession(token);
       if (session) return session;
     }
-    
-    // Then check cookies
+
+    // Then check cookies (httpOnly session cookie set on sign in)
     const cookieHeader = request.headers.get('cookie');
-    if (!cookieHeader) return null;
-    
-    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
-      const [key, value] = cookie.trim().split('=');
-      acc[key] = value;
-      return acc;
-    }, {});
-    
-    const token = cookies.session;
-    if (!token) return null;
-    
-    const session = await verifySession(token);
-    return session;
+    if (cookieHeader) {
+      const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+
+      const token = cookies.session;
+      if (token) {
+        const session = await verifySession(token);
+        if (session) return session;
+      }
+    }
   } catch (error) {
     console.error('Get current user error:', error);
-    return null;
   }
+
+  return null;
 }
+
 
 // ========== SIMPLE AUTH ROUTES ==========
 
@@ -175,6 +180,7 @@ async function registerUser(request) {
       email,
       password: hashedPassword,
       onboardingComplete: false,
+      radarCredits: 3, // starter Radar Boost credits — see monetization notes
       createdAt: new Date(),
     });
     
@@ -463,14 +469,37 @@ async function getMatches(request) {
         ...match,
         compatibilityScore: Math.round(score),
         commonActivities,
-        distance: Math.floor(Math.random() * 20) + 1 // Mock distance for now
+        distance: Math.floor(Math.random() * 20) + 1 // Mock distance for now — needs real per-user geo coords
       };
     });
 
     // Sort by compatibility score
     matches.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
 
-    return NextResponse.json({ matches });
+    // Attach real trust signals (average rating + review count) — this is
+    // the actual reviews collection, not invented numbers. New users with
+    // no reviews yet correctly show as unrated rather than getting a fake
+    // "5.0" stamped on them.
+    const reviewsCollection = db.collection('reviews');
+    const matchIds = matches.map(m => m.id).filter(Boolean);
+    const ratingAggregates = matchIds.length
+      ? await reviewsCollection.aggregate([
+          { $match: { targetId: { $in: matchIds }, targetType: 'user' } },
+          { $group: { _id: '$targetId', avgRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } }
+        ]).toArray()
+      : [];
+    const ratingsById = new Map(ratingAggregates.map(r => [r._id, r]));
+
+    const matchesWithTrust = matches.map(m => {
+      const rating = ratingsById.get(m.id);
+      return {
+        ...m,
+        avgRating: rating ? Math.round(rating.avgRating * 10) / 10 : null,
+        reviewCount: rating ? rating.reviewCount : 0
+      };
+    });
+
+    return NextResponse.json({ matches: matchesWithTrust });
   } catch (error) {
     console.error('Get matches error:', error);
     return NextResponse.json({ error: 'Failed to fetch matches' }, { status: 500 });
@@ -806,12 +835,13 @@ Goals: ${goals.join(', ')}
 The plan should be safe, effective, and achievable for this fitness level.`;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
       response_format: { type: 'json_object' },
+
       temperature: 0.7,
       max_tokens: 2000,
     });
@@ -1583,184 +1613,6 @@ async function deleteActivity(request, activityId) {
   }
 }
 
-// ========== WELLNESS STORE CART ENDPOINTS ==========
-
-// POST /api/cart/add - Add item to cart
-async function addToCart(request) {
-  try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { productId, productName, price, quantity = 1, imageUrl } = body;
-
-    const db = await getDb();
-    const cartCollection = db.collection('cart');
-
-    // Check if item already in cart
-    const existingItem = await cartCollection.findOne({ 
-      userId: user.id, 
-      productId 
-    });
-
-    if (existingItem) {
-      // Update quantity
-      await cartCollection.updateOne(
-        { userId: user.id, productId },
-        { $inc: { quantity }, $set: { updatedAt: new Date() } }
-      );
-    } else {
-      // Add new item
-      await cartCollection.insertOne({
-        id: uuidv4(),
-        userId: user.id,
-        productId,
-        productName,
-        price,
-        quantity,
-        imageUrl,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    }
-
-    // Get updated cart
-    const cart = await cartCollection.find({ userId: user.id }).toArray();
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-    return NextResponse.json({ 
-      message: 'Added to cart',
-      cart,
-      total,
-      itemCount: cart.length
-    });
-  } catch (error) {
-    console.error('Add to cart error:', error);
-    return NextResponse.json({ error: 'Failed to add to cart' }, { status: 500 });
-  }
-}
-
-// GET /api/cart - Get user's cart
-async function getCart(request) {
-  try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const db = await getDb();
-    const cartCollection = db.collection('cart');
-
-    const cart = await cartCollection.find({ userId: user.id }).toArray();
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-    return NextResponse.json({ 
-      cart,
-      total,
-      itemCount: cart.length
-    });
-  } catch (error) {
-    console.error('Get cart error:', error);
-    return NextResponse.json({ error: 'Failed to get cart' }, { status: 500 });
-  }
-}
-
-// PUT /api/cart/:productId - Update cart item quantity
-async function updateCartItem(request, productId) {
-  try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { quantity } = body;
-
-    const db = await getDb();
-    const cartCollection = db.collection('cart');
-
-    if (quantity <= 0) {
-      // Remove item if quantity is 0 or less
-      await cartCollection.deleteOne({ userId: user.id, productId });
-    } else {
-      await cartCollection.updateOne(
-        { userId: user.id, productId },
-        { $set: { quantity, updatedAt: new Date() } }
-      );
-    }
-
-    // Get updated cart
-    const cart = await cartCollection.find({ userId: user.id }).toArray();
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-    return NextResponse.json({ 
-      message: 'Cart updated',
-      cart,
-      total,
-      itemCount: cart.length
-    });
-  } catch (error) {
-    console.error('Update cart error:', error);
-    return NextResponse.json({ error: 'Failed to update cart' }, { status: 500 });
-  }
-}
-
-// DELETE /api/cart/:productId - Remove item from cart
-async function removeFromCart(request, productId) {
-  try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const db = await getDb();
-    const cartCollection = db.collection('cart');
-
-    await cartCollection.deleteOne({ userId: user.id, productId });
-
-    // Get updated cart
-    const cart = await cartCollection.find({ userId: user.id }).toArray();
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-    return NextResponse.json({ 
-      message: 'Removed from cart',
-      cart,
-      total,
-      itemCount: cart.length
-    });
-  } catch (error) {
-    console.error('Remove from cart error:', error);
-    return NextResponse.json({ error: 'Failed to remove from cart' }, { status: 500 });
-  }
-}
-
-// DELETE /api/cart - Clear entire cart
-async function clearCart(request) {
-  try {
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const db = await getDb();
-    const cartCollection = db.collection('cart');
-
-    await cartCollection.deleteMany({ userId: user.id });
-
-    return NextResponse.json({ 
-      message: 'Cart cleared',
-      cart: [],
-      total: 0,
-      itemCount: 0
-    });
-  } catch (error) {
-    console.error('Clear cart error:', error);
-    return NextResponse.json({ error: 'Failed to clear cart' }, { status: 500 });
-  }
-}
-
 // ========== BROADCAST ENDPOINTS ==========
 
 // POST /api/broadcast - Create a broadcast to find companions
@@ -1927,6 +1779,285 @@ async function respondToBroadcast(request, broadcastId) {
   }
 }
 
+// ========== MESSAGING ROUTES ==========
+// Real per-user message persistence, replacing the frontend mock chat data.
+
+// GET /api/messages/:otherUserId - full thread between the current user and one other user
+async function getMessageThread(request, otherUserId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const db = await getDb();
+    const messagesCollection = db.collection('messages');
+
+    const thread = await messagesCollection
+      .find({
+        $or: [
+          { senderId: user.id, recipientId: otherUserId },
+          { senderId: otherUserId, recipientId: user.id }
+        ]
+      })
+      .sort({ createdAt: 1 })
+      .toArray();
+
+    // Mark messages sent to me as read now that I've opened the thread
+    await messagesCollection.updateMany(
+      { senderId: otherUserId, recipientId: user.id, read: false },
+      { $set: { read: true } }
+    );
+
+    return NextResponse.json({
+      messages: thread.map(m => ({
+        id: m.id,
+        senderId: m.senderId,
+        recipientId: m.recipientId,
+        text: m.text,
+        createdAt: m.createdAt,
+        read: m.read
+      }))
+    });
+  } catch (error) {
+    console.error('Get message thread error:', error);
+    return NextResponse.json({ error: 'Failed to load messages' }, { status: 500 });
+  }
+}
+
+// POST /api/messages - send a message to another user
+async function sendMessage(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { recipientId, text } = body;
+
+    if (!recipientId || !text || !text.trim()) {
+      return NextResponse.json({ error: 'recipientId and text are required' }, { status: 400 });
+    }
+
+    const db = await getDb();
+    const messagesCollection = db.collection('messages');
+
+    const message = {
+      id: uuidv4(),
+      senderId: user.id,
+      recipientId,
+      text: text.trim().slice(0, 2000),
+      read: false,
+      createdAt: new Date()
+    };
+
+    await messagesCollection.insertOne(message);
+
+    const notificationsCollection = db.collection('notifications');
+    await notificationsCollection.insertOne({
+      id: uuidv4(),
+      userId: recipientId,
+      type: 'new_message',
+      title: 'New message',
+      message: `${user.name} sent you a message`,
+      data: { senderId: user.id },
+      read: false,
+      createdAt: new Date()
+    });
+
+    return NextResponse.json({ message }, { status: 201 });
+  } catch (error) {
+    console.error('Send message error:', error);
+    return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
+  }
+}
+
+// GET /api/conversations - one row per person the current user has an actual
+// message thread with, each carrying the real last message/time/unread count.
+// This is what the Messages list should render instead of matches dressed up
+// with invented preview text.
+async function getConversations(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const db = await getDb();
+    const messagesCollection = db.collection('messages');
+    const usersCollection = db.collection('users');
+
+    const myMessages = await messagesCollection
+      .find({ $or: [{ senderId: user.id }, { recipientId: user.id }] })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    const byPartner = new Map();
+    for (const m of myMessages) {
+      const partnerId = m.senderId === user.id ? m.recipientId : m.senderId;
+      if (!byPartner.has(partnerId)) {
+        byPartner.set(partnerId, {
+          partnerId,
+          lastMessage: m.text,
+          lastMessageTime: m.createdAt,
+          unreadCount: 0
+        });
+      }
+      const entry = byPartner.get(partnerId);
+      if (m.recipientId === user.id && !m.read) {
+        entry.unreadCount += 1;
+      }
+    }
+
+    const partnerIds = Array.from(byPartner.keys());
+    const partners = partnerIds.length
+      ? await usersCollection
+          .find({ id: { $in: partnerIds } }, { projection: { password: 0 } })
+          .toArray()
+      : [];
+    const partnersById = new Map(partners.map(p => [p.id, p]));
+
+    const conversations = partnerIds
+      .map(id => {
+        const entry = byPartner.get(id);
+        const partner = partnersById.get(id);
+        if (!partner) return null;
+        return {
+          id: partner.id,
+          name: partner.name,
+          profilePhoto: partner.profilePhoto || null,
+          lastMessage: entry.lastMessage,
+          lastMessageTime: entry.lastMessageTime,
+          unread: entry.unreadCount > 0,
+          unreadCount: entry.unreadCount
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+
+    return NextResponse.json({ conversations });
+  } catch (error) {
+    console.error('Get conversations error:', error);
+    return NextResponse.json({ error: 'Failed to load conversations' }, { status: 500 });
+  }
+}
+
+// ========== RADAR BOOSTS (monetization) ==========
+// Credits are a simple in-app currency: every account starts with 3 free
+// ones (see registerUser). Spending them activates a temporary boost.
+// There is no real payment processing wired up yet — "buying" more credits
+// needs a Stripe (or similar) account connected before it can charge a real
+// card, so the frontend intentionally does not claim to sell anything yet.
+
+const BOOST_DURATION_MS = 60 * 60 * 1000; // 1 hour
+const BOOST_TYPES = {
+  radius: { label: 'Radius Boost', radiusMultiplier: 2, priorityPlacement: false },
+  priority: { label: 'Priority Placement', radiusMultiplier: 1, priorityPlacement: true }
+};
+
+// GET /api/boosts - current credit balance + any active boost
+async function getBoostStatus(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const db = await getDb();
+    const usersCollection = db.collection('users');
+    const boostsCollection = db.collection('boosts');
+
+    const dbUser = await usersCollection.findOne({ id: user.id }, { projection: { radarCredits: 1 } });
+    const credits = dbUser?.radarCredits ?? 3;
+
+    const activeBoost = await boostsCollection.findOne({
+      userId: user.id,
+      expiresAt: { $gt: new Date() }
+    });
+
+    return NextResponse.json({
+      credits,
+      activeBoost: activeBoost ? {
+        type: activeBoost.type,
+        label: BOOST_TYPES[activeBoost.type]?.label,
+        radiusMultiplier: activeBoost.radiusMultiplier,
+        priorityPlacement: activeBoost.priorityPlacement,
+        expiresAt: activeBoost.expiresAt
+      } : null
+    });
+  } catch (error) {
+    console.error('Get boost status error:', error);
+    return NextResponse.json({ error: 'Failed to load boost status' }, { status: 500 });
+  }
+}
+
+// POST /api/boosts/activate - spend 1 credit to activate a boost for BOOST_DURATION_MS
+async function activateBoost(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const type = BOOST_TYPES[body?.type] ? body.type : 'radius';
+    const config = BOOST_TYPES[type];
+
+    const db = await getDb();
+    const usersCollection = db.collection('users');
+    const boostsCollection = db.collection('boosts');
+
+    // Backfill accounts created before radarCredits existed, so the credit
+    // count they see on GET /api/boosts (which defaults to 3) matches what
+    // they can actually spend here.
+    await usersCollection.updateOne(
+      { id: user.id, radarCredits: { $exists: false } },
+      { $set: { radarCredits: 3 } }
+    );
+
+    // Atomically decrement — only succeeds if the user actually has a credit
+    // to spend, which avoids a race where two rapid clicks both succeed.
+    // Note: mongodb driver v6 returns the document directly here (not the
+    // older {value: doc} wrapper) since includeResultMetadata defaults false.
+    const decremented = await usersCollection.findOneAndUpdate(
+      { id: user.id, radarCredits: { $gt: 0 } },
+      { $inc: { radarCredits: -1 } },
+      { returnDocument: 'after' }
+    );
+
+    if (!decremented) {
+      return NextResponse.json({ error: 'No Radar Boost credits remaining' }, { status: 402 });
+    }
+
+    const expiresAt = new Date(Date.now() + BOOST_DURATION_MS);
+    const boost = {
+      id: uuidv4(),
+      userId: user.id,
+      type,
+      radiusMultiplier: config.radiusMultiplier,
+      priorityPlacement: config.priorityPlacement,
+      createdAt: new Date(),
+      expiresAt
+    };
+    await boostsCollection.insertOne(boost);
+
+    return NextResponse.json({
+      credits: decremented.radarCredits,
+      activeBoost: {
+        type,
+        label: config.label,
+        radiusMultiplier: config.radiusMultiplier,
+        priorityPlacement: config.priorityPlacement,
+        expiresAt
+      }
+    });
+  } catch (error) {
+    console.error('Activate boost error:', error);
+    return NextResponse.json({ error: 'Failed to activate boost' }, { status: 500 });
+  }
+}
+
 // ========== ROUTE HANDLER ==========
 
 export async function GET(request, { params }) {
@@ -1960,10 +2091,15 @@ export async function GET(request, { params }) {
     return getAvailability(request);
   } else if (path === 'activities') {
     return getActivities(request);
-  } else if (path === 'cart') {
-    return getCart(request);
   } else if (path === 'broadcasts') {
     return getBroadcasts(request);
+  } else if (path === 'conversations') {
+    return getConversations(request);
+  } else if (path.startsWith('messages/')) {
+    const otherUserId = path.split('/')[1];
+    return getMessageThread(request, otherUserId);
+  } else if (path === 'boosts') {
+    return getBoostStatus(request);
   }
 
   return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -1995,10 +2131,6 @@ export async function POST(request, { params }) {
     return saveAvailability(request);
   } else if (path === 'activities') {
     return createActivity(request);
-  } else if (path === 'cart/add') {
-    return addToCart(request);
-  } else if (path === 'cart/clear') {
-    return clearCart(request);
   } else if (path === 'broadcast') {
     return createBroadcast(request);
   } else if (path.startsWith('broadcasts/') && path.endsWith('/respond')) {
@@ -2031,6 +2163,10 @@ export async function POST(request, { params }) {
     return triggerSOS(request);
   } else if (path === 'subscriptions/upgrade') {
     return upgradeSubscription(request);
+  } else if (path === 'messages') {
+    return sendMessage(request);
+  } else if (path === 'boosts/activate') {
+    return activateBoost(request);
   }
 
   return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -2043,9 +2179,6 @@ export async function PUT(request, { params }) {
   if (path.startsWith('activities/')) {
     const id = path.split('/')[1];
     return updateActivity(request, id);
-  } else if (path.startsWith('cart/')) {
-    const productId = path.split('/')[1];
-    return updateCartItem(request, productId);
   }
   
   // Fall back to POST for other routes (backward compatibility)
@@ -2062,11 +2195,6 @@ export async function DELETE(request, { params }) {
   } else if (path.startsWith('activities/')) {
     const id = path.split('/')[1];
     return deleteActivity(request, id);
-  } else if (path.startsWith('cart/')) {
-    const productId = path.split('/')[1];
-    return removeFromCart(request, productId);
-  } else if (path === 'cart') {
-    return clearCart(request);
   }
   
   return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });

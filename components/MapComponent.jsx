@@ -18,7 +18,6 @@ export default function MapComponent({
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // Load Leaflet dynamically on client side only
     const loadLeaflet = async () => {
       if (typeof window === 'undefined') return;
       
@@ -33,11 +32,16 @@ export default function MapComponent({
       });
 
       if (mapRef.current && !mapInstanceRef.current) {
-        // Initialize map
-        const map = L.map(mapRef.current).setView(center, zoom);
+        // Initialize map with Dark Matter CartoDB tiles
+        const map = L.map(mapRef.current, {
+          zoomControl: false,
+          attributionControl: false
+        }).setView(center, zoom);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19,
+          subdomains: 'abcd',
+          attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
         }).addTo(map);
 
         mapInstanceRef.current = map;
@@ -67,41 +71,98 @@ export default function MapComponent({
       markersRef.current.forEach(marker => marker.remove());
       markersRef.current = [];
 
-      // Create custom icons
-      const createIcon = (color) => new L.Icon({
-        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-      });
+      // Custom HTML Marker for Current User (Glowing Red Pulse Radar)
+      const createCurrentUserIcon = () => {
+        return L.divIcon({
+          className: 'custom-user-pin',
+          html: `
+            <div style="position: relative; width: 44px; height: 44px; display: flex; items-center; justify-content: center;">
+              <div style="position: absolute; inset: 0; border-radius: 9999px; background: rgba(220, 38, 38, 0.4); animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+              <div style="position: absolute; inset: 6px; border-radius: 9999px; background: rgba(220, 38, 38, 0.6);"></div>
+              <div style="position: relative; width: 20px; height: 20px; border-radius: 9999px; background: #DC2626; border: 3px solid #FFFFFF; box-shadow: 0 0 15px #DC2626;"></div>
+            </div>
+          `,
+          iconSize: [44, 44],
+          iconAnchor: [22, 22]
+        });
+      };
+
+      // Custom HTML Marker for Nearby Users / Activity Matches
+      const createMatchUserIcon = (user, isSelected) => {
+        const initial = user.name ? user.name.charAt(0) : 'U';
+        const photo = user.profilePhoto;
+        const color = isSelected ? '#FBBF24' : '#DC2626';
+        
+        return L.divIcon({
+          className: 'custom-match-pin',
+          html: `
+            <div style="position: relative; cursor: pointer; transition: transform 0.2s;">
+              <div style="
+                width: 42px; 
+                height: 42px; 
+                border-radius: 9999px; 
+                background: #12151E; 
+                border: 2px solid ${color}; 
+                box-shadow: 0 0 15px ${isSelected ? 'rgba(251, 191, 36, 0.8)' : 'rgba(220, 38, 38, 0.6)'}; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center;
+                overflow: hidden;
+              ">
+                ${photo 
+                  ? `<img src="${photo}" style="width: 100%; height: 100%; object-fit: cover;" />`
+                  : `<span style="color: #FFFFFF; font-weight: 800; font-size: 14px;">${initial}</span>`
+                }
+              </div>
+              <div style="
+                position: absolute; 
+                bottom: -4px; 
+                right: -2px; 
+                width: 14px; 
+                height: 14px; 
+                border-radius: 9999px; 
+                background: #FBBF24; 
+                border: 2px solid #0A0C10;
+              "></div>
+            </div>
+          `,
+          iconSize: [42, 42],
+          iconAnchor: [21, 21]
+        });
+      };
 
       // Add current user marker
       if (currentUser?.location) {
         const marker = L.marker([currentUser.location.lat, currentUser.location.lng], {
-          icon: createIcon('green')
+          icon: createCurrentUserIcon()
         }).addTo(map);
-        marker.bindPopup('<strong>You</strong>');
+        marker.bindPopup(`
+          <div style="background: #12151E; color: #FFFFFF; padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); font-family: sans-serif;">
+            <strong style="color: #FBBF24;">You are here</strong>
+            <p style="margin: 2px 0 0 0; font-size: 11px; color: #94A3B8;">Broadcasting location</p>
+          </div>
+        `);
         markersRef.current.push(marker);
       }
 
-      // Add other users
+      // Add other nearby user markers
       users.forEach(user => {
         if (!user.location) return;
         
         const isSelected = selectedUser?.id === user.id;
         const marker = L.marker([user.location.lat, user.location.lng], {
-          icon: createIcon(isSelected ? 'red' : 'blue')
+          icon: createMatchUserIcon(user, isSelected)
         }).addTo(map);
 
         marker.bindPopup(`
-          <div style="text-align: center; min-width: 100px;">
-            <strong>${user.name || 'User'}</strong>
-            <p style="margin: 5px 0; color: #666;">${user.activity || 'Available'}</p>
-            ${user.distance ? `<p style="font-size: 12px; color: #999;">${user.distance} km away</p>` : ''}
+          <div style="background: #12151E; color: #FFFFFF; padding: 10px; border-radius: 14px; border: 1px solid rgba(220,38,38,0.4); text-align: center; min-width: 130px; font-family: sans-serif;">
+            <strong style="font-size: 14px; color: #FFFFFF; display: block;">${user.name || 'User'}</strong>
+            <div style="margin: 4px 0; background: rgba(220, 38, 38, 0.2); color: #FF6B6B; font-size: 11px; padding: 2px 8px; border-radius: 9999px; font-weight: 700; display: inline-block;">
+              ${user.activity || 'Wanna Go!'}
+            </div>
+            ${user.distance ? `<p style="font-size: 11px; color: #94A3B8; margin: 4px 0 0 0;">📍 ${user.distance} mi away</p>` : ''}
           </div>
-        `);
+        `, { className: 'dark-leaflet-popup' });
 
         marker.on('click', () => {
           if (onUserClick) onUserClick(user);
@@ -116,9 +177,10 @@ export default function MapComponent({
           [currentUser.location.lat, currentUser.location.lng],
           [selectedUser.location.lat, selectedUser.location.lng]
         ], {
-          color: '#1a1aff',
+          color: '#DC2626',
           weight: 4,
-          dashArray: '10, 10'
+          dashArray: '8, 8',
+          lineCap: 'round'
         }).addTo(map);
         markersRef.current.push(routeLine);
       }
@@ -138,13 +200,34 @@ export default function MapComponent({
     <div className={`relative ${className}`}>
       <div 
         ref={mapRef} 
-        style={{ height: '100%', width: '100%', minHeight: '300px' }}
+        style={{ height: '100%', width: '100%', minHeight: '300px', background: '#0A0C10' }}
       />
       {!isLoaded && (
-        <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
-          <div className="text-gray-500">Loading map...</div>
+        <div className="absolute inset-0 bg-[#0A0C10] flex items-center justify-center">
+          <div className="flex flex-col items-center">
+            <div className="w-8 h-8 border-4 border-[#DC2626] border-t-transparent rounded-full animate-spin mb-3"></div>
+            <p className="text-[#94A3B8] text-sm font-medium">Initializing Radar Map...</p>
+          </div>
         </div>
       )}
+      <style jsx global>{`
+        .leaflet-popup-content-wrapper {
+          background: transparent !important;
+          box-shadow: none !important;
+          padding: 0 !important;
+        }
+        .leaflet-popup-tip {
+          background: #12151E !important;
+          border: 1px solid rgba(220,38,38,0.4) !important;
+        }
+        @keyframes ping {
+          75%, 100% {
+            transform: scale(2);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }
+

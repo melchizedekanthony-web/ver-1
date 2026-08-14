@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   User, Calendar, Bell, Users, Settings, LogOut, ChevronRight,
   Edit, Shield, Star, Camera, Video, Plus, X, Globe, Lock,
-  Instagram, Facebook, Twitter, Share2, Activity, MapPin
+  Instagram, Facebook, Twitter, Share2, Activity, MapPin, Award, Flame, Zap, Compass
 } from 'lucide-react';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
@@ -47,18 +47,23 @@ export default function ProfilePage() {
   });
 
   const statusOptions = [
-    { id: 'available', label: 'Available', color: 'bg-green-500' },
-    { id: 'busy', label: 'Busy', color: 'bg-red-500' },
-    { id: 'away', label: 'Away', color: 'bg-yellow-500' },
-    { id: 'do_not_disturb', label: 'Do Not Disturb', color: 'bg-gray-500' }
+    { id: 'available', label: 'Available', color: 'bg-[#DC2626]' },
+    { id: 'busy', label: 'Busy', color: 'bg-[#94A3B8]' },
+    { id: 'away', label: 'Away', color: 'bg-[#FBBF24]' },
   ];
 
   const activityOptions = [
-    'Looking for hiking buddy',
-    'Open to coffee meetups',
-    'Training for marathon',
-    'New to the area',
-    'Weekend warrior'
+    'Looking for Trail Run buddy',
+    'Open for Coffee & Co-working',
+    'Training for Marathon',
+    'New to the Area',
+    'Weekend Outdoor Explorer'
+  ];
+
+  const achievements = [
+    { label: "Trail Runner", icon: Flame, color: "text-[#DC2626]" },
+    { label: "Top Partner", icon: Award, color: "text-[#FBBF24]" },
+    { label: "50+ Meetups", icon: Zap, color: "text-[#DC2626]" },
   ];
 
   useEffect(() => {
@@ -125,7 +130,6 @@ export default function ProfilePage() {
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
-          // In production, upload to cloud storage first, then save URL
           const mediaUrl = event.target.result;
           
           const res = await fetchWithAuth('/api/profile/media', {
@@ -148,7 +152,7 @@ export default function ProfilePage() {
               isPublic: true,
               date: new Date()
             }]);
-            toast.success(`${type === 'photo' ? 'Photo' : 'Video'} added to gallery!`);
+            toast.success(`${type === 'photo' ? 'Photo' : 'Video'} added to activity gallery!`);
           }
         } catch (error) {
           console.error('Upload error:', error);
@@ -180,11 +184,6 @@ export default function ProfilePage() {
     }
   };
 
-  const shareToSocial = (platform) => {
-    toast.success(`Sharing to ${platform}...`);
-    // In production, integrate with social media APIs
-  };
-
   const updateStatus = async (status, activity) => {
     try {
       await fetchWithAuth('/api/profile/status', {
@@ -194,7 +193,7 @@ export default function ProfilePage() {
       setCurrentStatus(status);
       setCurrentActivity(activity);
       setShowStatusModal(false);
-      toast.success('Status updated!');
+      toast.success('Radar status updated!');
     } catch (error) {
       console.error('Status update error:', error);
       toast.error('Failed to update status');
@@ -202,359 +201,263 @@ export default function ProfilePage() {
   };
 
   const menuItems = [
-    { icon: User, label: 'Set Status (e.g. Available)', action: () => setShowStatusModal(true) },
-    { icon: Calendar, label: 'Availability & Calendar', path: '/calendar' },
-    { icon: Bell, label: 'Alerts & Requests', path: '/alerts' },
-    { icon: Users, label: 'My Connections', path: '/connections' },
+    { icon: Compass, label: 'Broadcast Status on Radar', action: () => setShowStatusModal(true) },
+    { icon: Calendar, label: 'Activity Calendar & RSVP History', path: '/calendar' },
+    { icon: Bell, label: 'Radar Alerts & Meetup Requests', path: '/alerts' },
+    { icon: Users, label: 'My Activity Network', path: '/connections' },
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-gray-500">Loading profile...</div>
+      <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="w-8 h-8 border-4 border-[#DC2626] border-t-transparent rounded-full animate-spin mb-3"></div>
+          <p className="text-[#94A3B8] text-sm">Loading user profile...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20">
+    <div className="min-h-screen bg-[#0A0C10] text-white pb-28">
       <Header user={user} title="MY PROFILE" />
 
-      {/* Profile Card */}
-      <Card className="mx-4 mt-4 p-6 text-center">
-        <div className="relative inline-block">
-          <Avatar className="w-24 h-24 mx-auto border-4 border-[#2B2D9E]">
-            <AvatarImage src={profile?.profilePhoto} />
-            <AvatarFallback className="bg-[#4a3aff] text-white text-2xl">
-              {profile?.name?.charAt(0) || user?.name?.charAt(0) || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          {/* Status indicator */}
-          <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full border-2 border-white ${
-            statusOptions.find(s => s.label === currentStatus)?.color || 'bg-green-500'
-          }`}></div>
-        </div>
-        
-        <h2 className="text-xl font-bold text-gray-800 mt-4">{profile?.name || user?.name}</h2>
-        <p className="text-gray-500">{profile?.email || user?.email}</p>
-        
-        {/* Current Status & Activity */}
-        <div className="mt-3 space-y-1">
-          <Badge className={`${statusOptions.find(s => s.label === currentStatus)?.color} text-white`}>
-            {currentStatus}
-          </Badge>
-          {currentActivity && (
-            <p className="text-sm text-[#2B2D9E] font-medium">{currentActivity}</p>
-          )}
-        </div>
-        
-        {/* Rating */}
-        <div className="flex items-center justify-center gap-1 mt-3">
-          {[1,2,3,4,5].map((star) => (
-            <Star 
-              key={star} 
-              className={`w-5 h-5 ${star <= 4 ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
-            />
-          ))}
-          <span className="text-gray-600 ml-1">(4.0)</span>
-        </div>
+      {/* Main Profile Header Card */}
+      <div className="max-w-2xl mx-auto px-4 mt-4">
+        <div className="dark-glass-card p-6 text-center border-t-2 border-[#DC2626] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#DC2626]/10 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="relative inline-block mb-3">
+            <Avatar className="w-24 h-24 mx-auto border-2 border-[#DC2626] shadow-[0_0_20px_rgba(220,38,38,0.5)]">
+              <AvatarImage src={profile?.profilePhoto} />
+              <AvatarFallback className="bg-[#1A1E2B] text-white text-2xl font-bold">
+                {profile?.name?.charAt(0) || user?.name?.charAt(0) || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className={`absolute bottom-0 right-0 w-5 h-5 rounded-full border-2 border-[#0A0C10] ${
+              statusOptions.find(s => s.label === currentStatus)?.color || 'bg-[#DC2626]'
+            } animate-pulse`}></div>
+          </div>
+          
+          <h2 className="text-2xl font-black text-white tracking-tight">{profile?.name || user?.name}</h2>
+          <p className="text-xs text-[#94A3B8] font-medium mt-0.5">{profile?.email || user?.email}</p>
+          
+          {/* Status & Activity Tag */}
+          <div className="mt-3 flex flex-col items-center gap-1.5">
+            <span className="text-xs font-bold text-[#FBBF24] bg-[#FBBF24]/10 border border-[#FBBF24]/30 px-3 py-1 rounded-full shadow-sm">
+              {currentStatus} {currentActivity && `• ${currentActivity}`}
+            </span>
+          </div>
+          
+          {/* Ratings & Achievements */}
+          <div className="flex items-center justify-center gap-1.5 mt-4">
+            {[1,2,3,4,5].map((star) => (
+              <Star 
+                key={star} 
+                className={`w-4 h-4 ${star <= 5 ? 'text-[#FBBF24] fill-[#FBBF24]' : 'text-white/20'}`} 
+              />
+            ))}
+            <span className="text-xs font-bold text-white ml-1">5.0 (42 Meetups)</span>
+          </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mt-6">
-          <div>
-            <p className="text-2xl font-bold text-[#2B2D9E]">24</p>
-            <p className="text-sm text-gray-500">Activities</p>
+          {/* Achievement Badges */}
+          <div className="flex justify-center gap-2 mt-4 pt-3 border-t border-white/5">
+            {achievements.map((ach, idx) => {
+              const Icon = ach.icon;
+              return (
+                <div key={idx} className="flex items-center gap-1 bg-[#1A1E2B] border border-white/10 px-2.5 py-1 rounded-full">
+                  <Icon className={`w-3.5 h-3.5 ${ach.color}`} />
+                  <span className="text-[10px] font-bold text-white">{ach.label}</span>
+                </div>
+              );
+            })}
           </div>
-          <div>
-            <p className="text-2xl font-bold text-[#2B2D9E]">18</p>
-            <p className="text-sm text-gray-500">Connections</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-[#2B2D9E]">{mediaGallery.length}</p>
-            <p className="text-sm text-gray-500">Media</p>
+
+          {/* Stats Dashboard Grid */}
+          <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-white/10">
+            <div className="bg-[#1A1E2B]/80 p-3 rounded-xl border border-white/5">
+              <p className="text-xl font-black text-[#DC2626]">34</p>
+              <p className="text-[11px] text-[#94A3B8] font-semibold">Activities</p>
+            </div>
+            <div className="bg-[#1A1E2B]/80 p-3 rounded-xl border border-white/5">
+              <p className="text-xl font-black text-[#FBBF24]">28</p>
+              <p className="text-[11px] text-[#94A3B8] font-semibold">Connections</p>
+            </div>
+            <div className="bg-[#1A1E2B]/80 p-3 rounded-xl border border-white/5">
+              <p className="text-xl font-black text-white">{mediaGallery.length}</p>
+              <p className="text-[11px] text-[#94A3B8] font-semibold">Gallery</p>
+            </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Media Gallery Section */}
-      <Card className="mx-4 mt-4 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-gray-800 flex items-center gap-2">
-            <Camera className="w-5 h-5" />
-            Activity Gallery
-          </h3>
-          <div className="flex gap-2">
+      <div className="max-w-2xl mx-auto px-4 mt-4">
+        <div className="dark-glass-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-white text-base flex items-center gap-2">
+              <Camera className="w-4 h-4 text-[#DC2626]" />
+              Activity Photos & Moments
+            </h3>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => photoInputRef.current?.click()}
+                className="p-2 bg-[#1A1E2B] hover:bg-white/10 rounded-full border border-white/10 transition-colors"
+              >
+                <Camera className="w-4 h-4 text-white" />
+              </button>
+              <button 
+                onClick={() => videoInputRef.current?.click()}
+                className="p-2 bg-[#1A1E2B] hover:bg-white/10 rounded-full border border-white/10 transition-colors"
+              >
+                <Video className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          </div>
+
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => handleMediaUpload(e, 'photo')}
+            className="hidden"
+          />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            onChange={(e) => handleMediaUpload(e, 'video')}
+            className="hidden"
+          />
+
+          {/* Gallery Grid */}
+          <div className="grid grid-cols-3 gap-2.5">
+            {mediaGallery.slice(0, 6).map((media) => (
+              <div 
+                key={media.id} 
+                className="relative aspect-square cursor-pointer group rounded-xl overflow-hidden border border-white/10"
+                onClick={() => setSelectedMedia(media)}
+              >
+                {media.type === 'photo' ? (
+                  <img src={media.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                ) : (
+                  <video src={media.url} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                )}
+                <div className="absolute top-1.5 right-1.5 p-1 bg-black/70 rounded-full backdrop-blur-sm">
+                  {media.isPublic ? (
+                    <Globe className="w-3 h-3 text-white" />
+                  ) : (
+                    <Lock className="w-3 h-3 text-[#FBBF24]" />
+                  )}
+                </div>
+              </div>
+            ))}
+            
             <button 
               onClick={() => photoInputRef.current?.click()}
-              className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
+              className="aspect-square border-2 border-dashed border-white/20 bg-[#1A1E2B]/50 rounded-xl flex items-center justify-center hover:border-[#DC2626] transition-colors"
             >
-              <Camera className="w-4 h-4 text-gray-600" />
-            </button>
-            <button 
-              onClick={() => videoInputRef.current?.click()}
-              className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
-            >
-              <Video className="w-4 h-4 text-gray-600" />
+              <Plus className="w-6 h-6 text-[#94A3B8]" />
             </button>
           </div>
         </div>
+      </div>
 
-        <input
-          ref={photoInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(e) => handleMediaUpload(e, 'photo')}
-          className="hidden"
-        />
-        <input
-          ref={videoInputRef}
-          type="file"
-          accept="video/*"
-          onChange={(e) => handleMediaUpload(e, 'video')}
-          className="hidden"
-        />
-
-        {/* Gallery Grid */}
-        <div className="grid grid-cols-3 gap-2">
-          {mediaGallery.slice(0, 6).map((media) => (
-            <div 
-              key={media.id} 
-              className="relative aspect-square cursor-pointer group"
-              onClick={() => setSelectedMedia(media)}
-            >
-              {media.type === 'photo' ? (
-                <img src={media.url} alt="" className="w-full h-full object-cover rounded-lg" />
-              ) : (
-                <video src={media.url} className="w-full h-full object-cover rounded-lg" />
-              )}
-              {/* Privacy indicator */}
-              <div className="absolute top-1 right-1 p-1 bg-black/50 rounded-full">
-                {media.isPublic ? (
-                  <Globe className="w-3 h-3 text-white" />
-                ) : (
-                  <Lock className="w-3 h-3 text-white" />
-                )}
-              </div>
-              {/* Video indicator */}
-              {media.type === 'video' && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center">
-                    <Video className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-          
-          {/* Add more button */}
-          <button 
-            onClick={() => photoInputRef.current?.click()}
-            className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-[#2B2D9E] transition-colors"
-          >
-            <Plus className="w-8 h-8 text-gray-400" />
-          </button>
-        </div>
-
-        {mediaGallery.length > 6 && (
-          <Button variant="ghost" className="w-full mt-2 text-[#2B2D9E]">
-            View All ({mediaGallery.length})
-          </Button>
-        )}
-      </Card>
-
-      {/* Privacy Settings */}
-      <Card className="mx-4 mt-4 p-4">
-        <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-          <Shield className="w-5 h-5" />
-          Privacy Settings
-        </h3>
-        <div className="space-y-3">
-          {[
-            { key: 'profilePublic', label: 'Public Profile', desc: 'Anyone can view your profile' },
-            { key: 'showLocation', label: 'Show Location', desc: 'Display your area to others' },
-            { key: 'showActivity', label: 'Show Activity Status', desc: 'Others can see your current activity' },
-            { key: 'allowMessages', label: 'Allow Messages', desc: 'Receive messages from anyone' },
-          ].map((setting) => (
-            <div key={setting.key} className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-sm">{setting.label}</p>
-                <p className="text-xs text-gray-500">{setting.desc}</p>
-              </div>
-              <Switch 
-                checked={privacySettings[setting.key]}
-                onCheckedChange={(checked) => setPrivacySettings(prev => ({ ...prev, [setting.key]: checked }))}
-              />
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Menu Items */}
-      <div className="mx-4 mt-4 space-y-2">
+      {/* Menu Options */}
+      <div className="max-w-2xl mx-auto px-4 mt-4 space-y-2.5">
         {menuItems.map((item, index) => (
-          <Card 
+          <div 
             key={index}
-            className="p-4 flex items-center gap-3 cursor-pointer hover:bg-gray-50"
+            className="dark-glass-card p-4 flex items-center gap-3 cursor-pointer hover:border-[#DC2626]/40 transition-all"
             onClick={() => item.action ? item.action() : router.push(item.path)}
           >
-            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-              <item.icon className="w-5 h-5 text-[#2B2D9E]" />
+            <div className="w-10 h-10 rounded-xl bg-[#DC2626]/15 border border-[#DC2626]/40 flex items-center justify-center">
+              <item.icon className="w-5 h-5 text-[#DC2626]" />
             </div>
-            <span className="flex-1 font-medium text-gray-700">{item.label}</span>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </Card>
+            <span className="flex-1 font-bold text-sm text-white">{item.label}</span>
+            <ChevronRight className="w-4 h-4 text-[#94A3B8]" />
+          </div>
         ))}
       </div>
 
-      {/* Edit & Logout */}
-      <div className="mx-4 mt-6 space-y-3">
+      {/* Edit Preferences & Logout */}
+      <div className="max-w-2xl mx-auto px-4 mt-6 space-y-3">
         <Button 
-          variant="outline"
-          className="w-full py-6 border-[#2B2D9E] text-[#2B2D9E]"
+          className="w-full py-6 bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold rounded-2xl shadow-[0_0_25px_rgba(220,38,38,0.5)] border border-red-500/30"
           onClick={() => router.push('/profile/edit')}
         >
-          <Edit className="w-5 h-5 mr-2" />
-          EDIT PREFERENCES
+          <Edit className="w-4 h-4 mr-2" />
+          Edit Profile & Activity Preferences
         </Button>
         
         <Button 
           variant="outline"
-          className="w-full py-6 border-red-500 text-red-500 hover:bg-red-50"
+          className="w-full py-6 border-white/10 bg-[#1A1E2B] text-red-400 hover:bg-red-500/10 font-bold rounded-2xl"
           onClick={signOut}
         >
-          <LogOut className="w-5 h-5 mr-2" />
-          Sign Out
+          <LogOut className="w-4 h-4 mr-2" />
+          Sign Out of Account
         </Button>
       </div>
 
       {/* Status Modal */}
       {showStatusModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Card className="w-full max-w-md p-6 bg-[#12151E] border border-white/10 text-white rounded-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold">Set Your Status</h3>
+              <h3 className="text-xl font-black text-white">Broadcast Status</h3>
               <button onClick={() => setShowStatusModal(false)}>
-                <X className="w-6 h-6 text-gray-400" />
+                <X className="w-5 h-5 text-[#94A3B8]" />
               </button>
             </div>
 
             <div className="space-y-3 mb-4">
-              <p className="text-sm font-medium text-gray-700">Status</p>
-              <div className="grid grid-cols-2 gap-2">
+              <p className="text-xs font-bold text-[#94A3B8] uppercase">Availability</p>
+              <div className="grid grid-cols-3 gap-2">
                 {statusOptions.map((option) => (
                   <button
                     key={option.id}
                     onClick={() => setCurrentStatus(option.label)}
-                    className={`p-3 rounded-lg border-2 flex items-center gap-2 transition-all ${
+                    className={`p-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${
                       currentStatus === option.label
-                        ? 'border-[#2B2D9E] bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-[#DC2626] bg-[#DC2626]/20 text-white'
+                        : 'border-white/10 bg-[#1A1E2B] text-[#94A3B8]'
                     }`}
                   >
-                    <div className={`w-3 h-3 rounded-full ${option.color}`}></div>
-                    <span className="text-sm font-medium">{option.label}</span>
+                    <div className={`w-2.5 h-2.5 rounded-full ${option.color}`}></div>
+                    <span className="text-xs font-bold">{option.label}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="space-y-3 mb-6">
-              <p className="text-sm font-medium text-gray-700">Activity Message</p>
+              <p className="text-xs font-bold text-[#94A3B8] uppercase">Activity Message</p>
               <div className="space-y-2">
                 {activityOptions.map((activity) => (
                   <button
                     key={activity}
                     onClick={() => setCurrentActivity(activity)}
-                    className={`w-full p-3 rounded-lg border-2 text-left text-sm transition-all ${
+                    className={`w-full p-3 rounded-xl border text-left text-xs font-medium transition-all ${
                       currentActivity === activity
-                        ? 'border-[#2B2D9E] bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-[#DC2626] bg-[#DC2626]/15 text-white'
+                        : 'border-white/10 bg-[#1A1E2B] text-[#94A3B8]'
                     }`}
                   >
                     {activity}
                   </button>
                 ))}
               </div>
-              <Input 
-                placeholder="Or type your own..."
-                value={currentActivity}
-                onChange={(e) => setCurrentActivity(e.target.value)}
-              />
             </div>
 
             <Button 
-              className="w-full bg-[#2B2D9E]"
+              className="w-full bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold rounded-xl h-12 shadow-[0_0_20px_rgba(220,38,38,0.5)]"
               onClick={() => updateStatus(currentStatus, currentActivity)}
             >
-              Update Status
+              Save & Broadcast Status
             </Button>
           </Card>
-        </div>
-      )}
-
-      {/* Media Detail Modal */}
-      {selectedMedia && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg">
-            <button 
-              onClick={() => setSelectedMedia(null)}
-              className="absolute top-4 right-4 text-white"
-            >
-              <X className="w-8 h-8" />
-            </button>
-
-            {selectedMedia.type === 'photo' ? (
-              <img src={selectedMedia.url} alt="" className="w-full rounded-lg" />
-            ) : (
-              <video src={selectedMedia.url} controls className="w-full rounded-lg" />
-            )}
-
-            <div className="mt-4 bg-white rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  {selectedMedia.isPublic ? (
-                    <Badge className="bg-green-500">Public</Badge>
-                  ) : (
-                    <Badge className="bg-gray-500">Private</Badge>
-                  )}
-                </div>
-                <Switch 
-                  checked={selectedMedia.isPublic}
-                  onCheckedChange={(checked) => updateMediaPrivacy(selectedMedia.id, checked)}
-                />
-              </div>
-
-              <p className="text-sm text-gray-600 mb-4">
-                {selectedMedia.caption || 'No caption'}
-              </p>
-
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => shareToSocial('instagram')}
-                >
-                  <Instagram className="w-4 h-4 mr-1" /> Share
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => shareToSocial('facebook')}
-                >
-                  <Facebook className="w-4 h-4 mr-1" /> Share
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="text-red-500 border-red-500"
-                  onClick={() => deleteMedia(selectedMedia.id)}
-                >
-                  <X className="w-4 h-4 mr-1" /> Delete
-                </Button>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
@@ -562,3 +465,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
