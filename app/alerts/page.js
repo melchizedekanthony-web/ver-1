@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
-import { Bell, Check, X, User, MapPin, Calendar } from 'lucide-react';
+import { Bell, Check, X } from 'lucide-react';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
 import { getUser, fetchWithAuth } from '@/lib/auth';
@@ -18,6 +18,8 @@ export default function AlertsPage() {
   const [meetupAlerts, setMeetupAlerts] = useState(true);
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const storedUser = getUser();
@@ -26,46 +28,90 @@ export default function AlertsPage() {
       return;
     }
     setUser(storedUser);
-    generateMockRequests();
+    fetchRequests();
   }, []);
 
-  const generateMockRequests = async () => {
+  // Real, persisted connection requests — each one is a pending row in the
+  // `meetups` collection (see app/connect/[userId]/page.js for the rest of
+  // that flow). "Incoming" means someone else connected with you and is
+  // waiting on your accept; "outgoing" means you're waiting on them.
+  const fetchRequests = async () => {
+    setError(false);
     try {
-      const res = await fetchWithAuth('/api/matches');
+      const res = await fetchWithAuth('/api/meetups');
       const data = await res.json();
-      if (data.matches) {
-        // Generate incoming requests
-        setIncomingRequests(data.matches.slice(0, 2).map((m, i) => ({
-          ...m,
-          activity: ['Hiking', 'Yoga'][i],
-          status: 'pending'
-        })));
-        // Generate my requests
-        setMyRequests(data.matches.slice(2, 4).map((m, i) => ({
-          ...m,
-          activity: ['Yoga', 'Coffee'][i],
-          status: 'seeking'
-        })));
+      if (res.ok) {
+        setIncomingRequests(data.incoming || []);
+        setMyRequests(data.outgoing || []);
+      } else {
+        setError(true);
       }
     } catch (error) {
       console.error('Failed to fetch requests:', error);
+      setError(true);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAccept = (requestId) => {
-    setIncomingRequests(prev => prev.filter(r => r.id !== requestId));
-    toast.success('Request accepted!');
+  const handleAccept = async (userId) => {
+    try {
+      const res = await fetchWithAuth(`/api/meetups/${userId}/accept`, { method: 'POST' });
+      if (!res.ok) {
+        toast.error('Could not accept this request');
+        return;
+      }
+      setIncomingRequests(prev => prev.filter(r => r.userId !== userId));
+      toast.success('Request accepted! Let\'s coordinate a meetup.');
+      router.push(`/connect/${userId}`);
+    } catch (error) {
+      console.error('Failed to accept request:', error);
+      toast.error('Could not accept this request');
+    }
   };
 
-  const handleDecline = (requestId) => {
-    setIncomingRequests(prev => prev.filter(r => r.id !== requestId));
-    toast.info('Request declined');
+  const handleDecline = async (userId) => {
+    try {
+      const res = await fetchWithAuth(`/api/meetups/${userId}/cancel`, { method: 'POST' });
+      if (!res.ok) {
+        toast.error('Could not decline this request');
+        return;
+      }
+      setIncomingRequests(prev => prev.filter(r => r.userId !== userId));
+      toast.info('Request declined');
+    } catch (error) {
+      console.error('Failed to decline request:', error);
+      toast.error('Could not decline this request');
+    }
   };
 
-  const handleCancelRequest = (requestId) => {
-    setMyRequests(prev => prev.filter(r => r.id !== requestId));
-    toast.info('Request cancelled');
+  const handleCancelRequest = async (userId) => {
+    try {
+      const res = await fetchWithAuth(`/api/meetups/${userId}/cancel`, { method: 'POST' });
+      if (!res.ok) {
+        toast.error('Could not cancel this request');
+        return;
+      }
+      setMyRequests(prev => prev.filter(r => r.userId !== userId));
+      toast.info('Request cancelled');
+    } catch (error) {
+      console.error('Failed to cancel request:', error);
+      toast.error('Could not cancel this request');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0A0C10] pb-20">
+        <Header user={user} title="ALERTS & REQUESTS" showBack />
+        <div className="mx-4 mt-6 space-y-3 animate-pulse">
+          {[0, 1].map((i) => (
+            <div key={i} className="h-20 rounded-xl bg-[#12151E] border border-white/10" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0A0C10] pb-20">
@@ -78,12 +124,21 @@ export default function AlertsPage() {
             <Bell className="w-5 h-5 text-[#DC2626]" />
             <span className="font-medium">Meetup Alerts</span>
           </div>
-          <Switch 
-            checked={meetupAlerts} 
+          <Switch
+            checked={meetupAlerts}
             onCheckedChange={setMeetupAlerts}
           />
         </div>
       </Card>
+
+      {error && (
+        <Card className="mx-4 mt-4 p-4 bg-red-500/10 border-red-500/30">
+          <p className="text-red-400 text-sm mb-2">Couldn't load your requests.</p>
+          <Button size="sm" variant="outline" className="border-red-500/40 text-red-400" onClick={fetchRequests}>
+            Retry
+          </Button>
+        </Card>
+      )}
 
       {/* Incoming Requests */}
       <div className="mx-4 mt-6">
@@ -95,7 +150,7 @@ export default function AlertsPage() {
         ) : (
           <div className="space-y-3">
             {incomingRequests.map((request) => (
-              <Card key={request.id} className="p-4">
+              <Card key={request.meetupId} className="p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <Avatar className="w-12 h-12">
                     <AvatarImage src={request.profilePhoto} />
@@ -104,21 +159,23 @@ export default function AlertsPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-semibold">{request.name}: {request.activity}</p>
-                    <p className="text-sm text-emerald-400">Accept/Decline</p>
+                    <p className="font-semibold">
+                      {request.name}{request.activity ? `: ${request.activity}` : ''}
+                    </p>
+                    <p className="text-sm text-emerald-400">Wants to connect</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button 
+                  <Button
                     className="flex-1 bg-green-600 hover:bg-green-700"
-                    onClick={() => handleAccept(request.id)}
+                    onClick={() => handleAccept(request.userId)}
                   >
                     <Check className="w-4 h-4 mr-1" /> Accept
                   </Button>
-                  <Button 
+                  <Button
                     variant="outline"
-                    className="flex-1 border-red-500 text-red-500 hover:bg-red-50"
-                    onClick={() => handleDecline(request.id)}
+                    className="flex-1 border-red-500 text-red-500 hover:bg-red-500/10"
+                    onClick={() => handleDecline(request.userId)}
                   >
                     <X className="w-4 h-4 mr-1" /> Decline
                   </Button>
@@ -139,24 +196,29 @@ export default function AlertsPage() {
         ) : (
           <div className="space-y-3">
             {myRequests.map((request) => (
-              <Card key={request.id} className="p-4">
+              <Card key={request.meetupId} className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
-                      <MapPin className="w-5 h-5 text-[#DC2626]" />
-                    </div>
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={request.profilePhoto} />
+                      <AvatarFallback className="bg-white/5 text-white">
+                        {request.name?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
-                      <p className="font-semibold">{request.activity}: Seeking</p>
-                      <p className="text-sm text-[#94A3B8]">Looking for partners</p>
+                      <p className="font-semibold">
+                        {request.name}{request.activity ? `: ${request.activity}` : ''}
+                      </p>
+                      <p className="text-sm text-[#94A3B8]">Waiting for them to accept</p>
                     </div>
                   </div>
-                  <Button 
+                  <Button
                     variant="ghost"
                     size="sm"
                     className="text-red-500 hover:text-red-600"
-                    onClick={() => handleCancelRequest(request.id)}
+                    onClick={() => handleCancelRequest(request.userId)}
                   >
-                    Decline
+                    Cancel
                   </Button>
                 </div>
               </Card>

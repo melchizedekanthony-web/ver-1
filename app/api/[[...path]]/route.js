@@ -116,6 +116,20 @@ async function simpleSignIn(request) {
 
 // POST /api/signout - Simple sign out
 async function simpleSignOut(request) {
+  // Logging out is one of the two explicit ways (along with the Available
+  // toggle) a user can stop being discoverable — do it immediately here
+  // rather than waiting for the heartbeat to just go stale, since "log out"
+  // should mean "gone right now," not "gone in a few hours."
+  try {
+    const user = await getCurrentUser(request);
+    if (user) {
+      const db = await getDb();
+      await db.collection('users').updateOne({ email: user.email }, { $set: { available: false } });
+    }
+  } catch (error) {
+    console.error('Sign out presence cleanup error:', error);
+  }
+
   const response = NextResponse.json({ success: true });
   response.cookies.delete('session');
   return response;
@@ -267,23 +281,30 @@ async function updateBasicInfo(request) {
     }
 
     const body = await request.json();
-    const { name, dob, gender, profilePhoto } = body;
+    const { name, dob, gender, profilePhoto, phone, sharePhoneWithMatches } = body;
 
     const db = await getDb();
     const usersCollection = db.collection('users');
-    
+
+    const update = {
+      name,
+      dob,
+      gender,
+      profilePhoto,
+      updatedAt: new Date()
+    };
+    // Only touch onboardingStep when this is actually part of onboarding
+    // (dob/gender present) — the standalone profile-edit page reuses this
+    // same endpoint just to update name/phone and shouldn't rewind progress.
+    if (dob || gender) {
+      update.onboardingStep = 2;
+    }
+    if (phone !== undefined) update.phone = phone;
+    if (sharePhoneWithMatches !== undefined) update.sharePhoneWithMatches = sharePhoneWithMatches;
+
     await usersCollection.updateOne(
       { email: user.email },
-      { 
-        $set: { 
-          name,
-          dob,
-          gender,
-          profilePhoto,
-          onboardingStep: 2,
-          updatedAt: new Date()
-        } 
-      }
+      { $set: update }
     );
 
     return NextResponse.json({ message: 'Basic info updated' });
@@ -395,8 +416,8 @@ async function updateActivityPreferences(request) {
     
     await usersCollection.updateOne(
       { email: user.email },
-      { 
-        $set: { 
+      {
+        $set: {
           activities,
           preferredDays,
           preferredTimes,
@@ -405,8 +426,13 @@ async function updateActivityPreferences(request) {
           lookingFor,
           onboardingComplete: true,
           onboardingStep: 5,
+          // Discoverable by default the moment onboarding finishes — see the
+          // presence/heartbeat system below. They can turn it off any time
+          // from Profile, and it auto-goes-stale on its own if they stop
+          // opening the app, so this default doesn't mean "forever exposed."
+          available: true,
           updatedAt: new Date()
-        } 
+        }
       }
     );
 
@@ -418,6 +444,90 @@ async function updateActivityPreferences(request) {
 }
 
 // ========== MATCHING ROUTES ==========
+
+// GET /api/users/:id - Public profile lookup by id. Used by pages that need a
+// specific user's info (connect/[userId], user/[userId]) instead of hoping
+// that user happens to appear in the current /api/matches list — piggybacking
+// on the matches list meant those pages could silently show the WRONG
+// person's info (the code fell back to "the first match" when the requested
+// id wasn't found), which is a real problem on a safety-critical page like
+// the meetup/cancel flow.
+async function getUserById(request, targetId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const db = await getDb();
+    const usersCollection = db.collection('users');
+    const reviewsCollection = db.collection('reviews');
+    const activitiesCollection = db.collection('activities');
+
+    const target = await usersCollection.findOne(
+      { id: targetId },
+      { projection: { password: 0 } }
+    );
+
+    if (!target) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const [ratingAgg, activitiesCount] = await Promise.all([
+      reviewsCollection.aggregate([
+        { $match: { targetId, targetType: 'user' } },
+        { $group: { _id: '$targetId', avgRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } }
+      ]).toArray(),
+      // Only their public activity cards count toward this profile stat —
+      // private planning notes stay private.
+      activitiesCollection.countDocuments({ userId: targetId, isPublic: true })
+    ]);
+
+    // Real location only if they currently have an active, unexpired
+    // broadcast — never fabricated. Pages that need "where is this person
+    // right now" (e.g. the connect/cancel-meetup page) should treat a null
+    // location as "not available" rather than inventing one.
+    const broadcastsCollection = db.collection('broadcasts');
+    const activeBroadcast = await broadcastsCollection.findOne(
+      { userId: targetId, status: 'active', expiresAt: { $gt: new Date() } },
+      { sort: { createdAt: -1 } }
+    );
+
+    // Fall back to the passive-availability location when there's no active
+    // broadcast. This keeps profile/connect/rate/meetup pages consistent
+    // with findNearbyBroadcasters — someone who shows up on the radar via
+    // the passive layer (available === true, fresh heartbeat) shouldn't
+    // suddenly read as "location unavailable" once you click into them.
+    // Still never fabricated: only used when they're actually marked
+    // available and have a real lastKnownLocation on file.
+    const passiveLocation =
+      !activeBroadcast && target.available === true && target.lastKnownLocation
+        ? target.lastKnownLocation
+        : null;
+
+    return NextResponse.json({
+      user: {
+        id: target.id,
+        name: target.name,
+        profilePhoto: target.profilePhoto,
+        bio: target.bio || null,
+        activities: target.activities || [],
+        preferredDays: target.preferredDays || [],
+        preferredTimes: target.preferredTimes || null,
+        // Only ever expose a phone number if the user opted in to sharing it
+        // with matches — never exposed by default.
+        phone: target.sharePhoneWithMatches ? target.phone : null,
+        avgRating: ratingAgg.length ? Math.round(ratingAgg[0].avgRating * 10) / 10 : null,
+        reviewCount: ratingAgg.length ? ratingAgg[0].reviewCount : 0,
+        activitiesCount,
+        location: activeBroadcast?.location || passiveLocation
+      }
+    });
+  } catch (error) {
+    console.error('Get user by id error:', error);
+    return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
+  }
+}
 
 // GET /api/matches - Get compatible workout partners
 async function getMatches(request) {
@@ -1662,10 +1772,25 @@ function haversineDistanceMiles(lat1, lng1, lat2, lng2) {
   return R * c;
 }
 
-// Finds OTHER users who currently have an active, unexpired broadcast within
-// radiusMiles of (lat, lng) — real geolocation-based matching. If nobody is
-// actually broadcasting nearby, this returns an empty list; the UI shows an
-// honest "no one nearby right now" state rather than inventing people.
+// A heartbeat older than this counts as stale — the passive "Available"
+// presence layer below treats a stale heartbeat as "not really here right
+// now" even if the user never manually turned Available off. This is what
+// makes always-on-by-default safe: nobody stays discoverable indefinitely
+// just because they forgot to flip a switch.
+const AVAILABILITY_STALE_MS = 4 * 60 * 60 * 1000; // 4 hours
+
+// Finds OTHER users within radiusMiles of (lat, lng) who are reachable right
+// now, from TWO real sources — never fabricated:
+//   1. An active, unexpired, activity-specific broadcast (explicit "I'm
+//      looking for a hiking buddy right now" with a real location).
+//   2. The passive "Available" presence layer: available === true, a
+//      heartbeat within AVAILABILITY_STALE_MS, and a real last-known
+//      location. This is what makes someone discoverable just by having the
+//      app open/logged-in, without requiring them to broadcast every time.
+// A person with an active broadcast is represented by that richer record;
+// the passive layer only fills in people who don't already have one.
+// If nobody matches either source, this returns an empty list — the UI
+// shows an honest "no one nearby right now" state rather than inventing people.
 async function findNearbyBroadcasters(db, excludeUserId, lat, lng, radiusMiles, activity) {
   if (typeof lat !== 'number' || typeof lng !== 'number' || Number.isNaN(lat) || Number.isNaN(lng)) {
     return [];
@@ -1674,37 +1799,71 @@ async function findNearbyBroadcasters(db, excludeUserId, lat, lng, radiusMiles, 
   const broadcastsCollection = db.collection('broadcasts');
   const usersCollection = db.collection('users');
   const reviewsCollection = db.collection('reviews');
+  const radius = typeof radiusMiles === 'number' && !Number.isNaN(radiusMiles) ? radiusMiles : 5;
 
-  const query = {
+  // Source 1: explicit active broadcasts.
+  const broadcastQuery = {
     userId: { $ne: excludeUserId },
     status: 'active',
     expiresAt: { $gt: new Date() },
     'location.lat': { $type: 'number' },
     'location.lng': { $type: 'number' }
   };
-  if (activity) query.activity = activity;
+  if (activity) broadcastQuery.activity = activity;
 
   const broadcasts = await broadcastsCollection
-    .find(query)
+    .find(broadcastQuery)
     .sort({ createdAt: -1 })
     .limit(200)
     .toArray();
 
-  // Only the most recent active broadcast per user counts.
   const latestByUser = new Map();
   for (const b of broadcasts) {
     if (!latestByUser.has(b.userId)) latestByUser.set(b.userId, b);
   }
 
-  const radius = typeof radiusMiles === 'number' && !Number.isNaN(radiusMiles) ? radiusMiles : 5;
-  const withDistance = [...latestByUser.values()]
-    .map(b => ({ broadcast: b, distance: haversineDistanceMiles(lat, lng, b.location.lat, b.location.lng) }))
-    .filter(x => x.distance !== null && x.distance <= radius)
-    .sort((a, b) => a.distance - b.distance);
+  const broadcastResults = [...latestByUser.values()]
+    .map(b => ({
+      userId: b.userId,
+      location: b.location,
+      distance: haversineDistanceMiles(lat, lng, b.location.lat, b.location.lng),
+      activity: b.activity,
+      connectionType: b.connectionType || null
+    }))
+    .filter(x => x.distance !== null && x.distance <= radius);
 
-  if (withDistance.length === 0) return [];
+  // Source 2: passive "Available" presence — real heartbeat + real
+  // last-known location, no broadcast required.
+  const broadcastUserIds = new Set(broadcastResults.map(r => r.userId));
+  const availabilityQuery = {
+    id: { $ne: excludeUserId },
+    available: true,
+    lastActiveAt: { $gt: new Date(Date.now() - AVAILABILITY_STALE_MS) },
+    'lastKnownLocation.lat': { $type: 'number' },
+    'lastKnownLocation.lng': { $type: 'number' }
+  };
+  if (activity) availabilityQuery.activities = activity;
 
-  const userIds = withDistance.map(x => x.broadcast.userId);
+  const availableUsers = await usersCollection
+    .find(availabilityQuery, { projection: { id: 1, lastKnownLocation: 1 } })
+    .limit(500)
+    .toArray();
+
+  const availabilityResults = availableUsers
+    .filter(u => !broadcastUserIds.has(u.id))
+    .map(u => ({
+      userId: u.id,
+      location: u.lastKnownLocation,
+      distance: haversineDistanceMiles(lat, lng, u.lastKnownLocation.lat, u.lastKnownLocation.lng),
+      activity: null,
+      connectionType: null
+    }))
+    .filter(x => x.distance !== null && x.distance <= radius);
+
+  const combined = [...broadcastResults, ...availabilityResults].sort((a, b) => a.distance - b.distance);
+  if (combined.length === 0) return [];
+
+  const userIds = combined.map(x => x.userId);
   const users = await usersCollection
     .find({ id: { $in: userIds } }, { projection: { password: 0 } })
     .toArray();
@@ -1718,9 +1877,9 @@ async function findNearbyBroadcasters(db, excludeUserId, lat, lng, radiusMiles, 
     : [];
   const ratingsById = new Map(ratingAggregates.map(r => [r._id, r]));
 
-  return withDistance
-    .map(({ broadcast, distance }) => {
-      const u = usersById.get(broadcast.userId);
+  return combined
+    .map(({ userId, location, distance, activity, connectionType }) => {
+      const u = usersById.get(userId);
       if (!u) return null;
       const rating = ratingsById.get(u.id);
       return {
@@ -1728,10 +1887,13 @@ async function findNearbyBroadcasters(db, excludeUserId, lat, lng, radiusMiles, 
         name: u.name,
         profilePhoto: u.profilePhoto,
         activities: u.activities,
-        location: broadcast.location, // real coordinates the broadcaster shared, for the map marker
-        activity: broadcast.activity,
+        location, // real coordinates — either their live broadcast or their last-known heartbeat location
+        // A real broadcast's chosen activity wins; otherwise fall back to
+        // their general interests so the UI still has something honest to
+        // show rather than a blank field.
+        activity: activity || u.activities?.[0] || null,
         distance: Math.round(distance * 10) / 10,
-        connectionType: broadcast.connectionType || null,
+        connectionType,
         avgRating: rating ? Math.round(rating.avgRating * 10) / 10 : null,
         reviewCount: rating ? rating.reviewCount : 0
       };
@@ -2195,6 +2357,431 @@ async function activateBoost(request) {
   }
 }
 
+// ========== PRESENCE (passive "Available" discoverability) ==========
+// Being logged in and having the app open makes you discoverable by default
+// — see findNearbyBroadcasters above for how this merges with the explicit
+// broadcast system. Three things keep this from being an unbounded privacy
+// exposure: it requires a real, recent heartbeat (see AVAILABILITY_STALE_MS
+// above — stops counting after a few hours of inactivity on its own), it can
+// be turned off any time via the toggle below, and signing out clears it
+// immediately (see simpleSignOut above).
+
+// POST /api/presence/heartbeat - called on app foreground/open and
+// periodically while the tab is actually visible (never while backgrounded —
+// that's enforced client-side, not here, since a web app can't reliably run
+// in the background anyway). Records "still here" + a real location.
+async function presenceHeartbeat(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const body = await request.json().catch(() => ({}));
+    const { lat, lng } = body || {};
+
+    const update = { lastActiveAt: new Date() };
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      update.lastKnownLocation = { lat, lng };
+    }
+
+    const db = await getDb();
+    await db.collection('users').updateOne({ email: user.email }, { $set: update });
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('Presence heartbeat error:', error);
+    return NextResponse.json({ error: 'Failed to record presence' }, { status: 500 });
+  }
+}
+
+// POST /api/presence/toggle - explicit manual on/off for discoverability.
+async function togglePresence(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const body = await request.json();
+    const available = !!body?.available;
+
+    const db = await getDb();
+    await db.collection('users').updateOne({ email: user.email }, { $set: { available } });
+
+    return NextResponse.json({ available });
+  } catch (error) {
+    console.error('Toggle presence error:', error);
+    return NextResponse.json({ error: 'Failed to update availability' }, { status: 500 });
+  }
+}
+
+// GET /api/presence - current user's own availability status, for the
+// Profile toggle to reflect on load.
+async function getPresence(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const db = await getDb();
+    const dbUser = await db.collection('users').findOne(
+      { email: user.email },
+      { projection: { available: 1, lastActiveAt: 1 } }
+    );
+
+    return NextResponse.json({
+      // Strict equality on purpose: accounts that onboarded before this
+      // feature shipped have no `available` field at all, and the
+      // discovery query in findNearbyBroadcasters requires `available:
+      // true` exactly — so this has to match that, or the toggle would
+      // show ON for someone who isn't actually discoverable yet. New
+      // accounts get `available: true` written explicitly at onboarding
+      // completion, so they're correctly ON from the start.
+      available: dbUser?.available === true,
+      lastActiveAt: dbUser?.lastActiveAt || null
+    });
+  } catch (error) {
+    console.error('Get presence error:', error);
+    return NextResponse.json({ error: 'Failed to load availability' }, { status: 500 });
+  }
+}
+
+// ========== MEETUPS (mutual meeting-point coordination) ==========
+// A `meetups` document is the single shared source of truth about where two
+// specific people stand in their in-person meetup — replacing the old
+// `connectionStatus` state that used to live only in one browser tab's React
+// state and was never persisted or visible to the other participant at all.
+// status flow: pending -> accepted -> meeting_point_set -> in_transit -> arrived -> completed
+// (or -> cancelled from anywhere before completed).
+
+function meetupParticipantIds(a, b) {
+  return [a, b].sort();
+}
+
+async function findActiveMeetup(meetupsCollection, userIdA, userIdB) {
+  return meetupsCollection.findOne(
+    { participantIds: meetupParticipantIds(userIdA, userIdB), status: { $nin: ['completed', 'cancelled'] } },
+    { sort: { createdAt: -1 } }
+  );
+}
+
+// GET /api/meetups/:otherUserId - fetch the current shared meetup between the
+// caller and otherUserId, creating a fresh 'pending' one if none is active
+// (e.g. first time these two connect, or their last one already wrapped up).
+async function getOrCreateMeetup(request, otherUserId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!otherUserId || otherUserId === user.id) {
+      return NextResponse.json({ error: 'Invalid participant' }, { status: 400 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const activity = searchParams.get('activity') || null;
+    const latestOnly = searchParams.get('mode') === 'latest';
+
+    const db = await getDb();
+    const meetupsCollection = db.collection('meetups');
+
+    // The post-meetup summary/rating pages need the meetup that JUST
+    // completed — which findActiveMeetup deliberately excludes (its whole
+    // job elsewhere is "don't create a stale duplicate"). mode=latest reads
+    // the most recent record regardless of status and never creates one.
+    if (latestOnly) {
+      const latest = await meetupsCollection.findOne(
+        { participantIds: meetupParticipantIds(user.id, otherUserId) },
+        { sort: { createdAt: -1 } }
+      );
+      return NextResponse.json({ meetup: latest || null });
+    }
+
+    let meetup = await findActiveMeetup(meetupsCollection, user.id, otherUserId);
+
+    if (!meetup) {
+      meetup = {
+        id: uuidv4(),
+        participantIds: meetupParticipantIds(user.id, otherUserId),
+        initiatorId: user.id,
+        activity,
+        status: 'pending',
+        // The person who taps "Connect" has already expressed intent — that
+        // action IS their accept. They shouldn't have to accept their own
+        // request again on the connect page; only the other participant's
+        // accept is still pending.
+        acceptedBy: [user.id],
+        meetingPoint: null,
+        meetingPointProposedBy: null,
+        meetingPointConfirmedBy: [],
+        arrivedBy: [],
+        cancelledBy: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      await meetupsCollection.insertOne(meetup);
+    }
+
+    return NextResponse.json({ meetup });
+  } catch (error) {
+    console.error('Get/create meetup error:', error);
+    return NextResponse.json({ error: 'Failed to load meetup' }, { status: 500 });
+  }
+}
+
+// GET /api/meetups - the current user's pending connection requests, split
+// into incoming (someone else wants to connect, waiting on YOUR accept) and
+// outgoing (you're waiting on THEM). Real, persisted data — this is what the
+// Alerts page reads instead of fabricating requests from the matches list.
+async function listMyMeetups(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const db = await getDb();
+    const meetupsCollection = db.collection('meetups');
+    const usersCollection = db.collection('users');
+
+    const pending = await meetupsCollection
+      .find({ participantIds: user.id, status: 'pending' })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    const otherIds = pending.map(m => m.participantIds.find(id => id !== user.id)).filter(Boolean);
+    const others = otherIds.length
+      ? await usersCollection.find({ id: { $in: otherIds } }, { projection: { password: 0 } }).toArray()
+      : [];
+    const othersById = new Map(others.map(u => [u.id, u]));
+
+    const incoming = [];
+    const outgoing = [];
+    for (const meetup of pending) {
+      const otherId = meetup.participantIds.find(id => id !== user.id);
+      const other = othersById.get(otherId);
+      if (!other) continue; // the other account was deleted or is otherwise gone
+      const entry = {
+        meetupId: meetup.id,
+        userId: other.id,
+        name: other.name,
+        profilePhoto: other.profilePhoto,
+        activity: meetup.activity,
+        createdAt: meetup.createdAt
+      };
+      if (meetup.initiatorId === user.id) {
+        outgoing.push(entry);
+      } else {
+        incoming.push(entry);
+      }
+    }
+
+    return NextResponse.json({ incoming, outgoing });
+  } catch (error) {
+    console.error('List meetups error:', error);
+    return NextResponse.json({ error: 'Failed to load requests' }, { status: 500 });
+  }
+}
+
+// POST /api/meetups/:otherUserId/accept - caller accepts the connection.
+// Status flips to 'accepted' only once BOTH participants have accepted.
+async function acceptMeetup(request, otherUserId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const db = await getDb();
+    const meetupsCollection = db.collection('meetups');
+    const meetup = await findActiveMeetup(meetupsCollection, user.id, otherUserId);
+    if (!meetup) return NextResponse.json({ error: 'Meetup not found' }, { status: 404 });
+
+    const acceptedBy = Array.from(new Set([...(meetup.acceptedBy || []), user.id]));
+    const bothAccepted = meetup.participantIds.every(id => acceptedBy.includes(id));
+
+    const result = await meetupsCollection.findOneAndUpdate(
+      { id: meetup.id },
+      { $set: { acceptedBy, status: bothAccepted ? 'accepted' : meetup.status, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    );
+
+    return NextResponse.json({ meetup: result });
+  } catch (error) {
+    console.error('Accept meetup error:', error);
+    return NextResponse.json({ error: 'Failed to accept meetup' }, { status: 500 });
+  }
+}
+
+// POST /api/meetups/:otherUserId/point - propose (or re-propose) a real
+// tapped-on-the-map meeting point. The proposer implicitly confirms their
+// own pin; the other participant still has to confirm it before it locks in.
+async function proposeMeetingPoint(request, otherUserId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const body = await request.json();
+    const { lat, lng, label } = body;
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+      return NextResponse.json({ error: 'A real lat/lng is required' }, { status: 400 });
+    }
+
+    const db = await getDb();
+    const meetupsCollection = db.collection('meetups');
+    const meetup = await findActiveMeetup(meetupsCollection, user.id, otherUserId);
+    if (!meetup) return NextResponse.json({ error: 'Meetup not found' }, { status: 404 });
+
+    const result = await meetupsCollection.findOneAndUpdate(
+      { id: meetup.id },
+      {
+        $set: {
+          meetingPoint: { lat, lng, label: label || 'Meeting point' },
+          meetingPointProposedBy: user.id,
+          meetingPointConfirmedBy: [user.id],
+          status: 'meeting_point_set',
+          updatedAt: new Date()
+        }
+      },
+      { returnDocument: 'after' }
+    );
+
+    return NextResponse.json({ meetup: result });
+  } catch (error) {
+    console.error('Propose meeting point error:', error);
+    return NextResponse.json({ error: 'Failed to propose meeting point' }, { status: 500 });
+  }
+}
+
+// POST /api/meetups/:otherUserId/confirm-point - the other participant locks
+// in the currently-proposed pin. Status advances to 'in_transit' only once
+// BOTH have confirmed.
+async function confirmMeetingPoint(request, otherUserId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const db = await getDb();
+    const meetupsCollection = db.collection('meetups');
+    const meetup = await findActiveMeetup(meetupsCollection, user.id, otherUserId);
+    if (!meetup) return NextResponse.json({ error: 'Meetup not found' }, { status: 404 });
+    if (!meetup.meetingPoint) {
+      return NextResponse.json({ error: 'No meeting point has been proposed yet' }, { status: 400 });
+    }
+
+    const meetingPointConfirmedBy = Array.from(new Set([...(meetup.meetingPointConfirmedBy || []), user.id]));
+    const bothConfirmed = meetup.participantIds.every(id => meetingPointConfirmedBy.includes(id));
+
+    const result = await meetupsCollection.findOneAndUpdate(
+      { id: meetup.id },
+      {
+        $set: {
+          meetingPointConfirmedBy,
+          status: bothConfirmed ? 'in_transit' : meetup.status,
+          updatedAt: new Date()
+        }
+      },
+      { returnDocument: 'after' }
+    );
+
+    return NextResponse.json({ meetup: result });
+  } catch (error) {
+    console.error('Confirm meeting point error:', error);
+    return NextResponse.json({ error: 'Failed to confirm meeting point' }, { status: 500 });
+  }
+}
+
+// POST /api/meetups/:otherUserId/arrived - caller marks themselves arrived at
+// the meeting point. Status becomes 'completed' only once BOTH have arrived,
+// so a solo tap correctly shows as "waiting for the other person" rather than
+// silently closing out the meetup for someone who hasn't shown up yet.
+async function markMeetupArrived(request, otherUserId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const db = await getDb();
+    const meetupsCollection = db.collection('meetups');
+    const meetup = await findActiveMeetup(meetupsCollection, user.id, otherUserId);
+    if (!meetup) return NextResponse.json({ error: 'Meetup not found' }, { status: 404 });
+
+    const arrivedBy = Array.from(new Set([...(meetup.arrivedBy || []), user.id]));
+    const bothArrived = meetup.participantIds.every(id => arrivedBy.includes(id));
+
+    const result = await meetupsCollection.findOneAndUpdate(
+      { id: meetup.id },
+      { $set: { arrivedBy, status: bothArrived ? 'completed' : 'arrived', updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    );
+
+    return NextResponse.json({ meetup: result });
+  } catch (error) {
+    console.error('Mark arrived error:', error);
+    return NextResponse.json({ error: 'Failed to update meetup' }, { status: 500 });
+  }
+}
+
+// POST /api/meetups/:otherUserId/location - share a live position update
+// while actually en route. Gated to in_transit/arrived only — no reason to
+// broadcast exact coordinates before both sides have locked in a meeting
+// point, and this keeps precise location data out of the record for as
+// short a window as possible.
+async function updateMeetupLocation(request, otherUserId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const body = await request.json();
+    const { lat, lng } = body;
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+      return NextResponse.json({ error: 'A real lat/lng is required' }, { status: 400 });
+    }
+
+    const db = await getDb();
+    const meetupsCollection = db.collection('meetups');
+    const meetup = await findActiveMeetup(meetupsCollection, user.id, otherUserId);
+    if (!meetup) return NextResponse.json({ error: 'Meetup not found' }, { status: 404 });
+
+    if (!['in_transit', 'arrived'].includes(meetup.status)) {
+      return NextResponse.json(
+        { error: 'Live location sharing only starts once the meeting point is confirmed' },
+        { status: 400 }
+      );
+    }
+
+    const participantLocations = { ...(meetup.participantLocations || {}) };
+    participantLocations[user.id] = { lat, lng, updatedAt: new Date() };
+
+    const result = await meetupsCollection.findOneAndUpdate(
+      { id: meetup.id },
+      { $set: { participantLocations, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    );
+
+    return NextResponse.json({ meetup: result });
+  } catch (error) {
+    console.error('Update meetup location error:', error);
+    return NextResponse.json({ error: 'Failed to update location' }, { status: 500 });
+  }
+}
+
+// POST /api/meetups/:otherUserId/cancel - either participant can end the
+// meetup at any point before completion (used by the Cancel/Emergency flow).
+async function cancelMeetup(request, otherUserId) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const db = await getDb();
+    const meetupsCollection = db.collection('meetups');
+    const meetup = await findActiveMeetup(meetupsCollection, user.id, otherUserId);
+    if (!meetup) return NextResponse.json({ meetup: null });
+
+    const result = await meetupsCollection.findOneAndUpdate(
+      { id: meetup.id },
+      { $set: { status: 'cancelled', cancelledBy: user.id, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    );
+
+    return NextResponse.json({ meetup: result });
+  } catch (error) {
+    console.error('Cancel meetup error:', error);
+    return NextResponse.json({ error: 'Failed to cancel meetup' }, { status: 500 });
+  }
+}
+
 // ========== ROUTE HANDLER ==========
 
 export async function GET(request, { params }) {
@@ -2239,6 +2826,16 @@ export async function GET(request, { params }) {
     return getMessageThread(request, otherUserId);
   } else if (path === 'boosts') {
     return getBoostStatus(request);
+  } else if (path.startsWith('users/')) {
+    const targetId = path.split('/')[1];
+    return getUserById(request, targetId);
+  } else if (path === 'presence') {
+    return getPresence(request);
+  } else if (path === 'meetups') {
+    return listMyMeetups(request);
+  } else if (path.startsWith('meetups/')) {
+    const otherUserId = path.split('/')[1];
+    return getOrCreateMeetup(request, otherUserId);
   }
 
   return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -2306,6 +2903,28 @@ export async function POST(request, { params }) {
     return sendMessage(request);
   } else if (path === 'boosts/activate') {
     return activateBoost(request);
+  } else if (path === 'presence/heartbeat') {
+    return presenceHeartbeat(request);
+  } else if (path === 'presence/toggle') {
+    return togglePresence(request);
+  } else if (path.startsWith('meetups/') && path.endsWith('/accept')) {
+    const otherUserId = path.split('/')[1];
+    return acceptMeetup(request, otherUserId);
+  } else if (path.startsWith('meetups/') && path.endsWith('/point')) {
+    const otherUserId = path.split('/')[1];
+    return proposeMeetingPoint(request, otherUserId);
+  } else if (path.startsWith('meetups/') && path.endsWith('/confirm-point')) {
+    const otherUserId = path.split('/')[1];
+    return confirmMeetingPoint(request, otherUserId);
+  } else if (path.startsWith('meetups/') && path.endsWith('/arrived')) {
+    const otherUserId = path.split('/')[1];
+    return markMeetupArrived(request, otherUserId);
+  } else if (path.startsWith('meetups/') && path.endsWith('/location')) {
+    const otherUserId = path.split('/')[1];
+    return updateMeetupLocation(request, otherUserId);
+  } else if (path.startsWith('meetups/') && path.endsWith('/cancel')) {
+    const otherUserId = path.split('/')[1];
+    return cancelMeetup(request, otherUserId);
   }
 
   return NextResponse.json({ error: 'Not found' }, { status: 404 });

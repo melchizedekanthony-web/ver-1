@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Star, ArrowLeft, Camera, Video, X, Share2, Instagram, Facebook, Twitter, User, Globe } from 'lucide-react';
+import { Star, ArrowLeft, Camera, Video, X, Share2, User, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { getUser, fetchWithAuth } from '@/lib/auth';
 
@@ -38,12 +38,14 @@ export default function RatePage() {
   const [video, setVideo] = useState(null);
   const [videoPreview, setVideoPreview] = useState(null);
   
-  // Sharing Options
+  // Sharing Options — both actually wired to real endpoints below. (A third
+  // "share to social media" toggle used to exist here but only ever
+  // console.logged; cut rather than shipped as a button that lies about
+  // what it does. Real social sharing needs OAuth apps registered with each
+  // platform, which isn't something to fake client-side.)
   const [shareToProfile, setShareToProfile] = useState(true);
   const [shareToFeed, setShareToFeed] = useState(false);
-  const [shareToSocial, setShareToSocial] = useState(false);
-  const [selectedSocialPlatforms, setSelectedSocialPlatforms] = useState([]);
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -56,13 +58,18 @@ export default function RatePage() {
     fetchTargetUser();
   }, []);
 
+  // The SPECIFIC person this rating is about, by id — not a lookup into
+  // /api/matches with a fallback to "the first match". Getting this wrong
+  // here is especially bad: it would attach a real rating/review to the
+  // WRONG person's trust score.
   const fetchTargetUser = async () => {
     try {
-      const res = await fetchWithAuth('/api/matches');
+      const res = await fetchWithAuth(`/api/users/${userId}`);
       const data = await res.json();
-      if (data.matches) {
-        const found = data.matches.find(m => m.id === userId);
-        setTargetUser(found || data.matches[0]);
+      if (res.ok && data.user) {
+        setTargetUser(data.user);
+      } else {
+        toast.error("Couldn't load this person's info");
       }
     } catch (error) {
       console.error('Failed to fetch user:', error);
@@ -129,14 +136,6 @@ export default function RatePage() {
     setVideoPreview(null);
   };
 
-  const toggleSocialPlatform = (platform) => {
-    setSelectedSocialPlatforms(prev => 
-      prev.includes(platform) 
-        ? prev.filter(p => p !== platform)
-        : [...prev, platform]
-    );
-  };
-
   const handleSubmit = async () => {
     if (rating === 0) {
       toast.error('Please select a rating');
@@ -146,12 +145,6 @@ export default function RatePage() {
     setIsSubmitting(true);
 
     try {
-      // In production, you'd upload media to a storage service first
-      const mediaUrls = {
-        photos: photos.map(p => p.preview), // In prod: actual uploaded URLs
-        video: videoPreview // In prod: actual uploaded URL
-      };
-
       const res = await fetchWithAuth('/api/reviews', {
         method: 'POST',
         body: JSON.stringify({
@@ -159,33 +152,52 @@ export default function RatePage() {
           targetType: 'user',
           rating,
           categories: Object.keys(categories).filter(k => categories[k]),
-          reviewText: review,
-          media: mediaUrls,
-          sharing: {
-            profile: shareToProfile,
-            feed: shareToFeed,
-            social: shareToSocial,
-            platforms: selectedSocialPlatforms
-          }
+          reviewText: review
         })
       });
 
-      if (res.ok) {
-        // Handle social sharing
-        if (shareToSocial && selectedSocialPlatforms.length > 0) {
-          toast.success('Review submitted! Opening social share...');
-          // In production, integrate with actual social media APIs
-          selectedSocialPlatforms.forEach(platform => {
-            console.log(`Sharing to ${platform}`);
-          });
-        } else {
-          toast.success('Review submitted! Thank you for your feedback.');
-        }
-        
-        router.push('/connections');
-      } else {
+      if (!res.ok) {
         toast.error('Failed to submit review');
+        return;
       }
+
+      // These two toggles are genuinely wired, unlike the old "share to
+      // social media" one — best-effort, and neither blocks the review
+      // itself from having already been saved above.
+      const followUps = [];
+      if (shareToProfile && photos.length > 0) {
+        followUps.push(
+          ...photos.map(photo =>
+            fetchWithAuth('/api/profile/media', {
+              method: 'POST',
+              body: JSON.stringify({
+                mediaUrl: photo.preview,
+                mediaType: 'photo',
+                isPrivate: false,
+                caption: review || `Meetup with ${targetUser?.name || 'a WannaGo match'}`
+              })
+            }).catch((error) => console.error('Failed to save photo to profile:', error))
+          )
+        );
+      }
+      if (shareToFeed) {
+        followUps.push(
+          fetchWithAuth('/api/feed', {
+            method: 'POST',
+            body: JSON.stringify({
+              contentType: 'review',
+              content: review || `Just had a ${rating}-star experience with ${targetUser?.name || 'a WannaGo match'}!`,
+              mediaUrls: []
+            })
+          }).catch((error) => console.error('Failed to post to feed:', error))
+        );
+      }
+      if (followUps.length > 0) {
+        await Promise.all(followUps);
+      }
+
+      toast.success('Review submitted! Thank you for your feedback.');
+      router.push('/connections');
     } catch (error) {
       console.error('Submit review error:', error);
       toast.error('Failed to submit review');
@@ -193,12 +205,6 @@ export default function RatePage() {
       setIsSubmitting(false);
     }
   };
-
-  const socialPlatforms = [
-    { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
-    { id: 'facebook', name: 'Facebook', icon: Facebook, color: 'bg-[#DC2626]' },
-    { id: 'twitter', name: 'X/Twitter', icon: Twitter, color: 'bg-black' },
-  ];
 
   return (
     <div className="min-h-screen bg-[#0A0C10] pb-8">
@@ -405,46 +411,6 @@ export default function RatePage() {
               </div>
               <Switch checked={shareToFeed} onCheckedChange={setShareToFeed} />
             </div>
-
-            {/* Social Media Share */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                  <Share2 className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Share to Social Media</p>
-                  <p className="text-xs text-[#94A3B8]">Post to your social accounts</p>
-                </div>
-              </div>
-              <Switch checked={shareToSocial} onCheckedChange={setShareToSocial} />
-            </div>
-
-            {/* Social Platform Selection */}
-            {shareToSocial && (
-              <div className="ml-13 pl-4 border-l-2 border-white/10">
-                <p className="text-sm text-[#94A3B8] mb-3">Select platforms:</p>
-                <div className="flex gap-3">
-                  {socialPlatforms.map((platform) => {
-                    const Icon = platform.icon;
-                    const isSelected = selectedSocialPlatforms.includes(platform.id);
-                    return (
-                      <button
-                        key={platform.id}
-                        onClick={() => toggleSocialPlatform(platform.id)}
-                        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-                          isSelected 
-                            ? `${platform.color} text-white scale-110` 
-                            : 'bg-white/5 text-[#94A3B8] hover:bg-white/15'
-                        }`}
-                      >
-                        <Icon className="w-6 h-6" />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         </Card>
 

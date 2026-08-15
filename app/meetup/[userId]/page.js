@@ -32,8 +32,9 @@ export default function MeetupPage() {
 
   const [user, setUser] = useState(null);
   const [targetUser, setTargetUser] = useState(null);
+  const [meetup, setMeetup] = useState(null);
   const [meetupLocation, setMeetupLocation] = useState({ lat: 40.7128, lng: -74.0060 });
-  
+
   // Emergency state
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [emergencyReason, setEmergencyReason] = useState('');
@@ -55,8 +56,25 @@ export default function MeetupPage() {
     }
     setUser(storedUser);
     fetchTargetUser();
+    fetchMeetup();
     getUserLocation();
   }, []);
+
+  // The meetup record just finished (status 'completed' once both people
+  // tapped Arrived), so the normal get-or-create GET would spawn a fresh
+  // 'pending' one — mode=latest reads the real just-completed record
+  // instead, including the real agreed meeting point.
+  const fetchMeetup = async () => {
+    try {
+      const res = await fetchWithAuth(`/api/meetups/${userId}?mode=latest`);
+      const data = await res.json();
+      if (res.ok && data.meetup) {
+        setMeetup(data.meetup);
+      }
+    } catch (error) {
+      console.error('Failed to fetch meetup:', error);
+    }
+  };
 
   const getUserLocation = () => {
     if (navigator.geolocation) {
@@ -72,13 +90,17 @@ export default function MeetupPage() {
     }
   };
 
+  // The SPECIFIC person this meetup is about, by id — not a lookup into
+  // /api/matches with a fallback to "the first match", which could show a
+  // completely different person on what's meant to be a confirmation screen.
   const fetchTargetUser = async () => {
     try {
-      const res = await fetchWithAuth('/api/matches');
+      const res = await fetchWithAuth(`/api/users/${userId}`);
       const data = await res.json();
-      if (data.matches) {
-        const found = data.matches.find(m => m.id === userId);
-        setTargetUser(found || data.matches[0]);
+      if (res.ok && data.user) {
+        setTargetUser(data.user);
+      } else {
+        toast.error("Couldn't load this person's info");
       }
     } catch (error) {
       console.error('Failed to fetch user:', error);
@@ -141,10 +163,12 @@ export default function MeetupPage() {
       {/* Map showing meetup location */}
       <div className="h-[45vh] relative">
         <MapComponent
-          center={[meetupLocation.lat, meetupLocation.lng]}
+          center={meetup?.meetingPoint
+            ? [meetup.meetingPoint.lat, meetup.meetingPoint.lng]
+            : [meetupLocation.lat, meetupLocation.lng]}
           zoom={16}
-          users={targetUser ? [{ ...targetUser, location: meetupLocation }] : []}
           currentUser={{ location: meetupLocation }}
+          meetingPoint={meetup?.meetingPoint || null}
           className="h-full w-full"
         />
 
@@ -196,8 +220,10 @@ export default function MeetupPage() {
         {/* Location info */}
         <div className="bg-[#1A1E2B] rounded-xl p-4 mb-6">
           <h3 className="font-semibold text-[#E2E8F0] mb-2">Meetup Location</h3>
-          <p className="text-[#94A3B8] capitalize">{activity || 'Activity'} spot</p>
-          <p className="text-sm text-[#94A3B8]">Current meetup location</p>
+          <p className="text-[#94A3B8] capitalize">{activity || 'Activity'}</p>
+          <p className="text-sm text-[#94A3B8]">
+            {meetup?.meetingPoint?.label || (meetup?.meetingPoint ? 'Meeting point' : 'No meeting point was recorded for this meetup')}
+          </p>
         </div>
 
         {/* Action Buttons */}
@@ -239,14 +265,14 @@ export default function MeetupPage() {
         <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
           <Card className="w-full max-w-md p-6 border-2 border-red-500 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-red-600">⚠️ Emergency Exit</h3>
+              <h3 className="text-xl font-bold text-red-400">⚠️ Emergency Exit</h3>
               <button onClick={() => setShowEmergencyModal(false)} className="p-1 hover:bg-white/10 rounded-full">
                 <X className="w-6 h-6 text-[#94A3B8]" />
               </button>
             </div>
 
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-              <p className="text-red-800 text-sm">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4">
+              <p className="text-red-400 text-sm">
                 <strong>Your safety is our priority.</strong> This will immediately end the meetup and your feedback will help keep the community safe.
               </p>
             </div>
@@ -261,7 +287,7 @@ export default function MeetupPage() {
                     onClick={() => setEmergencyReason(reason)}
                     className={`w-full p-3 rounded-lg border text-left text-sm transition-all ${
                       emergencyReason === reason
-                        ? 'border-red-500 bg-red-50 text-red-800'
+                        ? 'border-red-500 bg-red-500/15 text-red-400'
                         : 'border-white/10 hover:border-white/15'
                     }`}
                   >
@@ -294,7 +320,7 @@ export default function MeetupPage() {
               
               <Button 
                 variant="outline"
-                className="w-full py-4 border-red-300 text-red-600"
+                className="w-full py-4 border-red-500/40 text-red-400"
                 onClick={skipAndExit}
               >
                 Exit Without Reporting

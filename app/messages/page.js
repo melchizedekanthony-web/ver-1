@@ -17,6 +17,7 @@ export default function MessagesPage() {
   const [conversations, setConversations] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const storedUser = getUser();
@@ -29,6 +30,7 @@ export default function MessagesPage() {
   }, []);
 
   const fetchConversations = async () => {
+    setError(false);
     const timeoutId = setTimeout(() => {
       setLoading(false);
     }, 15000);
@@ -45,9 +47,12 @@ export default function MessagesPage() {
           ...c,
           lastMessageTime: new Date(c.lastMessageTime)
         })));
+      } else if (!res.ok) {
+        setError(true);
       }
     } catch (error) {
       console.error('Failed to fetch conversations:', error);
+      setError(true);
     } finally {
       clearTimeout(timeoutId);
       setLoading(false);
@@ -69,10 +74,18 @@ export default function MessagesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="w-8 h-8 border-4 border-[#DC2626] border-t-transparent rounded-full animate-spin mb-3"></div>
-          <p className="text-[#94A3B8] text-sm">Loading activity chats...</p>
+      <div className="min-h-screen bg-[#0A0C10] text-white pb-24">
+        <Header user={user} title="MESSAGES" />
+        <div className="max-w-2xl mx-auto p-4 space-y-2.5 animate-pulse">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="p-4 rounded-2xl bg-[#12151E]/90 border border-white/5 flex items-center gap-3.5">
+              <div className="w-14 h-14 rounded-full bg-white/10" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-1/3 rounded bg-white/10" />
+                <div className="h-3 w-2/3 rounded bg-white/10" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -97,6 +110,15 @@ export default function MessagesPage() {
 
       {/* Conversations List */}
       <div className="max-w-2xl mx-auto p-4 space-y-2.5">
+        {error && (
+          <div className="text-center py-6 bg-red-500/10 border border-red-500/30 rounded-2xl mb-2">
+            <p className="text-red-400 text-sm mb-3">Couldn't load your conversations.</p>
+            <Button size="sm" variant="outline" className="border-red-500/40 text-red-400" onClick={fetchConversations}>
+              Retry
+            </Button>
+          </div>
+        )}
+
         {filteredConversations.map((conversation) => (
           <button
             key={conversation.id}
@@ -139,7 +161,7 @@ export default function MessagesPage() {
           </button>
         ))}
 
-        {filteredConversations.length === 0 && (
+        {!error && filteredConversations.length === 0 && (
           <div className="text-center py-16 bg-[#12151E] rounded-2xl border border-white/10 p-6">
             <MessageSquare className="w-10 h-10 text-[#DC2626] mx-auto mb-3 opacity-80" />
             <p className="text-white font-bold text-base">No active chats found.</p>

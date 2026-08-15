@@ -17,6 +17,7 @@ export default function ConnectionsPage() {
   const [connections, setConnections] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const storedUser = getUser();
@@ -29,17 +30,21 @@ export default function ConnectionsPage() {
   }, []);
 
   const fetchConnections = async () => {
+    setError(false);
     try {
       const res = await fetchWithAuth('/api/matches');
       const data = await res.json();
-      if (data.matches) {
+      if (res.ok && data.matches) {
         // Use only real, backend-computed fields — no fabricated status,
         // activity history, or connection dates. commonActivities and
         // compatibilityScore come straight from the matching algorithm.
         setConnections(data.matches);
+      } else if (!res.ok) {
+        setError(true);
       }
     } catch (error) {
       console.error('Failed to fetch connections:', error);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -60,10 +65,20 @@ export default function ConnectionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="w-8 h-8 border-4 border-[#DC2626] border-t-transparent rounded-full animate-spin mb-3"></div>
-          <p className="text-[#94A3B8] text-sm">Loading activity connections...</p>
+      <div className="min-h-screen bg-[#0A0C10] text-white pb-32">
+        <Header user={user} title="NETWORK" />
+        <div className="p-4 max-w-2xl mx-auto space-y-4 animate-pulse">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="dark-glass-card p-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-14 h-14 rounded-full bg-white/10" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-1/2 rounded bg-white/10" />
+                  <div className="h-3 w-1/3 rounded bg-white/10" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -88,12 +103,23 @@ export default function ConnectionsPage() {
 
       {/* Connections List */}
       <div className="p-4 max-w-2xl mx-auto space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-black text-white text-lg tracking-tight">People Nearby ({filteredConnections.length})</h2>
-          <span className="text-xs font-bold text-[#FBBF24] bg-[#FBBF24]/10 border border-[#FBBF24]/20 px-2.5 py-0.5 rounded-full">
-            SUGGESTED
-          </span>
-        </div>
+        {error && (
+          <div className="text-center py-6 bg-red-500/10 border border-red-500/30 rounded-2xl">
+            <p className="text-red-400 text-sm mb-3">Couldn't load your connections.</p>
+            <Button size="sm" variant="outline" className="border-red-500/40 text-red-400" onClick={fetchConnections}>
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {!error && (
+          <div className="flex items-center justify-between">
+            <h2 className="font-black text-white text-lg tracking-tight">People Nearby ({filteredConnections.length})</h2>
+            <span className="text-xs font-bold text-[#FBBF24] bg-[#FBBF24]/10 border border-[#FBBF24]/20 px-2.5 py-0.5 rounded-full">
+              SUGGESTED
+            </span>
+          </div>
+        )}
 
         {filteredConnections.map((connection) => (
           <div
@@ -168,7 +194,7 @@ export default function ConnectionsPage() {
           </div>
         ))}
 
-        {filteredConnections.length === 0 && (
+        {!error && filteredConnections.length === 0 && (
           <div className="text-center py-12 bg-[#12151E] rounded-2xl border border-white/10">
             <p className="text-[#94A3B8]">No activity connections found.</p>
             <Button 

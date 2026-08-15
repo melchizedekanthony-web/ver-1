@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 
-export default function MapComponent({ 
+export default function MapComponent({
   center = [40.7128, -74.0060],
   zoom = 13,
   users = [],
@@ -10,6 +10,8 @@ export default function MapComponent({
   selectedUser = null,
   onUserClick,
   showRoute = false,
+  onMapClick,
+  meetingPoint = null,
   className = ''
 }) {
   const mapRef = useRef(null);
@@ -58,6 +60,21 @@ export default function MapComponent({
       }
     };
   }, []);
+
+  // Tap-to-drop-pin support — only active while a caller passes onMapClick
+  // (e.g. the connect page's "propose a meeting point" mode). Re-bound
+  // whenever the handler identity changes so it never fires a stale closure.
+  useEffect(() => {
+    if (!mapInstanceRef.current || !isLoaded || !onMapClick) return;
+    const map = mapInstanceRef.current;
+    const handleClick = (e) => {
+      onMapClick({ lat: e.latlng.lat, lng: e.latlng.lng });
+    };
+    map.on('click', handleClick);
+    return () => {
+      map.off('click', handleClick);
+    };
+  }, [onMapClick, isLoaded]);
 
   // Update markers when users change
   useEffect(() => {
@@ -171,6 +188,31 @@ export default function MapComponent({
         markersRef.current.push(marker);
       });
 
+      // Meeting point pin — the mutually-agreed (or proposed) spot from the
+      // shared `meetups` record, distinct from either person's live position.
+      if (meetingPoint && typeof meetingPoint.lat === 'number' && typeof meetingPoint.lng === 'number') {
+        const meetIcon = L.divIcon({
+          className: 'custom-meeting-pin',
+          html: `
+            <div style="position: relative; width: 38px; height: 46px;">
+              <svg width="38" height="46" viewBox="0 0 38 46" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 0C8.5 0 0 8.5 0 19c0 14 19 27 19 27s19-13 19-27C38 8.5 29.5 0 19 0z" fill="#FBBF24" stroke="#0A0C10" stroke-width="2"/>
+                <circle cx="19" cy="18" r="7" fill="#0A0C10"/>
+              </svg>
+            </div>
+          `,
+          iconSize: [38, 46],
+          iconAnchor: [19, 46]
+        });
+        const marker = L.marker([meetingPoint.lat, meetingPoint.lng], { icon: meetIcon }).addTo(map);
+        marker.bindPopup(`
+          <div style="background: #12151E; color: #FFFFFF; padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(251,191,36,0.4); font-family: sans-serif;">
+            <strong style="color: #FBBF24;">${meetingPoint.label || 'Meeting point'}</strong>
+          </div>
+        `);
+        markersRef.current.push(marker);
+      }
+
       // Draw route line if needed
       if (showRoute && currentUser?.location && selectedUser?.location) {
         const routeLine = L.polyline([
@@ -187,7 +229,7 @@ export default function MapComponent({
     };
 
     updateMarkers();
-  }, [users, currentUser, selectedUser, showRoute, isLoaded, onUserClick]);
+  }, [users, currentUser, selectedUser, showRoute, isLoaded, onUserClick, meetingPoint]);
 
   // Update map center when it changes
   useEffect(() => {

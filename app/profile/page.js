@@ -28,7 +28,15 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState({ activitiesCount: 0, connectionsCount: 0, avgRating: null, reviewCount: 0 });
   const [loading, setLoading] = useState(true);
-  
+
+  // Real discoverability — this is the actual on/off switch for whether
+  // anyone can find you nearby (see PresenceHeartbeat + the `meetups`/
+  // broadcast matching on the backend). Distinct from the "Broadcast
+  // Status" message below, which is just a personal status tag shown on
+  // your own profile and never affects matching.
+  const [available, setAvailable] = useState(true);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+
   // Status & Activity
   const [currentStatus, setCurrentStatus] = useState('Available');
   const [currentActivity, setCurrentActivity] = useState('');
@@ -71,7 +79,37 @@ export default function ProfilePage() {
     fetchProfile();
     fetchMediaGallery();
     fetchProfileStatus();
+    fetchAvailability();
   }, []);
+
+  const fetchAvailability = async () => {
+    try {
+      const res = await fetchWithAuth('/api/presence');
+      const data = await res.json();
+      if (res.ok) setAvailable(!!data.available);
+    } catch (error) {
+      console.error('Failed to fetch availability:', error);
+    }
+  };
+
+  const handleToggleAvailable = async (checked) => {
+    setAvailable(checked); // optimistic
+    setAvailabilityLoading(true);
+    try {
+      const res = await fetchWithAuth('/api/presence/toggle', {
+        method: 'POST',
+        body: JSON.stringify({ available: checked })
+      });
+      if (!res.ok) throw new Error('Request failed');
+      toast.success(checked ? "You're discoverable — people nearby can find and connect with you." : "You're hidden — no one can find you on the radar until you turn this back on.");
+    } catch (error) {
+      console.error('Failed to update availability:', error);
+      setAvailable(!checked); // revert
+      toast.error('Could not update your availability');
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -266,6 +304,24 @@ export default function ProfilePage() {
             ) : (
               <span className="text-xs font-semibold text-[#94A3B8]">No reviews yet — new here</span>
             )}
+          </div>
+
+          {/* Real discoverability toggle */}
+          <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between text-left">
+            <div className="flex items-center gap-2.5">
+              <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${available ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse' : 'bg-white/20'}`} />
+              <div>
+                <p className="text-sm font-bold text-white">Discoverable Nearby</p>
+                <p className="text-[11px] text-[#94A3B8]">
+                  {available ? 'People nearby can find and connect with you' : 'Hidden — no one can find you right now'}
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={available}
+              onCheckedChange={handleToggleAvailable}
+              disabled={availabilityLoading}
+            />
           </div>
 
           {/* Stats Dashboard Grid */}

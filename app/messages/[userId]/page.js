@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Phone, Video, MoreVertical, ArrowLeft } from 'lucide-react';
+import { Send, Phone, ArrowLeft } from 'lucide-react';
 import { getUser, fetchWithAuth } from '@/lib/auth';
 
 export default function ChatPage() {
@@ -36,15 +36,19 @@ export default function ChatPage() {
 
   const fetchChatUser = async () => {
     try {
-      const res = await fetchWithAuth('/api/matches');
+      const res = await fetchWithAuth(`/api/users/${userId}`);
       const data = await res.json();
-      if (data.matches) {
-        const found = data.matches.find(m => m.id === userId);
-        setChatUser(found || data.matches[0]);
+      if (res.ok && data.user) {
+        setChatUser(data.user);
       }
     } catch (error) {
       console.error('Failed to fetch user:', error);
     }
+  };
+
+  const handleCall = () => {
+    if (!chatUser?.phone) return;
+    window.location.href = `tel:${chatUser.phone}`;
   };
 
   const fetchThread = async (myUserId) => {
@@ -116,15 +120,14 @@ export default function ChatPage() {
           <h2 className="font-semibold text-white">{chatUser?.name || 'User'}</h2>
           <p className="text-xs text-[#94A3B8]">{chatUser?.activity || 'Radar match'}</p>
         </div>
-        
-        <button className="p-2">
+
+        <button
+          className="p-2 disabled:opacity-30"
+          onClick={handleCall}
+          disabled={!chatUser?.phone}
+          title={chatUser?.phone ? `Call ${chatUser.name}` : "They haven't shared a phone number"}
+        >
           <Phone className="w-5 h-5 text-[#94A3B8]" />
-        </button>
-        <button className="p-2">
-          <Video className="w-5 h-5 text-[#94A3B8]" />
-        </button>
-        <button className="p-2">
-          <MoreVertical className="w-5 h-5 text-[#94A3B8]" />
         </button>
       </header>
 
